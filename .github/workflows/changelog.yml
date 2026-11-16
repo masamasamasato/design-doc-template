@@ -12,6 +12,9 @@ jobs:
   append:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
     steps:
       - name: mainを取得する
         uses: actions/checkout@v4
@@ -25,6 +28,7 @@ jobs:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_TITLE: ${{ github.event.pull_request.title }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           # 三点リーダーのマージベースを取れるよう、PR の先端も取得する。
@@ -41,6 +45,7 @@ jobs:
           for attempt in 1 2 3 4; do
             git pull --rebase origin main
             if git push origin HEAD:main; then
+              gh workflow run pages.yml --ref main
               exit 0
             fi
             sleep $((attempt * 2))
