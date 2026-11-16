@@ -1,0 +1,8 @@
+:root {
+  --md-text-font: "Noto Sans CJK JP", "Noto Sans JP", "Hiragino Sans", "Yu Gothic", sans-serif;
+  --md-code-font: ui-monospace, "Source Code Pro", monospace;
+}
+
+.md-typeset {
+  line-height: 1.75;
+}

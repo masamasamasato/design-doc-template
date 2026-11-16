@@ -1,0 +1,19 @@
+' 深さ3。プロフィールを公開する処理のイメージ。
+' スイムレーンは業務フロー側に書く。ここはメソッドの順番だけを書く。
+@startuml
+skinparam shadowing false
+skinparam defaultFontName "Noto Sans CJK JP"
+skinparam ActivityFontName "Noto Sans CJK JP"
+
+title プロフィールを公開する
+
+start
+:本人確認が済んでいるか確認する処理\ncheckOwner();
+if (本人で、確認済み?) then (はい)
+  :公開中にする処理\npublish();
+  :公開中を返す;
+else (いいえ)
+  :失敗を返す\nNOT_VERIFIED など;
+endif
+stop
+@enduml

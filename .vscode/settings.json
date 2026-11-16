@@ -1,0 +1,11 @@
+{
+  "plantuml.render": "Local",
+  "plantuml.server": "",
+  "plantuml.jar": "tools/plantuml.jar",
+  "plantuml.exportFormat": "svg",
+  "plantuml.jarArgs": ["-nometadata"],
+  "markdown-preview-enhanced.plantumlServer": "",
+  "markdown-preview-enhanced.plantumlJarPath": "tools/plantuml.jar",
+  "markdown-preview-enhanced.krokiServer": "http://127.0.0.1:9",
+  "markdown-preview-enhanced.webSequenceDiagramsServer": "http://127.0.0.1:9"
+}

@@ -1,0 +1,13 @@
+' 深さ3の処理イメージ。スイムレーン（|利用者|）は業務フローだけに使う。
+' ここは分岐が分かるアクティビティ図にする。
+@startuml
+skinparam shadowing false
+skinparam defaultFontName "Noto Sans CJK JP"
+
+title （APIの名前）
+
+start
+:（何をする処理）\nmethodName();
+stop
+
+@enduml

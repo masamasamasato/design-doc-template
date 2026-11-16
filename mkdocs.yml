@@ -1,0 +1,75 @@
+site_name: 設計書
+site_description: 人が読む設計書のテンプレートです。業務、機能、サービスメソッドまでを書きます。
+# MkDocs は、設定ファイルのあるフォルダ自体を原稿にできない。
+# mkdocs/docs は、リポジトリ直下の原稿へのリンク。
+docs_dir: mkdocs/docs
+site_dir: site
+use_directory_urls: true
+
+theme:
+  name: material
+  language: ja
+  font: false
+  features:
+    - navigation.expand
+    - navigation.footer
+    - content.code.copy
+    - search.suggest
+    - search.highlight
+    - toc.follow
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: ダークモードへ
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: ライトモードへ
+
+extra_css:
+  - stylesheets/extra.css
+
+plugins:
+  - search:
+      lang:
+        - ja
+        - en
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
+nav:
+  - はじめに: README.md
+  - 用語集: 用語集.md
+  - 業務フロー:
+      - プロフィールを公開する: docs/business/index.md
+  - API:
+      - 新しいAPIの型:
+          - 入口: apis/_template/README.md
+          - 用語: apis/_template/用語.md
+          - 処理詳細: apis/_template/処理詳細.md
+          - 変更履歴: apis/_template/変更履歴.md
+      - 記入例 プロフィールを公開する:
+          - 入口: apis/publish-profile/README.md
+          - 用語: apis/publish-profile/用語.md
+          - 処理詳細: apis/publish-profile/処理詳細.md
+          - 変更履歴: apis/publish-profile/変更履歴.md
+  - 決定記録:
+      - テンプレートの方針: decisions/0000-template.md

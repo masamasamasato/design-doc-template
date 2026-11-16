@@ -1,0 +1,92 @@
+name: ドキュメントを公開する
+
+on:
+  push:
+    branches:
+      - main
+  workflow_run:
+    workflows:
+      - 変更履歴を追記する
+    types:
+      - completed
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    if: >-
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_run' &&
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.head_branch == 'main')
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: リポジトリを取得する
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Pythonを入れる
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Javaを入れる
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Graphvizと日本語フォントを入れる
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y graphviz fonts-noto-cjk
+
+      - name: plantuml.jarを入れる
+        run: ./scripts/install-plantuml.sh
+
+      - name: Pythonの依存を入れる
+        run: python -m pip install -r requirements.txt
+
+      - name: PagesのURLを読む
+        id: pages
+        uses: actions/configure-pages@v5
+
+      - name: 図をローカルでSVGにする
+        run: ./scripts/render-changed.sh --all >/dev/null
+
+      - name: 原稿へのリンクを作る
+        run: ./scripts/prepare-docs.sh
+
+      - name: サイトをビルドする
+        env:
+          SITE_URL: ${{ steps.pages.outputs.base_url }}
+          NO_MKDOCS_2_WARNING: "1"
+        run: |
+          set -euo pipefail
+          url="${SITE_URL}"
+          case "$url" in
+            */) ;;
+            *) url="${url}/" ;;
+          esac
+          mkdocs build --strict --site-url "$url"
+
+      - name: サイトをアップロードする
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: GitHub Pagesへ公開する
+        id: deployment
+        uses: actions/deploy-pages@v4

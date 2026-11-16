@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+*.pyc
+site/
+_site/
+tools/plantuml.jar
+.DS_Store

@@ -1,0 +1,24 @@
+name: PRタイトルを確認する
+
+on:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - reopened
+      - synchronize
+
+permissions:
+  contents: read
+
+jobs:
+  title:
+    runs-on: ubuntu-latest
+    steps:
+      - name: リポジトリを取得する
+        uses: actions/checkout@v4
+
+      - name: タイトルを確認する
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: python3 scripts/check-pr-title.py

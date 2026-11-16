@@ -1,0 +1,30 @@
+' 深さ1。業務のスイムレーン。レーンは |名前| と書く。
+' 変換はローカルの plantuml.jar と Graphviz。図の中身は外部へ送らない。
+@startuml
+skinparam shadowing false
+skinparam defaultFontName "Noto Sans CJK JP"
+skinparam ActivityFontName "Noto Sans CJK JP"
+
+title プロフィールを公開する
+
+|ユーザー|
+start
+:公開するボタンを押す;
+
+|プロフィール画面|
+:公開APIを呼ぶ;
+
+|プロフィールAPI|
+if (本人確認は済みか?) then (済み)
+  :公開中にする;
+else (まだ)
+  :公開しない;
+endif
+
+|プロフィール画面|
+:結果を表示する;
+
+|ユーザー|
+:結果を確認する;
+stop
+@enduml
