@@ -15,7 +15,7 @@ on:
       - "scripts/post-plantuml-comment.sh"
 
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
 
 jobs:
