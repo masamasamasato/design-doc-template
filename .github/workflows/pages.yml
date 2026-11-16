@@ -31,45 +31,59 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - name: PagesのURLを読む
+        id: pages
+        continue-on-error: true
+        uses: actions/configure-pages@v5
+
+      - name: Pagesが使えないときは公開を飛ばす
+        if: steps.pages.outcome != 'success'
+        run: echo "::notice::Pagesが使えないため公開を飛ばしました"
+
       - name: リポジトリを取得する
+        if: steps.pages.outcome == 'success'
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: Pythonを入れる
+        if: steps.pages.outcome == 'success'
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           cache: pip
 
       - name: Javaを入れる
+        if: steps.pages.outcome == 'success'
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "21"
 
       - name: Graphvizと日本語フォントを入れる
+        if: steps.pages.outcome == 'success'
         run: |
           sudo apt-get update
           sudo apt-get install -y graphviz fonts-noto-cjk
 
       - name: plantuml.jarを入れる
+        if: steps.pages.outcome == 'success'
         run: ./scripts/install-plantuml.sh
 
       - name: Pythonの依存を入れる
+        if: steps.pages.outcome == 'success'
         run: python -m pip install -r requirements.txt
 
-      - name: PagesのURLを読む
-        id: pages
-        uses: actions/configure-pages@v5
-
       - name: 図をローカルでSVGにする
+        if: steps.pages.outcome == 'success'
         run: ./scripts/render-changed.sh --all >/dev/null
 
       - name: 原稿へのリンクを作る
+        if: steps.pages.outcome == 'success'
         run: ./scripts/prepare-docs.sh
 
       - name: サイトをビルドする
+        if: steps.pages.outcome == 'success'
         env:
           SITE_URL: ${{ steps.pages.outputs.base_url }}
           NO_MKDOCS_2_WARNING: "1"
@@ -83,10 +97,12 @@ jobs:
           mkdocs build --strict --site-url "$url"
 
       - name: サイトをアップロードする
+        if: steps.pages.outcome == 'success'
         uses: actions/upload-pages-artifact@v3
         with:
           path: site
 
       - name: GitHub Pagesへ公開する
+        if: steps.pages.outcome == 'success'
         id: deployment
         uses: actions/deploy-pages@v4

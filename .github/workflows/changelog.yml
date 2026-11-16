@@ -22,15 +22,13 @@ jobs:
       - name: 変更履歴へ1行足す
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
           set -euo pipefail
-          if [[ -z "${HEAD_SHA}" ]]; then
-            HEAD_SHA="$(git rev-parse HEAD)"
-            export HEAD_SHA
-          fi
+          # 三点リーダーのマージベースを取れるよう、PR の先端も取得する。
+          git fetch --no-tags origin "${BASE_SHA}" "${HEAD_SHA}"
           python3 scripts/append-changelog.py
           if git diff --quiet; then
             echo "追記はありません"
