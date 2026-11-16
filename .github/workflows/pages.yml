@@ -4,11 +4,7 @@ on:
   push:
     branches:
       - main
-  workflow_run:
-    workflows:
-      - 変更履歴を追記する
-    types:
-      - completed
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -22,10 +18,8 @@ concurrency:
 jobs:
   deploy:
     if: >-
-      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
-      (github.event_name == 'workflow_run' &&
-        github.event.workflow_run.conclusion == 'success' &&
-        github.event.workflow_run.head_branch == 'main')
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -44,7 +38,7 @@ jobs:
         if: steps.pages.outcome == 'success'
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          ref: ${{ github.sha }}
 
       - name: Pythonを入れる
         if: steps.pages.outcome == 'success'
