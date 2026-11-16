@@ -8,6 +8,7 @@ skinparam ActivityFontName "Noto Sans CJK JP"
 title プロフィールを公開する
 
 start
+note right: 公開の前に本人確認が必要
 :本人確認が済んでいるか確認する処理\ncheckOwner();
 if (本人で、確認済み?) then (はい)
   :公開中にする処理\npublish();
