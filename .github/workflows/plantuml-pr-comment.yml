@@ -92,20 +92,15 @@ jobs:
           done < "$RUNNER_TEMP/changed-puml.txt"
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
-      - name: 足りないSVGをローカルで作る
+      - name: 変わった図をローカルでSVGにする
         if: steps.list.outputs.changed == 'true'
         run: |
           set -euo pipefail
-          missing=()
-          while IFS= read -r puml; do
-            [[ -z "$puml" ]] && continue
-            svg="${puml%.*}.svg"
-            if [[ ! -f "$svg" ]]; then
-              missing+=("$puml")
-            fi
-          done < "$RUNNER_TEMP/changed-puml.txt"
-          if ((${#missing[@]} > 0)); then
-            ./scripts/render-puml.sh "${missing[@]}"
+          # リポジトリのSVGは、botの更新前だと古いことがある。
+          # コメントには、いまの .puml から作り直したSVGを載せる。
+          mapfile -t changed < "$RUNNER_TEMP/changed-puml.txt"
+          if ((${#changed[@]} > 0)); then
+            ./scripts/render-puml.sh "${changed[@]}"
           fi
           : > "$RUNNER_TEMP/plantuml-svgs.txt"
           while IFS= read -r puml; do
