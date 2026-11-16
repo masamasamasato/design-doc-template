@@ -219,7 +219,7 @@ Material for MkDocs は 2027-05-05 まで保守されます。起動時の案内
 
 SVGのコミットメッセージには `[plantuml-svg]` が付きます。`GITHUB_TOKEN` による push は、次の workflow を起動しません。図の変換が無限に繰り返されないためです。
 
-変更履歴の1行は、次の形です。日付は日本時間です。対象のAPIは、マージしたPRの先端（head）と、base から head への三点リーダー（マージベースからの差）で決めます。以前 main に入った変更は含めません。1行足して main に push できたときだけ、サイト公開のワークフローを起動します。
+変更履歴の1行は、次の形です。日付は日本時間です。対象のAPIは、マージしたPRが触ったファイルだけを見て決めます。以前 main に入った変更は含めません。1行足して main に push できたときだけ、サイト公開のワークフローを起動します。
 
 ```text
 2026-11-16 #12 公開時に本人確認を追加
@@ -234,6 +234,7 @@ SVGのコミットメッセージには `[plantuml-svg]` が付きます。`GITH
 1. Settings → Actions → General → Workflow permissions を **Read and write permissions** にする。SVGと変更履歴のコミットに必要です。
 2. Settings → Pages → Build and deployment → Source を **GitHub Actions** にする。
 3. Settings → General → **Template repository** にチェックを入れる。
+4. Settings → General → Pull Requests → Allow squash merging の既定メッセージを **Pull request title and description** にする。全コミット文が本文に入ると、bot のコミット文が混ざり、main の自動処理が止まることがあります。
 
 ブランチ保護で bot の push が拒否されるときは、`github-actions[bot]` の更新を許可します。
 
