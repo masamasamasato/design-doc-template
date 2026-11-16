@@ -11,7 +11,6 @@ def main() -> None:
     server = os.environ.get("GITHUB_SERVER_URL", "https://github.com").rstrip("/")
     repository = os.environ["GITHUB_REPOSITORY"]
     sha = os.environ["COMMENT_SHA"]
-    attach = os.environ.get("COMMENT_ATTACH", "").strip() in {"1", "true", "yes"}
     paths = [line.strip() for line in sys.stdin if line.strip()]
     lines = [
         "<!-- plantuml-preview -->",
@@ -19,7 +18,7 @@ def main() -> None:
         "",
         "PlantUML は GitHub Actions の中だけで SVG にしました。図の中身は外部のサーバーへ送っていません。",
         "",
-        "コメントに画像が出ないときは、リンクを開いてください。",
+        "コメントに画像が出ないときは、リンクを開いてください。GitHub は SVG をコメントの中で表示しないことがあります。",
         "",
     ]
     if not paths:
@@ -33,12 +32,10 @@ def main() -> None:
                 "",
                 f"[SVGを開く]({url})",
                 "",
+                f'<img alt="{path}" src="{url}?sanitize=true" />',
+                "",
             ]
         )
-        if attach:
-            lines.extend([f"![{path}](./{path})", ""])
-        else:
-            lines.extend([f'<img alt="{path}" src="{url}?sanitize=true" />', ""])
     run_url = os.environ.get("RUN_URL", "").strip()
     if run_url:
         lines.extend(
