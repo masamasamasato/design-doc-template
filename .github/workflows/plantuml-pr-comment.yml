@@ -10,6 +10,9 @@ on:
       - "**/*.puml"
       - "**/*.plantuml"
       - "**/*.svg"
+      - ".github/workflows/plantuml-pr-comment.yml"
+      - "scripts/format-plantuml-comment.py"
+      - "scripts/post-plantuml-comment.sh"
 
 permissions:
   contents: read
@@ -89,20 +92,15 @@ jobs:
           done < "$RUNNER_TEMP/changed-puml.txt"
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
-      - name: 足りないSVGをローカルで作る
+      - name: 変わった図をローカルでSVGにする
         if: steps.list.outputs.changed == 'true'
         run: |
           set -euo pipefail
-          missing=()
-          while IFS= read -r puml; do
-            [[ -z "$puml" ]] && continue
-            svg="${puml%.*}.svg"
-            if [[ ! -f "$svg" ]]; then
-              missing+=("$puml")
-            fi
-          done < "$RUNNER_TEMP/changed-puml.txt"
-          if ((${#missing[@]} > 0)); then
-            ./scripts/render-puml.sh "${missing[@]}"
+          # リポジトリのSVGは、botの更新前だと古いことがある。
+          # コメントには、いまの .puml から作り直したSVGを載せる。
+          mapfile -t changed < "$RUNNER_TEMP/changed-puml.txt"
+          if ((${#changed[@]} > 0)); then
+            ./scripts/render-puml.sh "${changed[@]}"
           fi
           : > "$RUNNER_TEMP/plantuml-svgs.txt"
           while IFS= read -r puml; do
@@ -127,42 +125,13 @@ jobs:
 
       - name: PRに図を載せる
         if: steps.list.outputs.changed == 'true'
-        uses: actions/github-script@v7
         env:
           COMMENT_SHA: ${{ steps.list.outputs.sha || github.event.pull_request.head.sha }}
           FILE_LIST: ${{ runner.temp }}/plantuml-svgs.txt
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        with:
-          script: |
-            const fs = require("fs");
-            const { execFileSync } = require("child_process");
-            const body = execFileSync("python3", ["scripts/format-plantuml-comment.py"], {
-              encoding: "utf8",
-              env: { ...process.env },
-              input: fs.existsSync(process.env.FILE_LIST)
-                ? fs.readFileSync(process.env.FILE_LIST, "utf8")
-                : "",
-            });
-            const marker = "<!-- plantuml-preview -->";
-            const issueNumber = context.payload.pull_request.number;
-            const comments = await github.paginate(github.rest.issues.listComments, {
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: issueNumber,
-            });
-            const existing = comments.find((comment) => (comment.body || "").includes(marker));
-            if (existing) {
-              await github.rest.issues.updateComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: existing.id,
-                body,
-              });
-            } else {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: issueNumber,
-                body,
-              });
-            }
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          # 画像の添付には個人トークン（PREVIEW_TOKEN）が要る。
+          # 無い・期限切れ・権限不足のときは、自動トークンでリンク形式のコメントを書く。
+          PREVIEW_TOKEN: ${{ secrets.PREVIEW_TOKEN }}
+          FALLBACK_TOKEN: ${{ github.token }}
+        run: ./scripts/post-plantuml-comment.sh

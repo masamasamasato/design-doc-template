@@ -15,6 +15,7 @@ if (本人で、確認済み?) then (はい)
   :公開中を返す;
 else (いいえ)
   :失敗を返す\nNOT_VERIFIED など;
+  note right: 失敗理由の一覧は処理詳細.mdを見る
 endif
 stop
 @enduml
