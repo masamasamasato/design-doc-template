@@ -131,6 +131,7 @@ jobs:
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           # 画像の添付には個人トークン（PREVIEW_TOKEN）が要る。
-          # 無いとき（フォークのPRなど）は添付に失敗し、リンク形式のコメントに切り替わる。
-          GH_TOKEN: ${{ secrets.PREVIEW_TOKEN || github.token }}
+          # 無い・期限切れ・権限不足のときは、自動トークンでリンク形式のコメントを書く。
+          PREVIEW_TOKEN: ${{ secrets.PREVIEW_TOKEN }}
+          FALLBACK_TOKEN: ${{ github.token }}
         run: ./scripts/post-plantuml-comment.sh

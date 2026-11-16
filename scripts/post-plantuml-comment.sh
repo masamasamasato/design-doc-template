@@ -26,10 +26,13 @@ ensure_gh() {
   fi
 }
 
+# プレビューの印があり、投稿者が個人トークンの持ち主か Actions のコメントだけを返す。
+# 人が手で書いたコメントは、印を含んでいても消さない。
 list_preview_ids() {
   local repo="$1" number="$2"
-  gh api --paginate "repos/${repo}/issues/${number}/comments" \
-    --jq '.[] | select((.body // "") | contains("<!-- plantuml-preview -->")) | .id'
+  local authors="${3:-${PREVIEW_AUTHORS:-github-actions[bot]}}"
+  AUTHORS="$authors" gh api --paginate "repos/${repo}/issues/${number}/comments" \
+    --jq '.[] | select((.body // "") | contains("<!-- plantuml-preview -->")) | select(.user.login as $u | ($ENV.AUTHORS | split(",") | index($u))) | .id'
 }
 
 delete_comments() {
@@ -74,14 +77,15 @@ post_fallback() {
   local repo="$1" number="$2"
   local body existing
   body="$(build_body 0)"
-  existing="$(list_preview_ids "$repo" "$number" | tail -n1 || true)"
+  # 自動トークンが書き換えられるのは、Actions 自身のコメントだけ。
+  existing="$(list_preview_ids "$repo" "$number" "github-actions[bot]" | tail -n1 || true)"
   local payload
   payload="$(jq -n --arg body "$body" '{body: $body}')"
   if [[ -n "$existing" ]]; then
-    printf '%s' "$payload" | gh api -X PATCH "repos/${repo}/issues/comments/${existing}" --input -
+    printf '%s' "$payload" | gh api -X PATCH "repos/${repo}/issues/comments/${existing}" --input - >/dev/null
     echo "添付できなかったため、コメント ${existing} を従来の形式で更新しました"
   else
-    printf '%s' "$payload" | gh api "repos/${repo}/issues/${number}/comments" --input -
+    printf '%s' "$payload" | gh api "repos/${repo}/issues/${number}/comments" --input - >/dev/null
     echo "添付できなかったため、従来の形式でコメントしました"
   fi
 }
@@ -107,8 +111,25 @@ main() {
   ensure_gh
   : "${GITHUB_REPOSITORY:?}"
   : "${COMMENT_SHA:?}"
-  export GH_TOKEN="${GH_TOKEN:-${GITHUB_TOKEN:?}}"
   export GH_REPO="${GH_REPO:-$GITHUB_REPOSITORY}"
+  local fallback="${FALLBACK_TOKEN:-${GITHUB_TOKEN:?}}"
+  local preview="${PREVIEW_TOKEN:-}"
+  export GH_TOKEN="$fallback"
+  PREVIEW_AUTHORS="github-actions[bot]"
+
+  # 個人トークンが使えるかを先に確かめる。期限切れなどは、ここで警告して添付をやめる。
+  if [[ -n "$preview" ]]; then
+    local login
+    if login="$(GH_TOKEN="$preview" gh api user --jq .login 2>/dev/null)" && [[ -n "$login" ]]; then
+      PREVIEW_AUTHORS="github-actions[bot],${login}"
+    else
+      echo "::warning::PREVIEW_TOKEN が期限切れか無効です。図はリンクで載せます。トークンを作り直してください"
+      preview=""
+    fi
+  else
+    echo "PREVIEW_TOKEN が無いため、図はリンクで載せます"
+  fi
+  export PREVIEW_AUTHORS
 
   local numbers number
   mapfile -t numbers < <(resolve_prs)
@@ -126,13 +147,15 @@ main() {
     [[ -z "$number" ]] && continue
     local old_ids=()
     mapfile -t old_ids < <(list_preview_ids "$repo" "$number" || true)
-    if post_with_attach "$number" "$body_file"; then
+    if [[ -n "$preview" ]] && GH_TOKEN="$preview" post_with_attach "$number" "$body_file"; then
       echo "user-attachments へ添付してコメントしました (PR #${number})"
       if ((${#old_ids[@]} > 0)); then
-        delete_comments "$repo" "${old_ids[@]}"
+        GH_TOKEN="$preview" delete_comments "$repo" "${old_ids[@]}"
       fi
     else
-      echo "::warning::gh pr comment --attach に失敗したため、従来の blob URL でコメントします"
+      if [[ -n "$preview" ]]; then
+        echo "::warning::個人トークンでの添付に失敗したため、リンク形式でコメントします"
+      fi
       post_fallback "$repo" "$number"
     fi
   done
