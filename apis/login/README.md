@@ -18,7 +18,7 @@ sequenceDiagram
   API->>API: authenticate()
   alt メールとパスワードが合う
     API->>API: createSession()
-    API-->>Screen: 200 セッションを作った
+    API-->>Screen: 200 Cookie でセッションを返す
     Screen-->>User: ログインできた
   else メールまたはパスワードが違う
     API-->>Screen: 401 INVALID_CREDENTIALS
@@ -38,14 +38,14 @@ sequenceDiagram
 | メール | はい | ログインする人。例: `hana@example.com` |
 | パスワード | はい | 利用者が画面に入れた値。ログには残しません |
 
-成功すると、セッションが作られます。例: セッションID `session_789`。
+成功すると、セッションが作られます。セッションIDは、HttpOnly、Secure、SameSite=Lax の Cookie で返します。本文には入れません。例: Cookie の値 `session_789`。
 
 ## 失敗するとき
 
 | コード | いつ | 結果 |
 | --- | --- | --- |
-| INVALID_CREDENTIALS | メールが無い、またはパスワードが違う | セッションは作らない。どちらが違うかは返さない |
-| ACCOUNT_LOCKED | 連続して5回失敗し、アカウントがロックされている | セッションは作らない。パスワードが合っていてもログインしない |
+| INVALID_CREDENTIALS | メールが無い、またはパスワードが違う（そのメールの連続失敗が5回未満） | セッションは作らない。どちらが違うかは返さない |
+| ACCOUNT_LOCKED | そのメールで連続して5回失敗した、または既にロックされている | セッションは作らない。メールが無くても同じ。返事と応答時間の差で、アカウントの有無は分からない |
 
 ## 各ドキュメント
 

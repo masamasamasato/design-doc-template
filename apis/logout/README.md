@@ -16,7 +16,7 @@ sequenceDiagram
   User->>Screen: ログアウトする
   Screen->>API: DELETE /sessions/current
   API->>API: invalidateSession()
-  API-->>Screen: 200 ログアウトした
+  API-->>Screen: 200 Cookie を消した
   Screen-->>User: ログアウトできた
 ```
 
@@ -28,7 +28,7 @@ sequenceDiagram
 | --- | --- | --- |
 | セッションID | いいえ | 今のセッション。例: `session_789`。無くても成功する |
 
-成功すると、そのセッションは無効になります。既に無効なときも、同じ結果です。画面は、ログインしていない状態に戻してよいです。
+成功すると、そのセッションは無効になり、セッションの Cookie を消します。既に無効なときも、同じ結果です。画面は、ログインしていない状態に戻してよいです。
 
 ## 失敗するとき
 

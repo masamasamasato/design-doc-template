@@ -12,10 +12,10 @@ note right: セッションを作る前に、メールとパスワードの確�
 :メールとパスワードを確かめる処理\nauthenticate();
 if (本人で、ロックされていない?) then (はい)
   :セッションを作る処理\ncreateSession();
-  :セッションを返す;
+  :Cookie でセッションを返す;
 else (いいえ)
   :失敗を返す\nINVALID_CREDENTIALS など;
-  note right: 失敗理由の一覧は処理詳細.mdを見る
+  note right: 失敗回数はメールごとに数える。メールが無くても5回でロックする
 endif
 stop
 @enduml

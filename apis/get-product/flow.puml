@@ -10,11 +10,16 @@ title 商品詳細を取得する
 start
 note right: 詳細を返す前にログインが必要
 :ログインしているか確認する処理\nrequireSession();
-if (ログインしていて、公開中の商品がある?) then (はい)
+if (ログインしている?) then (はい)
   :商品の詳細を返す処理\ngetProduct();
-  :詳細を返す;
+  if (公開中の商品がある?) then (はい)
+    :詳細を返す;
+  else (いいえ)
+    :失敗を返す\nNOT_FOUND;
+    note right: 失敗理由の一覧は処理詳細.mdを見る
+  endif
 else (いいえ)
-  :失敗を返す\nUNAUTHORIZED など;
+  :失敗を返す\nUNAUTHORIZED;
   note right: 失敗理由の一覧は処理詳細.mdを見る
 endif
 stop
