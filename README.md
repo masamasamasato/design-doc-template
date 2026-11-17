@@ -20,11 +20,12 @@
 
 ## 図の使い分け
 
-基本は Mermaid です。スイムレーンだけ PlantUML の `|レーン名|` 形式にします。
+基本は Mermaid です。スイムレーンと、インフラ構成のアイコンは PlantUML にします。
 
 | 見せたいもの | 図 | 記入例 |
 | --- | --- | --- |
 | 業務フロー | PlantUML のスイムレーン | [プロフィールを公開する](docs/business/index.md) |
+| インフラ構成 | PlantUML（awslib のアイコン） | [AWSのインフラ構成](docs/infra/index.md) |
 | 処理の順番 | Mermaid のシーケンス図 | [公開APIの入口](apis/publish-profile/README.md) |
 | 分かれ道 | Mermaid のフローチャート | この下の図 |
 | データ | Mermaid の ER 図 | この下の図 |
@@ -106,6 +107,7 @@ PlantUML と Mermaid で足りる図は、draw.io にしません。
 README.md                         使い方、深さ、図の使い分け
 用語集.md                         APIをまたいで使う言葉
 docs/business/                    業務フロー（.puml と、変換した .svg）
+docs/infra/                       記入例。AWSのインフラ構成図
 apis/_template/                   新しいAPIを作るときにコピーする型
 apis/publish-profile/             記入例。プロフィールを公開するAPI
 apis/login/                       記入例。ログインするAPI

@@ -1,0 +1,72 @@
+' インフラ構成の記入例。ログインと商品APIを動かす想定。
+' 変換はローカルの plantuml.jar と Graphviz。図の中身は外部へ送らない。
+' アイコンは jar 同梱の awslib（AWS Icons for PlantUML）を使う。
+@startuml
+!include <awslib/AWSCommon>
+!include <awslib/Groups/AWSCloud>
+!include <awslib/Groups/VPC>
+!include <awslib/Groups/AvailabilityZone>
+!include <awslib/Groups/PublicSubnet>
+!include <awslib/Groups/PrivateSubnet>
+!include <awslib/General/Users>
+!include <awslib/NetworkingContentDelivery/Route53>
+!include <awslib/NetworkingContentDelivery/CloudFront>
+!include <awslib/Storage/SimpleStorageService>
+!include <awslib/NetworkingContentDelivery/ElasticLoadBalancingApplicationLoadBalancer>
+!include <awslib/Containers/ElasticContainerService>
+!include <awslib/Database/RDS>
+!include <awslib/Database/ElastiCache>
+!include <awslib/ManagementGovernance/CloudWatchLogs>
+
+skinparam shadowing false
+skinparam defaultFontName "Noto Sans CJK JP"
+skinparam ActivityFontName "Noto Sans CJK JP"
+
+hide stereotype
+
+title AWSインフラ構成（ログインと商品API）
+
+Users(user, "利用者", "ブラウザ")
+
+AWSCloudGroup(aws, "AWS クラウド") {
+  Route53(dns, "Route 53", "名前解決")
+  CloudFront(cf, "CloudFront", "配信")
+  SimpleStorageService(s3, "静的画面", "S3")
+  CloudWatchLogs(logs, "CloudWatch Logs", "APIのログ")
+
+  VPCGroup(vpc, "VPC") {
+    PublicSubnetGroup(pub, "パブリックサブネット（2つのAZ）") {
+      ElasticLoadBalancingApplicationLoadBalancer(alb, "ALB", "負荷分散")
+    }
+
+    AvailabilityZoneGroup(az1, "AZ ap-northeast-1a") {
+      PrivateSubnetGroup(pri1, "プライベートサブネット") {
+        ElasticContainerService(ecs1, "APIサービス", "ECS Fargate")
+        ElastiCache(cache, "ElastiCache", "セッション")
+      }
+    }
+
+    AvailabilityZoneGroup(az2, "AZ ap-northeast-1c") {
+      PrivateSubnetGroup(pri2, "プライベートサブネット") {
+        ElasticContainerService(ecs2, "APIサービス", "ECS Fargate")
+        RDS(rds, "RDS", "商品・利用者")
+      }
+    }
+  }
+}
+
+user --> dns
+dns --> cf
+cf --> s3
+cf --> alb
+alb --> ecs1
+alb --> ecs2
+ecs1 --> cache
+ecs2 --> cache
+ecs1 --> rds
+ecs2 --> rds
+ecs1 --> logs
+ecs2 --> logs
+cf -[hidden]- logs
+
+@enduml

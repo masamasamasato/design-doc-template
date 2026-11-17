@@ -61,6 +61,7 @@ nav:
   - 業務フロー:
       - プロフィールを公開する: docs/business/index.md
       - ログインして商品を探す: docs/business/ログインして商品を探す.md
+  - インフラ構成: docs/infra/index.md
   - API:
       - 新しいAPIの型:
           - 入口: apis/_template/README.md
