@@ -26,9 +26,9 @@ if (セッションの Cookie が有効な場合) then (有効な場合)
       if (端末名が30文字を超える場合) then (超える場合)
         :失敗を返す\n400 INVALID_DEVICE_NAME;
         note right: 削除：チャレンジ。パスキーは保存しない
-      else (30文字以内の場合)
+      else (30文字以内、または\n無い・空の場合)
         :200 を返す;
-        note right: 保存：公開鍵、credential ID、署名カウンタ、端末名。\n削除：チャレンジ。秘密鍵は受け取らない
+        note right: 保存：公開鍵、credential ID、署名カウンタ、端末名。\n端末名が無い・空なら「端末」を保存する。\n削除：チャレンジ。秘密鍵は受け取らない
       endif
     else (チャレンジが無い・期限切れ・使用済み・他の利用者のもの、\norigin・rpId が合わない、または user verification が無い場合)
       :失敗を返す\n400 INVALID_CHALLENGE;
