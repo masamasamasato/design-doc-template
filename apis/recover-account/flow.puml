@@ -8,12 +8,15 @@ skinparam ActivityFontName "Noto Sans CJK JP"
 title アカウントを復旧する
 
 start
+note right: 1回目の呼び出し。POST /account-recovery
 :確認リンクを送る処理\nrequestRecovery();
-if (依頼の上限内?) then (はい)
+if (同じメール宛・同じIPの依頼が上限内?) then (はい)
   :確認リンクを登録メールへ送る;
-  note right: 1回限り。期限は15分。保存するのはハッシュだけ
+  note right: 1回限り。期限は15分。元の値に戻せない形（ハッシュ）だけ保存する。メールが無いときも応答は同じ
+  :利用者がメールのリンクを開く;
+  note right: ここから先は2回目の呼び出し。POST /account-recovery/confirm
   :確認リンクを確かめる処理\nconfirmRecovery();
-  if (トークンは有効?) then (はい)
+  if (トークンのハッシュが保存値と合い、期限内で未使用?) then (はい)
     :今までのセッションを無効にする処理\nrevokeAllSessions();
     :今までのパスキーを無効にする処理\nrevokeAllPasskeys();
     note right: なくした端末でログインできなくする

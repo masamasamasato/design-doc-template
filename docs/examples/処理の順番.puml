@@ -16,7 +16,9 @@ API -> API : checkOwner()
 alt 本人確認が済んでいる
   API -> API : publish()
   API --> Screen : 200 公開中
+  Screen --> User : 公開できた
 else 本人確認が済んでいない
   API --> Screen : 403 NOT_VERIFIED
+  Screen --> User : 先に本人確認が必要
 end
 @enduml

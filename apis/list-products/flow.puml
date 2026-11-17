@@ -10,12 +10,17 @@ title 商品一覧を取得する
 start
 note right: 一覧を返す前にログインが必要
 :ログインしているか確認する処理\nrequireSession();
-if (ログインしていて、ページ分けが正しい?) then (はい)
+if (ログインしている?) then (はい)
   :公開中の商品をページに分けて返す処理\nlistProducts();
-  :一覧を返す;
+  if (ページ分けと並び順の指定が正しい?) then (はい)
+    :一覧を返す;
+    note right: 0件でも成功。空の一覧を返す
+  else (いいえ)
+    :失敗を返す\nINVALID_QUERY;
+    note right: 例: limit=200、page=0、sort=name
+  endif
 else (いいえ)
-  :失敗を返す\nUNAUTHORIZED など;
-  note right: 失敗の理由は処理詳細.md を見る
+  :失敗を返す\nUNAUTHORIZED;
 endif
 stop
 @enduml

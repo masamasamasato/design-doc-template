@@ -8,14 +8,26 @@ skinparam ActivityFontName "Noto Sans CJK JP"
 title プロフィールを公開する
 
 start
-note right: 公開の前に本人確認が必要
-:本人確認が済んでいるか確認する処理\ncheckOwner();
-if (本人で、確認済み?) then (はい)
-  :公開中にする処理\npublish();
-  :公開中を返す;
+:ログインしているか確認する処理\nrequireSession();
+if (セッションの Cookie がある?) then (はい)
+  :持ち主か、本人確認済みかを確かめる処理\ncheckOwner();
+  note right: セッションの利用者IDと、プロフィールの持ち主を比べる
+  if (プロフィールがある?) then (はい)
+    if (呼んだ人が持ち主?) then (はい)
+      if (本人確認が済んでいる?) then (はい)
+        :公開中にする処理\npublish();
+        :公開中を返す;
+      else (いいえ)
+        :失敗を返す\nNOT_VERIFIED;
+      endif
+    else (いいえ)
+      :失敗を返す\nFORBIDDEN;
+    endif
+  else (いいえ)
+    :失敗を返す\nNOT_FOUND;
+  endif
 else (いいえ)
-  :失敗を返す\nNOT_VERIFIED など;
-  note right: 失敗の理由は処理詳細.md を見る
+  :失敗を返す\nUNAUTHORIZED;
 endif
 stop
 @enduml

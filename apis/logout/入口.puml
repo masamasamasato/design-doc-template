@@ -11,7 +11,8 @@ participant "設定画面" as Screen
 participant "認証API" as API
 
 User -> Screen : ログアウトする
-Screen -> API : DELETE /sessions/current
+Screen -> API : DELETE /sessions/current\nセッションの Cookie を付ける
+note right of API : Cookie が無くても、既に無効でも 200
 API -> API : invalidateSession()
 API --> Screen : 200 Cookie を消した
 Screen --> User : ログアウトできた

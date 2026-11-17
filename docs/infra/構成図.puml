@@ -35,7 +35,7 @@ skinparam ActivityFontName "Noto Sans CJK JP"
 
 hide stereotype
 
-title AWSインフラ構成（ログインと商品API）
+title AWSインフラ構成（ログインと商品APIの記入例。決済・パスキーは未掲載）
 
 together {
   rectangle "イメージを push し、\nECSを更新する" as n_gha #FFFFCC
@@ -52,9 +52,9 @@ AWSCloudGroup(aws, "AWS クラウド") {
   }
 
   SimpleStorageService(s3, "静的画面\n画面ファイルを置く", "S3")
-  rectangle "OAC経由のみ。\n例: login.html" as n_s3 #FFFFCC
+  rectangle "CloudFrontだけが読める（OAC）。\n例: login.html" as n_s3 #FFFFCC
   CloudFront(cf, "CloudFront\nHTTPSで配信する", "CDN")
-  rectangle "OACでS3だけに繋ぐ" as n_cf #FFFFCC
+  rectangle "画面はS3から（OAC）、\nAPIはALBへ回す" as n_cf #FFFFCC
   together {
     CertificateManager(acm, "ACM\nHTTPSの証明書を発行する", "HTTPS")
     rectangle "CloudFrontとALBに付ける" as n_acm #FFFFCC
@@ -79,7 +79,7 @@ AWSCloudGroup(aws, "AWS クラウド") {
   }
   together {
     rectangle "NAT経由。ログには出さない" as n_sm #FFFFCC
-    SecretsManager(sm, "Secrets Manager\nDBパスワードを置く", "機密")
+    SecretsManager(sm, "Secrets Manager\nこの図ではDBパスワード", "機密")
   }
 
   VPCGroup(vpc, "VPC") {
@@ -111,7 +111,7 @@ AWSCloudGroup(aws, "AWS クラウド") {
       }
     }
 
-    rectangle "両APIから" as j
+    rectangle "両APIからの通信（合流）" as j
 
     GenericGroup(data, "データ（マルチAZ）") {
       together {

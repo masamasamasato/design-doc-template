@@ -10,12 +10,17 @@ title 商品を検索する
 start
 note right: 検索する前にログインが必要
 :ログインしているか確認する処理\nrequireSession();
-if (ログインしていて、条件とページ分けが正しい?) then (はい)
-  :条件に合う公開中の商品を返す処理\nsearchProducts();
-  :一覧を返す;
+if (ログインしている?) then (はい)
+  :商品名に検索語を含む、公開中の商品を返す処理\nsearchProducts();
+  if (検索語、ページ分け、並び順の指定が正しい?) then (はい)
+    :一覧を返す;
+    note right: 0件でも成功。空の一覧を返す
+  else (いいえ)
+    :失敗を返す\nINVALID_QUERY;
+    note right: 例: 検索語が空、101文字以上、limit=200
+  endif
 else (いいえ)
-  :失敗を返す\nUNAUTHORIZED など;
-  note right: 失敗の理由は処理詳細.md を見る
+  :失敗を返す\nUNAUTHORIZED;
 endif
 stop
 @enduml

@@ -10,7 +10,14 @@ actor "利用者" as User
 participant "（画面の名前）" as Screen
 participant "（APIの名前）" as API
 
-User -> Screen : （操作）
-Screen -> API : （メソッドとパス）
-API --> Screen : （成功または失敗）
+User -> Screen : （操作）。例: 公開する
+Screen -> API : （メソッドとパス）。例: POST /profiles/{id}/publish
+API -> API : （何を確かめるか）\nmethodName()
+alt （成功する条件）。例: 本人確認が済んでいる
+  API --> Screen : （200 と返すもの）
+  Screen --> User : （画面に出す言葉）。例: 公開できた
+else （失敗する条件）。例: 本人確認が済んでいない
+  API --> Screen : （コード）。例: 403 NOT_VERIFIED
+  Screen --> User : （画面に出す言葉）。例: 先に本人確認が必要
+end
 @enduml

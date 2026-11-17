@@ -16,11 +16,10 @@ if (ログインしている?) then (はい)
     :詳細を返す;
   else (いいえ)
     :失敗を返す\nNOT_FOUND;
-    note right: 失敗の理由は処理詳細.md を見る
+    note right: 無い商品も、公開中でない商品も同じ
   endif
 else (いいえ)
   :失敗を返す\nUNAUTHORIZED;
-  note right: 失敗の理由は処理詳細.md を見る
 endif
 stop
 @enduml

@@ -10,28 +10,32 @@ title 決済の結果を受け取る
 start
 note right: 確かめないと、誰でも偽の通知で支払い済みにできる
 :署名を確かめる処理\nverifyWebhookSignature();
-if (署名が合うか?) then (いいえ)
+note right: 受け取ったもとの本文で計算し、ヘッダーの署名と比べる
+if (署名が合い、タイムスタンプが5分以内?) then (いいえ)
   :400 を返す\nINVALID_SIGNATURE;
-  note right: タイムスタンプが古いときも同じ。注文は変えない
+  note right: 注文は変えない
 else (はい)
+  :通知を保存してすぐ返す処理\nenqueuePaymentEvent();
+  :200 を返す;
+  note right: 同じイベントIDは重ねて保存しない
+  :保存した通知を反映に回す処理\nprocessSavedPaymentEvents();
+  note right: 返事のあとで行う。失敗したら同じ保存からやり直す。反映は1回
   :注文と合うか確かめる処理\nmatchOrder();
-  if (注文ID・金額・通貨が合う?) then (いいえ)
-    :記録して警告を出す;
-    note right: 注文は変えない
-    :200 を返す;
+  if (注文ID・金額・通貨が注文と合う?) then (いいえ)
+    :運用者へ警告する;
+    note right: 注文は変えない。通知の中身を記録する
   else (はい)
     :決済の結果を反映する処理\napplyPaymentEvent();
     if (同じイベントIDを処理済み?) then (はい)
-      :200 を返す;
-      note right: 状態は変えない
+      :何もしない;
     else (いいえ)
       if (注文は支払い済み?) then (はい)
         :支払い済みのまま変えない;
         note right: 状態は一方向。支払い済みは戻さない
       else (いいえ)
-        :支払い済みまたは失敗にする;
+        :通知のとおり、\n支払い済みまたは失敗にする;
+        note right: 失敗から支払い済みへは、合う成功の通知のときだけ
       endif
-      :200 を返す;
     endif
   endif
 endif

@@ -12,16 +12,17 @@ participant "認証API" as API
 
 User -> Screen : 確認メールを依頼する
 Screen -> API : POST /account-recovery
-API -> API : requestRecovery()
+API -> API : 上限を見て、確認リンクを送る\nrequestRecovery()
 alt 依頼の上限を超えた
   API --> Screen : 429 TOO_MANY_REQUESTS
   Screen --> User : 時間をおいて依頼する
 else 上限内
   API --> Screen : 200
+  note right of Screen : メールが無いときも同じ 200。\n送ったかどうかは返さない
   Screen --> User : メールを確認する
   User -> Screen : 確認リンクを開く
   Screen -> API : POST /account-recovery/confirm
-  API -> API : confirmRecovery()
+  API -> API : トークンのハッシュを保存値と比べる\nconfirmRecovery()
   alt トークンが有効
     API -> API : revokeAllSessions()
     API -> API : revokeAllPasskeys()

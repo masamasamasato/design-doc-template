@@ -10,22 +10,25 @@ actor "決済サービス" as PSP
 participant "決済API" as API
 
 PSP -> API : POST /webhooks/payment
-API -> API : verifyWebhookSignature()
+API -> API : もとの本文で署名を確かめる\nverifyWebhookSignature()
 alt 署名が合わない、またはタイムスタンプが古い
   API --> PSP : 400 INVALID_SIGNATURE
 else 署名が合う
+  API -> API : 通知をイベントIDと一緒に保存する\nenqueuePaymentEvent()
+  API --> PSP : 200（すぐ返す）
+  note right of API : ここから先は、返事のあとで行う。\n同じイベントIDの反映は1回だけ
+  API -> API : 保存した通知を反映に回す\nprocessSavedPaymentEvents()
   API -> API : matchOrder()
   alt 注文ID・金額・通貨のどれかが合わない
-    API -> API : 記録して警告を出す。注文は変えない
-    API --> PSP : 200
+    API -> API : 注文は変えず、運用者へ警告する
   else すべて合う
     API -> API : applyPaymentEvent()
     alt 注文が既に支払い済み
       API -> API : 支払い済みのまま変えない
-    else まだ支払い済みでない
-      API -> API : 支払い済みまたは失敗にする
+    else 処理中、または失敗
+      API -> API : 通知のとおり、支払い済みまたは失敗にする
+      note right of API : 失敗から進めるのは、成功の通知のときだけ
     end
-    API --> PSP : 200
   end
 end
 @enduml
