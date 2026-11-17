@@ -1,0 +1,9 @@
+@startuml
+skinparam shadowing false
+skinparam defaultFontName "Noto Sans CJK JP"
+
+title 表示を確かめるための図（あとで戻す）
+
+[*] --> 試す
+試す --> [*]
+@enduml
