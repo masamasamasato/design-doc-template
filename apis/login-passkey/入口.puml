@@ -2,6 +2,7 @@
 skinparam shadowing false
 skinparam defaultFontName "Noto Sans CJK JP"
 skinparam SequenceFontName "Noto Sans CJK JP"
+skinparam NoteBackgroundColor #FFFFCC
 hide footbox
 
 title パスキーでログインする
@@ -15,21 +16,21 @@ note right of User : メールアドレスは入れない
 Screen -> API : POST /sessions/passkey/options
 API -> API : チャレンジを発行する\nissueLoginOptions()
 API --> Screen : 200 チャレンジ\n一時的な印の Cookie を付ける
-note right of Screen : チャレンジは1回限りで、期限は5分。\n印はセッションとは別の、5分の Cookie
+note right of Screen : 保存：チャレンジと印の組（例：5分で消える）。\n印はセッションとは別の Cookie
 Screen --> User : 端末で署名する（PIN か生体認証）
 User -> Screen : 端末がチャレンジへの署名\n（assertion）を返す
 Screen -> API : POST /sessions/passkey\n一時的な印の Cookie が付く
-API -> API : assertion 検証\nverifyAssertion()
-alt 印が無い、またはチャレンジと組にした印と違う場合
-  API --> Screen : 401 INVALID_CREDENTIALS\n一時的な印は消す
+API -> API : 印・チャレンジ検証と assertion 検証\nverifyAssertion()
+alt 印が無い、組が発行時と違う、またはチャレンジが期限切れ・使用済みの場合
+  API --> Screen : 401 INVALID_CREDENTIALS\n一時的な印とチャレンジを消す
   Screen --> User : ログインできない
-else 印が合い、署名がチャレンジと合い、カウンタが保存値より増えている場合
-  API -> API : createSession()
+else 組が同じで、パスキーが無い、署名・origin・rpId・user verification のどれかが合わない、\nまたは署名カウンタが保存値以下の場合
+  API --> Screen : 401 INVALID_CREDENTIALS\n一時的な印とチャレンジを消す
+  Screen --> User : ログインできない
+else 組が同じで、署名・origin・rpId・user verification が合い、署名カウンタが保存値より大きい場合
+  API -> API : セッションと署名カウンタを保存する\ncreateSession()
   API -> API : ログイン通知メールを送る\nnotifyLogin()
-  API --> Screen : 200 Cookie でセッションを返す\n一時的な印は消す
+  API --> Screen : 200 Cookie でセッションを返す\n一時的な印とチャレンジを消す
   Screen --> User : ログインできた
-else 署名が合わない、カウンタが増えていない、またはパスキーが無い場合
-  API --> Screen : 401 INVALID_CREDENTIALS\n一時的な印は消す
-  Screen --> User : ログインできない
 end
 @enduml

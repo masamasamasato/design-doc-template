@@ -2,6 +2,7 @@
 skinparam shadowing false
 skinparam defaultFontName "Noto Sans CJK JP"
 skinparam SequenceFontName "Noto Sans CJK JP"
+skinparam NoteBackgroundColor #FFFFCC
 hide footbox
 
 title 注文の状態を見る
@@ -14,17 +15,16 @@ User -> Screen : 支払いの結果を待つ
 note right of Screen : 支払うAPIが処理中を返した直後から呼ぶ
 loop 処理中のあいだ、2秒おき。最長60秒
   Screen -> API : GET /orders/{orderId}
-  API -> API : セッション検証\nrequireSession()
+  API -> API : セッション検証と注文の持ち主検証\nrequireSession()、getOrderStatus()
   alt セッションが有効で、本人の注文がある場合
-    API -> API : getOrderStatus()
-    API --> Screen : 200 注文の状態
+    API --> Screen : 200 注文の状態\n何も保存しない
   else セッションの Cookie が無い、または無効な場合
-    API --> Screen : 401 UNAUTHORIZED
-  else 注文が無い、または他人の注文の場合
-    API --> Screen : 404 ORDER_NOT_FOUND
+    API --> Screen : 401 UNAUTHORIZED\n何も保存しない
+  else セッションが有効で、注文が無い、または他人の注文の場合
+    API --> Screen : 404 ORDER_NOT_FOUND\n何も保存しない
   end
 end
-alt 支払い済み、または失敗の場合
+alt 60秒以内に、支払い済み、または失敗になった場合
   Screen --> User : 支払い済み、または失敗を表示する
 else 60秒たっても処理中の場合
   Screen --> User : 「60秒たっても処理中です。\n注文履歴で結果を見てください」と表示する

@@ -4,22 +4,25 @@
 skinparam shadowing false
 skinparam defaultFontName "Noto Sans CJK JP"
 skinparam ActivityFontName "Noto Sans CJK JP"
+skinparam NoteBackgroundColor #FFFFCC
 
 title 注文の状態を見る
 
 start
-note right: 読むだけ。注文の状態は変えない
+note right: 読むだけ。どの枝でも、保存も削除もしない
 :セッション検証\nリクエストの Cookie を、保存済みの有効なセッションと照合\nrequireSession();
 if (セッションの Cookie が有効な場合) then (有効な場合)
-  :注文の状態を返す処理\ngetOrderStatus();
-  if (本人の注文がある場合) then (ある場合)
-    :状態を返す;
+  :注文の持ち主検証\n注文の利用者IDを、セッションの利用者IDと照合\ngetOrderStatus();
+  if (注文があり、本人の注文の場合) then (本人の注文の場合)
+    :200 注文ID・状態・金額を返す;
+    note right: 保存も削除もしない
   else (注文が無い、または\n他人の注文の場合)
-    :失敗を返す\nORDER_NOT_FOUND;
-    note right: 他人の注文も、無い注文と同じ
+    :失敗を返す\n404 ORDER_NOT_FOUND;
+    note right: 保存も削除もしない。\n他人の注文も、無い注文と同じ
   endif
 else (セッションの Cookie が無い、\nまたは無効な場合)
-  :失敗を返す\nUNAUTHORIZED;
+  :失敗を返す\n401 UNAUTHORIZED;
+  note right: 保存も削除もしない
 endif
 stop
 @enduml

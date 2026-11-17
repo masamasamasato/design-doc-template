@@ -4,22 +4,25 @@
 skinparam shadowing false
 skinparam defaultFontName "Noto Sans CJK JP"
 skinparam ActivityFontName "Noto Sans CJK JP"
+skinparam NoteBackgroundColor #FFFFCC
 
 title 商品詳細を取得する
 
 start
-note right: 詳細を返す前にログインが必要
+note right: 読むだけ。どの枝でも、保存も削除もしない
 :セッション検証\nリクエストの Cookie を、保存済みの有効なセッションと照合\nrequireSession();
 if (セッションの Cookie が有効な場合) then (有効な場合)
-  :商品の詳細を返す処理\ngetProduct();
-  if (公開中の商品がある場合) then (ある場合)
-    :詳細を返す;
+  :公開状態の検証\n商品IDの商品の状態を、公開中と照合\ngetProduct();
+  if (商品があり、公開中の場合) then (公開中の場合)
+    :200 名前・価格・在庫を返す;
+    note right: 保存も削除もしない
   else (商品が無い、または\n公開中でない場合)
-    :失敗を返す\nNOT_FOUND;
-    note right: 無い商品も、公開中でない商品も同じ
+    :失敗を返す\n404 NOT_FOUND;
+    note right: 保存も削除もしない。\n無い商品も、公開中でない商品も同じ
   endif
 else (セッションの Cookie が無い、\nまたは無効な場合)
-  :失敗を返す\nUNAUTHORIZED;
+  :失敗を返す\n401 UNAUTHORIZED;
+  note right: 保存も削除もしない
 endif
 stop
 @enduml

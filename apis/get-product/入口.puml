@@ -2,6 +2,7 @@
 skinparam shadowing false
 skinparam defaultFontName "Noto Sans CJK JP"
 skinparam SequenceFontName "Noto Sans CJK JP"
+skinparam NoteBackgroundColor #FFFFCC
 hide footbox
 
 title 商品詳細を取得する
@@ -12,16 +13,15 @@ participant "商品API" as API
 
 User -> Screen : 商品を見る
 Screen -> API : GET /products/{id}
-API -> API : セッション検証\nrequireSession()
-alt セッションが有効で、公開中の商品がある場合
-  API -> API : getProduct()
-  API --> Screen : 200 名前・価格・在庫
+API -> API : セッション検証と公開状態の検証\nrequireSession()、getProduct()
+alt セッションが有効で、商品があり、公開中の場合
+  API --> Screen : 200 名前・価格・在庫\n何も保存しない
   Screen --> User : 詳細が見えた
 else セッションの Cookie が無い、または無効な場合
-  API --> Screen : 401 UNAUTHORIZED
+  API --> Screen : 401 UNAUTHORIZED\n何も保存しない
   Screen --> User : ログインが必要
-else 商品が無い、または公開中でない場合
-  API --> Screen : 404 NOT_FOUND
+else セッションが有効で、商品が無い、または公開中でない場合
+  API --> Screen : 404 NOT_FOUND\n何も保存しない
   Screen --> User : 商品を表示できない
   note right of Screen : 公開中でない商品も同じ表示
 end

@@ -4,6 +4,7 @@
 skinparam shadowing false
 skinparam defaultFontName "Noto Sans CJK JP"
 skinparam ActivityFontName "Noto Sans CJK JP"
+skinparam NoteBackgroundColor #FFFFCC
 
 title ログインして商品を探す
 
@@ -16,33 +17,40 @@ start
 :ログインAPIを呼ぶ\nPOST /sessions;
 
 |認証API|
+:メアド・パスワード検証\n登録済みメアドのパスワードハッシュと\n入力パスワードを照合;
 if (ロック中（連続5回失敗から15分以内）の場合) then (ロック中の場合)
+  :何も保存しない;
+  note left: 失敗回数もロックの期限も変えない
   |ログイン画面|
-  :15分間ログインできないと表示する;
-  note right: 例：15分たつと自動で解除
+  :15分間ログインできないと表示する\n403 ACCOUNT_LOCKED;
   stop
 else (ロック中でない場合)
 endif
 |認証API|
 if (メールアドレス・パスワードが異なり、\n連続失敗(5回未満)の場合) then (5回未満の場合)
+  :失敗回数を1増やして保存する;
+  note left: 例：15分で消える
   |ログイン画面|
-  :ログインできないと表示する;
+  :ログインできないと表示する\n401 INVALID_CREDENTIALS;
   stop
 else (それ以外の場合)
 endif
 |認証API|
 if (メールアドレス・パスワードが異なり、\n連続失敗(5回以上)の場合) then (5回以上の場合)
-  :15分ロックする;
+  :ロックを保存する;
+  note left: 例：15分で自動解除
   |ログイン画面|
-  :15分間ログインできないと表示する;
+  :15分間ログインできないと表示する\n403 ACCOUNT_LOCKED;
   stop
 else (メールアドレス・パスワードが正しい場合)
 endif
 |認証API|
-:ログイン状態にする;
+:セッションを保存し、\n失敗回数を消す;
+note left: 例：セッションは24時間有効
+:ログイン通知メールを送る;
 
 |ログイン画面|
-:ログインできたと表示する;
+:ログインできたと表示する\n200 セッションの Cookie;
 
 |利用者|
 :検索語を入れる;
@@ -50,23 +58,28 @@ endif
 
 |商品画面|
 :検索APIを呼ぶ\nGET /products/search;
-note right: 検索APIもログインが必要
 
 |商品API|
-if (検索語が無い・空・100文字超の場合) then (決まりどおりでない場合)
+:セッション検証\nリクエストの Cookie を、\n保存済みの有効なセッションと照合;
+if (セッションの Cookie が無い、または無効な場合) then (無効な場合)
   |商品画面|
-  :検索語を直すよう表示する;
-  note right: INVALID_QUERY
+  :ログインが必要と表示する\n401 UNAUTHORIZED;
   stop
-else (検索語が1〜100文字の場合)
+else (有効な場合)
 endif
 |商品API|
-:商品名に検索語を含む、\n公開中の商品を探す;
-:検索結果を返す;
-note right: 0件でも成功。空の検索結果を返す
-
+:検索語と指定の検証\nq の文字数と、page・limit・sort・order を\n決まりと照合;
+if (q が無い・空・100文字超、または\npage・limit・sort・order が決まりどおりでない場合) then (決まりどおりでない場合)
+  |商品画面|
+  :検索語や指定を直すよう表示する\n400 INVALID_QUERY;
+  stop
+else (q が1〜100文字で、決まりどおりの場合)
+endif
+|商品API|
+:商品名に検索語を含む、\n公開中の商品を返す;
+note left: 読むだけ。保存も削除もしない。\n0件でも成功
 |商品画面|
-:検索結果を表示する;
+:検索結果を表示する\n200 検索結果;
 
 |利用者|
 :結果を確認する;

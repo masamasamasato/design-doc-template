@@ -14,23 +14,23 @@
 | 端末名 | いいえ | 利用者が見る名前。例: `雅人のスマホ`。例：30文字まで（Unicode のコードポイントで数える） |
 | attestation | はい | 端末が作った登録の証明。2回目の `POST /passkeys` で送ります |
 
-流れは2段階です。`POST /passkeys/options` でチャレンジを発行します。チャレンジは1回限りで、期限は5分です。画面はそれを端末に渡し、端末はパスキーを作って attestation を返します。`POST /passkeys` で attestation を検証し、公開鍵を保存します。検証では、発行したチャレンジ、origin、rpId、user verification を照合します。保存するのは公開鍵、credential ID、署名カウンタ、端末名だけです。
+流れは2段階です。`POST /passkeys/options` でチャレンジを発行します。チャレンジは1回限りで、期限は5分です。画面はそれを端末に渡し、端末はパスキーを作って attestation を返します。`POST /passkeys` で attestation を検証し、公開鍵を保存します。検証では、発行したチャレンジ、origin、rpId、user verification を照合します。保存するのは公開鍵、credential ID、署名カウンタ、端末名だけです。チャレンジは、成功でも失敗でも `POST /passkeys` のあとに消します。
 
 ## 失敗するとき
 
 | コード | いつ | 結果 |
 | --- | --- | --- |
-| UNAUTHORIZED | セッションの Cookie が無い、または無効な場合 | `401`。登録しない |
-| INVALID_CHALLENGE | チャレンジが無い、発行から5分を超えた、既に使った、または attestation がチャレンジ・origin・rpId・user verification と合わない場合 | `400`。登録しない |
-| INVALID_DEVICE_NAME | 端末名が30文字を超える場合 | `400`。登録しない |
+| UNAUTHORIZED | セッションの Cookie が無い、または無効な場合 | `401`。登録しない。何も保存しない |
+| INVALID_CHALLENGE | チャレンジが無い、発行から5分を超えた、既に使った、他の利用者のもの、または attestation の origin・rpId・user verification が合わない場合 | `400`。登録しない。チャレンジは消す |
+| INVALID_DEVICE_NAME | 端末名が30文字を超える場合 | `400`。登録しない。チャレンジは消す |
 
 削除（`DELETE /passkeys/{credentialId}`）の失敗です。削除の図はまだ載せていません。
 
 | コード | いつ | 結果 |
 | --- | --- | --- |
-| UNAUTHORIZED | セッションの Cookie が無い、または無効な場合 | `401`。消さない |
-| PASSKEY_NOT_FOUND | その credential ID が無い、または他人のパスキーの場合 | `404`。消さない |
-| LAST_PASSKEY | 本人のパスキーがこれ1つだけの場合 | `409`。消さない |
+| UNAUTHORIZED | セッションの Cookie が無い、または無効な場合 | `401`。何も削除しない |
+| PASSKEY_NOT_FOUND | その credential ID が無い、または他人のパスキーの場合 | `404`。何も削除しない |
+| LAST_PASSKEY | 本人のパスキーがこれ1つだけの場合 | `409`。何も削除しない |
 
 ## 関連リンク
 

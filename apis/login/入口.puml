@@ -2,6 +2,7 @@
 skinparam shadowing false
 skinparam defaultFontName "Noto Sans CJK JP"
 skinparam SequenceFontName "Noto Sans CJK JP"
+skinparam NoteBackgroundColor #FFFFCC
 hide footbox
 
 title ログインする
@@ -14,19 +15,19 @@ User -> Screen : ログインする
 Screen -> API : POST /sessions
 API -> API : メアド・パスワード検証\nauthenticate()
 alt ロック中（連続5回失敗から15分以内）の場合
-  API --> Screen : 403 ACCOUNT_LOCKED
+  API --> Screen : 403 ACCOUNT_LOCKED\n何も保存しない
   Screen --> User : 15分間ログインできない
   note right of Screen : 例：15分たつと自動で解除
 else メールアドレス・パスワードが正しい場合
-  API -> API : createSession()
+  API -> API : セッションを保存する\ncreateSession()
   API -> API : ログイン通知メールを送る\nnotifyLogin()
-  API --> Screen : 200 Cookie でセッションを返す
+  API --> Screen : 200 Cookie でセッションを返す\n失敗回数を消す
   Screen --> User : ログインできた
 else メールアドレス・パスワードが異なり、連続失敗(5回以上)の場合
-  API --> Screen : 403 ACCOUNT_LOCKED
+  API --> Screen : 403 ACCOUNT_LOCKED\nロックを保存する
   Screen --> User : 15分間ログインできない
 else メールアドレス・パスワードが異なり、連続失敗(5回未満)の場合
-  API --> Screen : 401 INVALID_CREDENTIALS
+  API --> Screen : 401 INVALID_CREDENTIALS\n失敗回数を1増やす
   Screen --> User : ログインできない
 end
 @enduml

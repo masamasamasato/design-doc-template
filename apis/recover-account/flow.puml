@@ -4,31 +4,35 @@
 skinparam shadowing false
 skinparam defaultFontName "Noto Sans CJK JP"
 skinparam ActivityFontName "Noto Sans CJK JP"
+skinparam NoteBackgroundColor #FFFFCC
 
 title アカウントを復旧する
 
 start
 note right: 1回目の呼び出し。POST /account-recovery
-:依頼回数の上限検証と確認リンクの発行\n過去1時間の回数を上限と照合\nrequestRecovery();
+:依頼回数の上限検証\n過去1時間の依頼回数を、メアドごと3回・IPごと10回の上限と照合\nrequestRecovery();
 if (過去1時間で、同じメールアドレス宛が3回以内、\nかつ同じIPが10回以内の場合) then (上限内の場合)
-  :確認リンクを登録したメールアドレスへ送る;
-  note right: 1回限り。期限は15分。SHA-256 のハッシュだけ保存する。\n前のトークンは使えなくする。\n未登録のメールアドレスでも応答は同じ
+  :確認リンクを発行する処理\nrequestRecovery();
+  note right: 保存：依頼回数を1増やす（例：1時間で消える）。\n登録済みのメールアドレスなら、トークンの SHA-256 ハッシュ（例：15分で期限切れ）。\n削除：前のトークン。未登録でも応答は同じ 200
   :利用者がメールのリンクを開く;
   note right: ここから先は2回目の呼び出し。POST /account-recovery/confirm
   :確認リンクトークン検証\n届いたトークンの SHA-256 ハッシュを保存値と照合\nconfirmRecovery();
-  if (ハッシュが合い、発行から15分以内で未使用の場合) then (有効な場合)
+  if (ハッシュが保存値と合い、発行から15分以内で、\n未使用かつ新しい依頼で無効になっていない場合) then (有効な場合)
     :今までのセッションを無効にする処理\nrevokeAllSessions();
+    note right: 削除：その利用者のセッションすべて
     :今までのパスキーを無効にする処理\nrevokeAllPasskeys();
-    note right: なくした端末でログインできなくする
+    note right: 削除：その利用者のパスキーすべて
     :セッションを作る処理\ncreateSession();
-    :Cookie でセッションを返す;
+    note right: 保存：新しいセッション（例：24時間有効）と、トークンの使用済み
+    :200 Cookie でセッションを返す;
     note right: このあと、新しい端末でパスキーを登録し直す
-  else (ハッシュが合わない、15分を超えた、\nまたは使用済みの場合)
-    :失敗を返す\nINVALID_TOKEN;
+  else (トークンが無い、ハッシュが合わない、15分を超えた、\n使用済み、または新しい依頼で無効になった場合)
+    :失敗を返す\n400 INVALID_TOKEN;
+    note right: 保存も削除もしない。\n今までのセッションとパスキーは変えない
   endif
-else (上限を超えた場合)
-  :失敗を返す\nTOO_MANY_REQUESTS;
-  note right: Retry-After に、次に依頼できるまでの秒数（最長1時間）を入れる
+else (同じメールアドレス宛が3回、\nまたは同じIPが10回を超えた場合)
+  :失敗を返す\n429 TOO_MANY_REQUESTS;
+  note right: 保存しない。この依頼は回数に数えない。\nRetry-After に、次に依頼できるまでの秒数（最長1時間）を入れる
 endif
 stop
 @enduml

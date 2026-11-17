@@ -4,30 +4,34 @@
 skinparam shadowing false
 skinparam defaultFontName "Noto Sans CJK JP"
 skinparam ActivityFontName "Noto Sans CJK JP"
+skinparam NoteBackgroundColor #FFFFCC
 
 title パスキーを登録する
 
 start
-note right: 削除（DELETE）の流れは処理詳細.md の 4 を見る
+note right: 1回目の呼び出し POST /passkeys/options。\n削除（DELETE）の流れは処理詳細.md の 4 を見る
 :セッション検証\nリクエストの Cookie を、保存済みの有効なセッションと照合\nrequireSession();
 if (セッションの Cookie が有効な場合) then (有効な場合)
   :登録用のチャレンジを発行する処理\nissueRegistrationOptions();
-  note right: 今の利用者に結びつけ、5分だけ保存する。\n例：登録済みの credential ID も端末へ渡す
+  note right: 保存：今の利用者に結びつけたチャレンジ（例：5分で消える）。\n例：登録済みの credential ID も端末へ渡す
   :画面がチャレンジを端末へ渡し、\n端末が作った attestation を受け取る;
-  note right: 端末で PIN か生体認証をする。ここはサーバーの外
-  :attestation 検証と保存\nチャレンジ・origin・rpId・user verification を照合し、公開鍵を保存\nverifyAndSavePasskey();
-  if (attestation が、保存したチャレンジ・origin・rpId と合い、\nuser verification 済みの場合) then (検証が通る場合)
+  note right: 端末で PIN か生体認証をする。ここはサーバーの外。\n次は2回目の呼び出し POST /passkeys（セッション検証も同じくする）
+  :attestation 検証\nattestation を、保存したチャレンジ・自社の origin・rpId と照合し、\nuser verification のフラグを見る\nverifyAndSavePasskey();
+  if (チャレンジが今の利用者のもので5分以内・未使用、\norigin・rpId が自社と合い、user verification 済みの場合) then (検証が通る場合)
     if (端末名が30文字を超える場合) then (超える場合)
-      :失敗を返す\nINVALID_DEVICE_NAME;
+      :失敗を返す\n400 INVALID_DEVICE_NAME;
+      note right: 削除：チャレンジ。パスキーは保存しない
     else (30文字以内の場合)
-      :公開鍵、credential ID、署名カウンタ、\n端末名を保存する;
-      note right: 秘密鍵は受け取らない。1人で複数の端末を登録できる
+      :200 を返す;
+      note right: 保存：公開鍵、credential ID、署名カウンタ、端末名。\n削除：チャレンジ。秘密鍵は受け取らない
     endif
-  else (チャレンジが期限切れ・使用済み、\nまたは照合できない場合)
-    :失敗を返す\nINVALID_CHALLENGE;
+  else (チャレンジが無い・期限切れ・使用済み・他の利用者のもの、\norigin・rpId が合わない、または user verification が無い場合)
+    :失敗を返す\n400 INVALID_CHALLENGE;
+    note right: 削除：チャレンジ。パスキーは保存しない
   endif
 else (セッションの Cookie が無い、\nまたは無効な場合)
-  :失敗を返す\nUNAUTHORIZED;
+  :失敗を返す\n401 UNAUTHORIZED;
+  note right: 保存も削除もしない
 endif
 stop
 @enduml
