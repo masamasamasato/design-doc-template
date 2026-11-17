@@ -117,14 +117,34 @@ def category(title: str, items: list[str]) -> list[str]:
     return [row + "\\" for row in rows[:-1]] + [rows[-1], ""]
 
 
+def open_label(puml: str) -> str:
+    """閉じた details の見出し。図の場所が分かる名前にする。
+    例: apis/register-passkey/flow.puml → 「register-passkey のフローを開く」"""
+    parts = puml.split("/")
+    folder = parts[-2] if len(parts) >= 2 else ""
+    name = parts[-1].rsplit(".", 1)[0]
+    kind = {"flow": "フロー"}.get(name, name)
+    return f"{folder} の{kind}を開く" if folder else f"{kind}を開く"
+
+
 def figure(path: str, name: str, url: str, attach: bool, info: dict | None, failed: bool, title: str) -> list[str]:
-    lines = [f"### {title}：{code(name)}", "", f"[SVGを開く]({url})", ""]
+    # 図は大きいので、1枚ごとに閉じた details に入れる。見出しは閉じていても見える
+    lines = [
+        f"### {title}：{code(name)}",
+        "",
+        "<details>",
+        f"<summary>{html.escape(open_label(name))}</summary>",
+        "",
+        f"[SVGを開く]({url})",
+        "",
+    ]
     if attach:
         lines.extend([f"![{alt_text(path)}](./{path})", ""])
     else:
         lines.extend([f'<img alt="{html.escape(path)}" src="{html.escape(url)}?sanitize=true" />', ""])
     if info:
         lines.extend(diff_lines(info, attach, failed))
+    lines.extend(["</details>", ""])
     return lines
 
 
