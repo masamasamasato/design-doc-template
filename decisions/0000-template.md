@@ -11,7 +11,7 @@
 
 図の変換は、開発者のマシンと GitHub Actions の中だけで行います。図の中身は、PlantUML.com や Kroki に送りません。
 
-`main` にマージされたときだけ、変わったAPIの `変更履歴.md` に `YYYY-MM-DD #PR番号 PRタイトル` を1行足します。読み物サイトも、`main` だけを GitHub Pages に出します。
+`main` にマージされたときだけ、変わったAPIと業務フローの `変更履歴.md` に `YYYY-MM-DD #PR番号 PRタイトル` を1行足します。読み物サイトも、`main` だけを GitHub Pages に出します。
 
 ## なぜか
 

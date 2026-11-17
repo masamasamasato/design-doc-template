@@ -24,7 +24,7 @@
 
 | 見せたいもの | 図 | 記入例 |
 | --- | --- | --- |
-| 業務フロー | PlantUML のスイムレーン | [プロフィールを公開する](docs/business/index.md) |
+| 業務フロー | PlantUML のスイムレーン | [プロフィールを公開する](docs/business/プロフィールを公開する/README.md) |
 | インフラ構成 | PlantUML（awslib のアイコン） | [AWSのインフラ構成](docs/infra/index.md) |
 | 処理の順番 | Mermaid のシーケンス図 | [公開APIの入口](apis/publish-profile/README.md) |
 | 分かれ道 | Mermaid のフローチャート | この下の図 |
@@ -82,7 +82,7 @@ stateDiagram-v2
   公開中 --> 下書き: 非公開に戻す
 ```
 
-スイムレーンの書き方は次のとおりです。全文は [業務フロー](docs/business/プロフィールを公開する.puml) にあります。
+スイムレーンの書き方は次のとおりです。全文は [業務フロー](docs/business/プロフィールを公開する/flow.puml) にあります。
 
 ```plantuml
 |ユーザー|
@@ -114,7 +114,7 @@ PlantUML と Mermaid で足りる図は、draw.io にしません。
 ```text
 README.md                         使い方、深さ、図の使い分けと書き方
 用語集.md                         APIをまたいで使う言葉
-docs/business/                    業務フロー（.puml と、変換した .svg）
+docs/business/<業務>/             業務フロー（README、flow.puml、変更履歴.md）
 docs/infra/                       記入例。AWSのインフラ構成図
 apis/_template/                   新しいAPIを作るときにコピーする型
 apis/publish-profile/             記入例。プロフィールを公開するAPI
@@ -186,7 +186,7 @@ brew install graphviz
 SVGにするときは、次を実行します。
 
 ```bash
-./scripts/render-puml.sh docs/business/プロフィールを公開する.puml
+./scripts/render-puml.sh docs/business/プロフィールを公開する/flow.puml
 ```
 
 `.svg` は `.puml` と同じ場所にできます。
@@ -230,7 +230,7 @@ Material for MkDocs は 2027-05-05 まで保守されます。起動時の案内
 | --- | --- |
 | `.puml` を push したとき | Actions の中で SVG に変換し、同じ場所へコミットする |
 | PRで図が変わったとき | 変換した SVG を PR コメントに画像で載せる。PRで足した・変えた部分は赤く描き、消したものは図の下に文字で並べる（個人トークンが無いときはリンクだけで、色は付かない） |
-| `main` へマージしたとき | 変わった `apis/<名前>/変更履歴.md` に1行足す。追記したときだけ、サイト公開のワークフローを起動する |
+| `main` へマージしたとき | 変わった `apis/<名前>/変更履歴.md` と `docs/business/<業務>/変更履歴.md` に1行足す。追記したときだけ、サイト公開のワークフローを起動する |
 | `main` へ push したとき、または手動で実行したとき | MkDocs Material を GitHub Pages へ公開する |
 | PRを開いた・タイトルを変えたとき | タイトルが日本語で、`fix` などの接頭辞でないことを確認する |
 
@@ -255,7 +255,7 @@ PRコメントの赤い図は、`scripts/highlight-puml-diff.py` が作ります
 
 SVGのコミットメッセージには `[plantuml-svg]` が付きます。`GITHUB_TOKEN` による push は、次の workflow を起動しません。図の変換が無限に繰り返されないためです。
 
-変更履歴の1行は、次の形です。日付は日本時間です。対象のAPIは、マージしたPRが触ったファイルだけを見て決めます。以前 main に入った変更は含めません。1行足して main に push できたときだけ、サイト公開のワークフローを起動します。
+変更履歴の1行は、次の形です。日付は日本時間です。対象のAPIと業務フローは、マージしたPRが触ったファイルだけを見て決めます。以前 main に入った変更は含めません。1行足して main に push できたときだけ、サイト公開のワークフローを起動します。
 
 ```text
 2026-11-16 #12 公開時に本人確認を追加
