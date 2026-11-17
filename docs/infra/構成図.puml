@@ -1,6 +1,7 @@
 ' インフラ構成の記入例。ログインと商品APIを動かす想定。
 ' 変換はローカルの plantuml.jar と Graphviz。図の中身は外部へ送らない。
 ' アイコンは jar 同梱の awslib（AWS Icons for PlantUML）を使う。
+' 補足は黄色い付箋（rectangle）にし、対象と同じ枠の内側に置く。
 @startuml
 !include <awslib/AWSCommon>
 !include <awslib/Groups/AWSCloud>
@@ -35,50 +36,94 @@ hide stereotype
 
 title AWSインフラ構成（ログインと商品API）
 
+together {
+  rectangle "GitHub Actions" as gha
+  rectangle "ECRにイメージを置き、\nECSへデプロイ" as n_gha #FFFFCC
+}
 Users(user, "利用者", "ブラウザ")
-rectangle "GitHub Actions\nECRにイメージを置き\nECSへデプロイ" as gha
 
 AWSCloudGroup(aws, "AWS クラウド") {
-  Route53(dns, "Route 53\n例: www.example.com", "名前解決")
-  WAF(waf, "AWS WAF\nCloudFrontに付ける\n不正な要求を落とす", "Web ACL")
-  CertificateManager(acm, "ACM\nCloudFrontとALBの証明書", "HTTPS")
-  CloudFront(cf, "CloudFront\nHTTPSで配信\nOACでS3だけに繋ぐ", "CDN")
-  SimpleStorageService(s3, "静的画面（S3）\nOAC経由のみ\n例: login.html", "S3")
-  ElasticContainerRegistry(ecr, "ECR\nAPIのコンテナイメージ\nNAT経由で取得", "レジストリ")
+  together {
+    rectangle "CloudFrontに付ける。\n不正な要求を落とす" as n_waf #FFFFCC
+    WAF(waf, "AWS WAF", "Web ACL")
+  }
+  Route53(dns, "Route 53", "名前解決")
+
+  together {
+    rectangle "OAC経由のみ。\n例: login.html" as n_s3 #FFFFCC
+    SimpleStorageService(s3, "静的画面", "S3")
+  }
+  together {
+    CloudFront(cf, "CloudFront", "CDN")
+    rectangle "HTTPSで配信する。\nOACでS3だけに繋ぐ" as n_cf #FFFFCC
+  }
+  together {
+    CertificateManager(acm, "ACM", "HTTPS")
+    rectangle "CloudFrontとALBの\nHTTPS証明書" as n_acm #FFFFCC
+  }
+
+  together {
+    rectangle "両APIのログを集める。\nパスワードは出さない" as n_logs #FFFFCC
+    CloudWatchLogs(logs, "CloudWatch Logs", "ログ")
+  }
+  together {
+    ElasticContainerRegistry(ecr, "ECR", "レジストリ")
+    rectangle "APIのイメージを置く。\nNAT経由で取得" as n_ecr #FFFFCC
+  }
 
   VPCGroup(vpc, "VPC") {
     PublicSubnetGroup(pub, "パブリックサブネット（2つのAZ）") {
-      VPCNATGateway(nat1, "NAT Gateway（1a）\nこのAZのAPIが外へ出る", "NAT")
-      ElasticLoadBalancingApplicationLoadBalancer(alb, "ALB\n2つのAZのAPIへ振り分ける", "負荷分散")
-      VPCNATGateway(nat2, "NAT Gateway（1c）\nこのAZのAPIが外へ出る", "NAT")
+      VPCNATGateway(nat1, "NAT Gateway（1a）", "NAT")
+      ElasticLoadBalancingApplicationLoadBalancer(alb, "ALB", "負荷分散")
+      VPCNATGateway(nat2, "NAT Gateway（1c）", "NAT")
     }
 
     AvailabilityZoneGroup(az1, "AZ ap-northeast-1a") {
       PrivateSubnetGroup(pri1, "プライベートサブネット") {
-        ElasticContainerService(ecs1, "APIサービス\n例: POST /sessions", "ECS Fargate")
+        together {
+          ElasticContainerService(ecs1, "APIサービス", "ECS Fargate")
+          rectangle "例: POST /sessions" as n_ecs1 #FFFFCC
+        }
       }
     }
     AvailabilityZoneGroup(az2, "AZ ap-northeast-1c") {
       PrivateSubnetGroup(pri2, "プライベートサブネット") {
-        ElasticContainerService(ecs2, "APIサービス\n例: GET /products/search", "ECS Fargate")
+        together {
+          rectangle "例: GET /products/search" as n_ecs2 #FFFFCC
+          ElasticContainerService(ecs2, "APIサービス", "ECS Fargate")
+        }
       }
     }
 
     rectangle "両APIから" as j
 
     GenericGroup(data, "データ（マルチAZ）") {
-      ElastiCache(cachep, "ElastiCache プライマリ\nセッションを置く\nどのAPIでもログインが続く", "Redis")
-      RDS(rdsp, "RDS プライマリ\n例: hana@example.com", "商品・利用者")
-      ElastiCache(cacher, "ElastiCache レプリカ\n障害時の読み取り先", "Redis")
-      RDS(rdss, "RDS スタンバイ\nプライマリ故障時に昇格", "マルチAZ")
+      together {
+        rectangle "セッションを置く。\nどのAPIでもログインが続く" as n_cache #FFFFCC
+        ElastiCache(cachep, "ElastiCache プライマリ", "Redis")
+      }
+      together {
+        RDS(rdsp, "RDS プライマリ", "商品・利用者")
+        rectangle "例: hana@example.com。\nスタンバイは故障時に昇格" as n_rds #FFFFCC
+      }
+      ElastiCache(cacher, "ElastiCache レプリカ", "Redis")
+      RDS(rdss, "RDS スタンバイ", "マルチAZ")
     }
-    SecretsManager(sm, "Secrets Manager\nDBパスワード\nログには出さない", "機密")
+    together {
+      SecretsManager(sm, "Secrets Manager", "機密")
+      rectangle "DBパスワード。\nログには出さない" as n_sm #FFFFCC
+    }
   }
 
-  CloudWatchLogs(logs, "CloudWatch Logs\n両APIのログ\nパスワードは出さない", "ログ")
-  CloudWatchAlarm(alarm, "CloudWatch Alarm\n例: 5xxが増えたら通知", "アラーム")
-  SimpleNotificationService(sns, "Amazon SNS\n開発者へメールやSlack", "通知")
-  SimpleEmailService(ses, "SES\n例: ログイン通知メール", "メール")
+  CloudWatchAlarm(alarm, "CloudWatch Alarm", "アラーム")
+  together {
+    SimpleNotificationService(sns, "Amazon SNS", "通知")
+    rectangle "5xxが増えたら、\n開発者へメールやSlack" as n_sns #FFFFCC
+  }
+  together {
+    SimpleEmailService(ses, "SES", "メール")
+    rectangle "例: ログイン通知メール" as n_ses #FFFFCC
+  }
 }
 
 user -down-> dns
@@ -101,16 +146,29 @@ cachep -down-> cacher
 rdsp -down-> rdss
 cachep -[hidden]right- rdsp
 cacher -[hidden]right- rdss
+n_cache -[hidden]right- cachep
+rdsp -[hidden]right- n_rds
 j -right-> sm
 data -[hidden]right- sm
 j -right-> ses
-
 gha -[hidden]right- user
 gha -down-> ecr
+n_gha -[hidden]right- gha
+n_waf -[hidden]right- waf
+s3 -[hidden]down- n_s3
+cf -[hidden]down- n_cf
+acm -[hidden]right- n_acm
+n_logs -[hidden]right- logs
+ecr -[hidden]right- n_ecr
 ecr -[hidden]right- vpc
 vpc -[hidden]right- logs
 logs -down-> alarm
 alarm -down-> sns
+sns -[hidden]down- n_sns
+ses -[hidden]right- n_ses
+ecs1 -[hidden]right- n_ecs1
+n_ecs2 -[hidden]right- ecs2
+sm -[hidden]down- n_sm
 az1 -[hidden]right- az2
 
 @enduml

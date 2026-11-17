@@ -1,6 +1,6 @@
 # AWSのインフラ構成
 
-ログイン、ログアウト、商品詳細、商品一覧、商品検索のAPIを、次の置き方で動かします。図は上から下へ、利用者、Route 53、CloudFront、ALB、2つのAZのAPI、データの順です。左にデプロイと監視、VPCの外に SES、データの右に Secrets Manager があります。
+ログイン、ログアウト、商品詳細、商品一覧、商品検索のAPIを、次の置き方で動かします。図は上から下へ、利用者、Route 53、CloudFront、ALB、2つのAZのAPI、データの順です。左にデプロイ、右に監視、VPCの外に SES、データの右に Secrets Manager があります。
 
 ![AWSのインフラ構成](構成図.svg)
 
@@ -12,11 +12,11 @@
 
 利用者が画面とAPIを使う流れは、図の中央を上から下へ辿ります。実線は通信の流れです。AWS WAF から CloudFront、ACM から CloudFront と ALB への点線は、付けている関係と証明書を示します。
 
+箱のラベルは名前と種別だけです。説明と具体例は、黄色い付箋に書いてあります。付箋は、対象と同じ枠（AWSクラウド、VPC、サブネット、データ帯）の内側に置きます。
+
 2つのAPIからデータへの線は「両APIから」で合流し、ElastiCache と RDS の両方、Secrets Manager、および SES へ分かれます。片方のAPIだけがDBを使う、とは読みません。SES はログイン通知メール用で、VPC の外（AWSクラウド内）に置きます。
 
-GitHub Actions から ECR への線は、デプロイを表します。APIが NAT、ECR、CloudWatch へ向かう線は、交差しないよう省き、ラベルで示します。NAT Gateway は各AZのパブリックサブネットに置き、そのAZのAPIが外へ出るときに使います。CloudWatch Alarm の通知先は SNS です。SES には繋がりません。
-
-補足は各箱のラベルに書いてあり、AWSクラウドやVPCなどの枠はまたぎません。
+GitHub Actions から ECR への線は、デプロイを表します。APIが NAT、ECR、CloudWatch へ向かう線は、交差しないよう省き、付箋で示します。NAT Gateway は各AZのパブリックサブネットに置き、そのAZのAPIが外へ出るときに使います。ALB は2つのAZのAPIへ要求を振り分けます。CloudWatch Alarm の通知先は SNS です。SES には繋がりません。
 
 ## 各要素の役割
 
@@ -33,8 +33,8 @@ GitHub Actions から ECR への線は、デプロイを表します。APIが NA
 - **ElastiCache**: セッションを置きます。プライマリとレプリカがあります。どのAPIサーバーに当たっても、ログイン状態が続きます。
 - **RDS**: 利用者と商品のデータを置きます。例: メール `hana@example.com`、商品 `product_1001`。マルチAZ（プライマリとスタンバイ）です。どちらのAPIからも使えます。
 - **Secrets Manager**: DBパスワードを置きます。コードやログ、図には出しません。
-- **ECR**: APIのコンテナイメージを置きます。GitHub Actions が押し、API は NAT 経由で取ります。ECR からAPIへの線は交差するため省き、ラベルで示します。
-- **CloudWatch Logs**: 両APIのログを集めます。パスワードは出しません。図では線を引かず、ラベルで示します。
+- **ECR**: APIのコンテナイメージを置きます。GitHub Actions が押し、API は NAT 経由で取ります。ECR からAPIへの線は交差するため省き、付箋で示します。
+- **CloudWatch Logs**: 両APIのログを集めます。パスワードは出しません。図では線を引かず、付箋で示します。
 - **CloudWatch Alarm**: ログやメトリクスを見て、SNS で知らせます。例: 5xx が増えたら通知する。
 - **Amazon SNS**: アラームの通知先です。例: 開発者にメールや Slack で知らせる。
 - **SES**: ログイン通知メールを送ります。「両APIから」から線を引きます。VPC の外（AWSクラウド内）に置きます。
