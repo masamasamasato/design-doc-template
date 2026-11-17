@@ -9,16 +9,16 @@ title 商品詳細を取得する
 
 start
 note right: 詳細を返す前にログインが必要
-:ログインしているか確認する処理\nrequireSession();
-if (ログインしている?) then (はい)
+:セッション検証\nリクエストの Cookie を、保存済みの有効なセッションと照合\nrequireSession();
+if (セッションの Cookie が有効な場合) then (有効な場合)
   :商品の詳細を返す処理\ngetProduct();
-  if (公開中の商品がある?) then (はい)
+  if (公開中の商品がある場合) then (ある場合)
     :詳細を返す;
-  else (いいえ)
+  else (商品が無い、または\n公開中でない場合)
     :失敗を返す\nNOT_FOUND;
     note right: 無い商品も、公開中でない商品も同じ
   endif
-else (いいえ)
+else (セッションの Cookie が無い、\nまたは無効な場合)
   :失敗を返す\nUNAUTHORIZED;
 endif
 stop

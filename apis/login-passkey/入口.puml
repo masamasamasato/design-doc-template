@@ -11,25 +11,25 @@ participant "ログイン画面" as Screen
 participant "認証API" as API
 
 User -> Screen : パスキーでログインする
-note right of User : メールは入れない
+note right of User : メールアドレスは入れない
 Screen -> API : POST /sessions/passkey/options
 API -> API : チャレンジを発行する\nissueLoginOptions()
 API --> Screen : 200 チャレンジ\n一時的な印の Cookie を付ける
-note right of Screen : チャレンジは、このログインだけに使う\n5分で消える一度きりの値。\n印はセッションとは別の、5分の Cookie
+note right of Screen : チャレンジは1回限りで、期限は5分。\n印はセッションとは別の、5分の Cookie
 Screen --> User : 端末で署名する（PIN か生体認証）
 User -> Screen : 端末がチャレンジへの署名\n（assertion）を返す
 Screen -> API : POST /sessions/passkey\n一時的な印の Cookie が付く
-API -> API : verifyAssertion()
-alt 印が無い、またはチャレンジと組にした印と違う
-  API --> Screen : 401 INVALID_CREDENTIALS
+API -> API : assertion 検証\nverifyAssertion()
+alt 印が無い、またはチャレンジと組にした印と違う場合
+  API --> Screen : 401 INVALID_CREDENTIALS\n一時的な印は消す
   Screen --> User : ログインできない
-else 印が合い、署名がチャレンジと合い、カウンタが前より増えている
+else 印が合い、署名がチャレンジと合い、カウンタが保存値より増えている場合
   API -> API : createSession()
-  API -> API : 登録メールへ通知する\nnotifyLogin()
+  API -> API : ログイン通知メールを送る\nnotifyLogin()
   API --> Screen : 200 Cookie でセッションを返す\n一時的な印は消す
   Screen --> User : ログインできた
-else 合わない、カウンタが増えていない、またはパスキーが無い
-  API --> Screen : 401 INVALID_CREDENTIALS
+else 署名が合わない、カウンタが増えていない、またはパスキーが無い場合
+  API --> Screen : 401 INVALID_CREDENTIALS\n一時的な印は消す
   Screen --> User : ログインできない
 end
 @enduml

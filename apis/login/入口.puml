@@ -12,20 +12,20 @@ participant "認証API" as API
 
 User -> Screen : ログインする
 Screen -> API : POST /sessions
-API -> API : メールとパスワードを確かめる\nauthenticate()
-alt そのメールが既にロック中
+API -> API : メアド・パスワード検証\nauthenticate()
+alt ロック中（連続5回失敗から15分以内）の場合
   API --> Screen : 403 ACCOUNT_LOCKED
-  Screen --> User : しばらくログインできない
-else メールとパスワードが合う
+  Screen --> User : 15分間ログインできない
+  note right of Screen : 例：15分たつと自動で解除
+else メールアドレス・パスワードが正しい場合
   API -> API : createSession()
-  API -> API : 登録メールへ通知する\nnotifyLogin()
+  API -> API : ログイン通知メールを送る\nnotifyLogin()
   API --> Screen : 200 Cookie でセッションを返す
-  note right of Screen : Cookie はブラウザが覚えるログインの印
   Screen --> User : ログインできた
-else 違い、そのメールの連続失敗が5回目
+else メールアドレス・パスワードが異なり、連続失敗(5回以上)の場合
   API --> Screen : 403 ACCOUNT_LOCKED
-  Screen --> User : しばらくログインできない
-else 違い、連続失敗が5回未満
+  Screen --> User : 15分間ログインできない
+else メールアドレス・パスワードが異なり、連続失敗(5回未満)の場合
   API --> Screen : 401 INVALID_CREDENTIALS
   Screen --> User : ログインできない
 end

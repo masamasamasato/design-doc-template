@@ -7,11 +7,11 @@ skinparam defaultFontName "Noto Sans CJK JP"
 title （APIの名前）
 
 start
-:（何を、何と比べて確かめる処理）\nmethodName();
-note right: 例: 本人確認が済んでいるか確かめる処理\ncheckOwner()
-if (（何が何と合う?）。例: 呼んだ人がプロフィールの持ち主?) then (はい)
+:（〜検証）\n（何と何を照合するかを1行）\nmethodName();
+note right: 例: 持ち主・本人確認の検証\nセッションの利用者IDとプロフィールの持ち主を照合\ncheckOwner()
+if (（〜の場合）。例: 呼んだ人がプロフィールの持ち主の場合) then (持ち主の場合)
   :（成功したら何をする）。例: 公開中にする;
-else (いいえ)
+else (（〜の場合）。例: 持ち主でない場合)
   :失敗を返す\n（コード）。例: FORBIDDEN;
 endif
 stop

@@ -9,26 +9,26 @@ title アカウントを復旧する
 
 start
 note right: 1回目の呼び出し。POST /account-recovery
-:確認リンクを送る処理\nrequestRecovery();
-if (同じメール宛・同じIPの依頼が上限内?) then (はい)
-  :確認リンクを登録メールへ送る;
-  note right: 1回限り。期限は15分。元の値に戻せない形（ハッシュ）だけ保存する。メールが無いときも応答は同じ
+:依頼回数の上限検証と確認リンクの発行\n過去1時間の回数を上限と照合\nrequestRecovery();
+if (過去1時間で、同じメールアドレス宛が3回以内、\nかつ同じIPが10回以内の場合) then (上限内の場合)
+  :確認リンクを登録したメールアドレスへ送る;
+  note right: 1回限り。期限は15分。SHA-256 のハッシュだけ保存する。\n前のトークンは使えなくする。\n未登録のメールアドレスでも応答は同じ
   :利用者がメールのリンクを開く;
   note right: ここから先は2回目の呼び出し。POST /account-recovery/confirm
-  :確認リンクを確かめる処理\nconfirmRecovery();
-  if (トークンのハッシュが保存値と合い、期限内で未使用?) then (はい)
+  :確認リンクトークン検証\n届いたトークンの SHA-256 ハッシュを保存値と照合\nconfirmRecovery();
+  if (ハッシュが合い、発行から15分以内で未使用の場合) then (有効な場合)
     :今までのセッションを無効にする処理\nrevokeAllSessions();
     :今までのパスキーを無効にする処理\nrevokeAllPasskeys();
     note right: なくした端末でログインできなくする
     :セッションを作る処理\ncreateSession();
     :Cookie でセッションを返す;
     note right: このあと、新しい端末でパスキーを登録し直す
-  else (いいえ)
+  else (ハッシュが合わない、15分を超えた、\nまたは使用済みの場合)
     :失敗を返す\nINVALID_TOKEN;
   endif
-else (いいえ)
+else (上限を超えた場合)
   :失敗を返す\nTOO_MANY_REQUESTS;
-  note right: 同じメール宛に1時間3回、同じIPから1時間10回まで
+  note right: Retry-After に、次に依頼できるまでの秒数（最長1時間）を入れる
 endif
 stop
 @enduml

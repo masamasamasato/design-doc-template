@@ -8,25 +8,25 @@ skinparam ActivityFontName "Noto Sans CJK JP"
 title ログインする
 
 start
-note right: セッションを作る前に、メールとパスワードの確認が必要
-:メールとパスワードを確かめる処理\nauthenticate();
-if (そのメールはロック中?) then (はい)
+note right: セッションを作る前に、メアド・パスワード検証が必要
+:メアド・パスワード検証\n登録済みメアドのパスワードハッシュと入力パスワードを照合\nauthenticate();
+if (ロック中（連続5回失敗から15分以内）の場合) then (ロック中の場合)
   :失敗を返す\nACCOUNT_LOCKED;
-else (いいえ)
-  if (メールとパスワードは合う?) then (はい)
+  note right: 例：15分たつと自動で解除
+else (ロック中でない場合)
+  switch (メアド・パスワード検証の結果)
+  case (メールアドレス・パスワードが\n正しい場合)
     :セッションを作る処理\ncreateSession();
     :ログイン通知メールを送る処理\nnotifyLogin();
-    note right: メール送信のサービス（例: SES）で、登録したメールアドレスに送る。送信に失敗してもログインは成功のまま
+    note right: 送信に失敗しても\nログインは成功のまま
     :Cookie でセッションを返す;
-    note right: Cookie はブラウザが覚えるログインの印。以降のAPIはこれを付けて呼ぶ
-  else (いいえ)
-    if (連続失敗が5回目?) then (はい)
-      :失敗を返す\nACCOUNT_LOCKED;
-    else (いいえ)
-      :失敗を返す\nINVALID_CREDENTIALS;
-    endif
-    note right: 失敗回数はメールごとに数える。メールが無くても5回目は ACCOUNT_LOCKED
-  endif
+    note right: 以降のAPIは、この Cookie を付けて呼ぶ
+  case (メールアドレス・パスワードが異なり、\n連続失敗(5回以上)の場合)
+    :失敗を返す\nACCOUNT_LOCKED;
+    note right: 例：15分ロックする
+  case (メールアドレス・パスワードが異なり、\n連続失敗(5回未満)の場合)
+    :失敗を返す\nINVALID_CREDENTIALS;
+  endswitch
 endif
 stop
 @enduml

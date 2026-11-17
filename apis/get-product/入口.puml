@@ -12,15 +12,15 @@ participant "商品API" as API
 
 User -> Screen : 商品を見る
 Screen -> API : GET /products/{id}
-API -> API : requireSession()
-alt ログインしていて、公開中の商品がある
+API -> API : セッション検証\nrequireSession()
+alt セッションが有効で、公開中の商品がある場合
   API -> API : getProduct()
   API --> Screen : 200 名前・価格・在庫
   Screen --> User : 詳細が見えた
-else ログインしていない
+else セッションの Cookie が無い、または無効な場合
   API --> Screen : 401 UNAUTHORIZED
   Screen --> User : ログインが必要
-else 商品が無い、または公開中でない
+else 商品が無い、または公開中でない場合
   API --> Screen : 404 NOT_FOUND
   Screen --> User : 商品を表示できない
   note right of Screen : 公開中でない商品も同じ表示

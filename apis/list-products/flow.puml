@@ -9,17 +9,17 @@ title 商品一覧を取得する
 
 start
 note right: 一覧を返す前にログインが必要
-:ログインしているか確認する処理\nrequireSession();
-if (ログインしている?) then (はい)
+:セッション検証\nリクエストの Cookie を、保存済みの有効なセッションと照合\nrequireSession();
+if (セッションの Cookie が有効な場合) then (有効な場合)
   :公開中の商品をページに分けて返す処理\nlistProducts();
-  if (ページ分けと並び順の指定が正しい?) then (はい)
+  if (ページ分けと並び順が、用語集の決まりどおりの場合) then (決まりどおりの場合)
     :一覧を返す;
     note right: 0件でも成功。空の一覧を返す
-  else (いいえ)
+  else (決まりどおりでない場合)
     :失敗を返す\nINVALID_QUERY;
     note right: 例: limit=200、page=0、sort=name
   endif
-else (いいえ)
+else (セッションの Cookie が無い、\nまたは無効な場合)
   :失敗を返す\nUNAUTHORIZED;
 endif
 stop

@@ -12,24 +12,24 @@ participant "認証API" as API
 
 User -> Screen : 確認メールを依頼する
 Screen -> API : POST /account-recovery
-API -> API : 上限を見て、確認リンクを送る\nrequestRecovery()
-alt 依頼の上限を超えた
-  API --> Screen : 429 TOO_MANY_REQUESTS
-  Screen --> User : 時間をおいて依頼する
-else 上限内
+API -> API : 依頼回数の上限検証のあと、確認リンクを送る\nrequestRecovery()
+alt 過去1時間で、同じメールアドレス宛が3回、または同じIPが10回を超えた場合
+  API --> Screen : 429 TOO_MANY_REQUESTS\nRetry-After（最長1時間）
+  Screen --> User : Retry-After の秒数がたってから依頼する
+else 上限内の場合
   API --> Screen : 200
-  note right of Screen : メールが無いときも同じ 200。\n送ったかどうかは返さない
+  note right of Screen : 未登録のメールアドレスでも同じ 200。\n送ったかどうかは返さない
   Screen --> User : メールを確認する
   User -> Screen : 確認リンクを開く
   Screen -> API : POST /account-recovery/confirm
-  API -> API : トークンのハッシュを保存値と比べる\nconfirmRecovery()
-  alt トークンが有効
+  API -> API : 確認リンクトークン検証\nconfirmRecovery()
+  alt トークンのハッシュが保存値と合い、15分以内で未使用の場合
     API -> API : revokeAllSessions()
     API -> API : revokeAllPasskeys()
     API -> API : createSession()
     API --> Screen : 200 Cookie でセッションを返す
     Screen --> User : 復旧できた。パスキーを登録し直す
-  else トークンが使えない
+  else ハッシュが合わない、15分を超えた、または使用済みの場合
     API --> Screen : 400 INVALID_TOKEN
     Screen --> User : 復旧できない
   end

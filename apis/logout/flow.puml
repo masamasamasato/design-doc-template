@@ -10,6 +10,6 @@ title ログアウトする
 start
 note right: セッションが既に無効でも成功とする
 :今のセッションを無効にする処理\ninvalidateSession();
-:ブラウザのログインの印（Cookie）を消して\n成功を返す;
+:セッションの Cookie を消して\n成功を返す;
 stop
 @enduml
