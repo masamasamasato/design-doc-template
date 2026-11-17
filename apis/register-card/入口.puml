@@ -22,29 +22,37 @@ else ログインしている
   API -> PSP : 利用者IDを付けて、登録の準備を作る
   PSP --> API : 準備
   API --> Screen : 200 準備
+  note right of Screen : 準備は、カード番号を自社に渡さず\n決済サービスへ直接送るための材料
+  User -> Screen : カード番号・有効期限・CVC を入れる
   Screen -> PSP : カード番号・有効期限・CVC を送る
-  note right: 自社サーバーは通さない
+  note right of PSP : 自社サーバーは通さない
   alt 3Dセキュアが必要
     PSP --> Screen : 本人認証を求める
     Screen --> User : 本人認証する
     User -> Screen : 認証する
     Screen -> PSP : 本人認証の結果を送る
   end
-  alt 決済サービスが受け付ける
+  alt 決済サービスがカードを受け付けない
+    PSP --> Screen : 失敗
+    Screen --> User : このカードは登録できない
+  else 預かり番号が返る
     PSP --> Screen : 預かり番号
     Screen -> API : POST /cards
-    API -> API : verifyCardOwner()
-    alt 本人の準備からできた番号
+    API -> API : 準備の利用者IDと今の利用者を比べる\nverifyCardOwner()
+    alt 本人の準備からできた番号でない
+      API --> Screen : 403 PAYMENT_METHOD_NOT_OWNED
+      Screen --> User : 登録できない
+    else 3Dセキュアが済んでいない
+      API --> Screen : 400 AUTHENTICATION_REQUIRED
+      Screen --> User : 本人認証をやり直す
+    else 預かり番号が使えない
+      API --> Screen : 400 INVALID_PAYMENT_METHOD
+      Screen --> User : このカードは登録できない
+    else 本人の番号で、使える
       API -> API : savePaymentMethod()
       API --> Screen : 200 ブランドと下4桁
       Screen --> User : 登録できた
-    else 他人の番号
-      API --> Screen : 403 PAYMENT_METHOD_NOT_OWNED
-      Screen --> User : 登録できない
     end
-  else 認証が済んでいない、または受け付けない
-    PSP --> Screen : 失敗
-    Screen --> User : 登録できない
   end
 end
 @enduml

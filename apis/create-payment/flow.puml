@@ -13,7 +13,7 @@ note right: 支払い済みにするのは、決済サービスからの通知
 if (ログインしている?) then (はい)
   :同じ依頼かを確かめる処理\ncheckIdempotencyKey();
   note right: キーは利用者ごとに24時間保存する
-  if (同じキーがある?) then (ある)
+  if (この利用者の同じ Idempotency-Key がある?) then (ある)
     if (注文ID と預かり番号も同じ?) then (はい)
       :前の結果をそのまま返す;
       note right: 二重に請求しない
@@ -26,10 +26,12 @@ if (ログインしている?) then (はい)
       :支払いを始める処理\nstartPayment();
       if (注文は未払い?) then (はい)
         :注文を処理中にする;
-        :決済サービスへ同じキーで依頼する;
+        :注文の金額で、決済サービスへ\n同じキーで依頼する;
+note right: 支払額は画面から受け取らない
         :処理中を返す;
       else (いいえ)
         :失敗を返す\nORDER_NOT_PAYABLE;
+        note right: 処理中・支払い済み・失敗・他人の注文・無い注文も同じ失敗
       endif
     else (いいえ)
       :失敗を返す\nCARD_NOT_FOUND;

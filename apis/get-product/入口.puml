@@ -15,13 +15,14 @@ Screen -> API : GET /products/{id}
 API -> API : requireSession()
 alt ログインしていて、公開中の商品がある
   API -> API : getProduct()
-  API --> Screen : 200 詳細
+  API --> Screen : 200 名前・価格・在庫
   Screen --> User : 詳細が見えた
 else ログインしていない
   API --> Screen : 401 UNAUTHORIZED
   Screen --> User : ログインが必要
 else 商品が無い、または公開中でない
   API --> Screen : 404 NOT_FOUND
-  Screen --> User : 商品が無い
+  Screen --> User : 商品を表示できない
+  note right of Screen : 公開中でない商品も同じ表示
 end
 @enduml

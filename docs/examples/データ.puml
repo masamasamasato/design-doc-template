@@ -10,11 +10,13 @@ entity "利用者" as USER {
   * id : string
   --
   verificationStatus : string
+  .. 未確認 / 確認済み ..
 }
 entity "プロフィール" as PROFILE {
   * id : string
   --
   visibility : string
+  .. 下書き / 公開中 ..
 }
 USER ||--o{ PROFILE : 持つ
 @enduml

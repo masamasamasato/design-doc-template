@@ -7,7 +7,13 @@ skinparam defaultFontName "Noto Sans CJK JP"
 title （APIの名前）
 
 start
-:（何をする処理）\nmethodName();
+:（何を、何と比べて確かめる処理）\nmethodName();
+note right: 例: 本人確認が済んでいるか確かめる処理\ncheckOwner()
+if (（何が何と合う?）。例: 呼んだ人がプロフィールの持ち主?) then (はい)
+  :（成功したら何をする）。例: 公開中にする;
+else (いいえ)
+  :失敗を返す\n（コード）。例: FORBIDDEN;
+endif
 stop
 
 @enduml

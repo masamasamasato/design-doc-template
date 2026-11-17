@@ -8,12 +8,18 @@ skinparam ActivityFontName "Noto Sans CJK JP"
 title パスキーでログインする
 
 start
-note right: セッションを作る前に、署名と署名カウンタの確認が必要
+note right: メールは入れない。セッションを作る前に、署名と署名カウンタの確認が必要
 :ログイン用のチャレンジを発行する処理\nissueLoginOptions();
+note right: 画面に返し、5分だけ保存する
+:画面がチャレンジを端末へ渡し、\n端末の署名（assertion）を受け取る;
+note right: 端末で PIN か生体認証をする。ここはサーバーの外
 :assertion を検証する処理\nverifyAssertion();
-if (署名とカウンタは正しい?) then (はい)
+if (チャレンジと合い、カウンタが前より増えている?) then (はい)
   :セッションを作る処理\ncreateSession();
+  :ログイン通知メールを送る処理\nnotifyLogin();
+  note right: パスワードのログインと同じ。送信に失敗してもログインは成功のまま
   :Cookie でセッションを返す;
+  note right: Cookie はブラウザが覚えるログインの印。以降のAPIはこれを付けて呼ぶ
 else (いいえ)
   :失敗を返す\nINVALID_CREDENTIALS;
   note right: どこが違うかは返さない

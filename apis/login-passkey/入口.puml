@@ -11,18 +11,21 @@ participant "ログイン画面" as Screen
 participant "認証API" as API
 
 User -> Screen : パスキーでログインする
+note right of User : メールは入れない
 Screen -> API : POST /sessions/passkey/options
-API -> API : issueLoginOptions()
+API -> API : チャレンジを発行する\nissueLoginOptions()
 API --> Screen : 200 チャレンジ
-Screen --> User : 端末で署名する
-User -> Screen : assertion を返す
+note right of Screen : チャレンジは、このログインだけに使う\n5分で消える一度きりの値
+Screen --> User : 端末で署名する（PIN か生体認証）
+User -> Screen : 端末がチャレンジへの署名\n（assertion）を返す
 Screen -> API : POST /sessions/passkey
 API -> API : verifyAssertion()
-alt 署名と署名カウンタが正しい
+alt 署名がチャレンジと合い、カウンタが前より増えている
   API -> API : createSession()
+  API -> API : 登録メールへ通知する\nnotifyLogin()
   API --> Screen : 200 Cookie でセッションを返す
   Screen --> User : ログインできた
-else 検証できない
+else 合わない、カウンタが増えていない、またはパスキーが無い
   API --> Screen : 401 INVALID_CREDENTIALS
   Screen --> User : ログインできない
 end

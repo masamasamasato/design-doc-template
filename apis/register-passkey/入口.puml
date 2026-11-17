@@ -17,18 +17,19 @@ alt ログインしていない
   API --> Screen : 401 UNAUTHORIZED
   Screen --> User : ログインが必要
 else ログインしている
-  API -> API : issueRegistrationOptions()
+  API -> API : チャレンジを発行する\nissueRegistrationOptions()
   API --> Screen : 200 チャレンジ
-  Screen --> User : 端末で登録する
-  User -> Screen : attestation を返す
+  note right of Screen : チャレンジは、この登録だけに使う\n5分で消える一度きりの値
+  Screen --> User : 端末で登録する（PIN か生体認証）
+  User -> Screen : 端末がパスキーを作り、\n作った証明（attestation）を返す
   Screen -> API : POST /passkeys
-  alt attestation を検証できる
-    API -> API : verifyAndSavePasskey()
+  API -> API : verifyAndSavePasskey()
+  alt 発行したチャレンジと照合できる
     API --> Screen : 200 登録した
     Screen --> User : 登録できた
-  else チャレンジが無効、または検証できない
+  else チャレンジが期限切れ・使用済み、または照合できない
     API --> Screen : 400 INVALID_CHALLENGE
-    Screen --> User : 登録できない
+    Screen --> User : 登録できない。やり直す
   end
 end
 @enduml
