@@ -1,0 +1,25 @@
+' 深さ3。注文の状態を見る処理のイメージ。
+' スイムレーンは業務フロー側に書く。ここはメソッドの順番だけを書く。
+@startuml
+skinparam shadowing false
+skinparam defaultFontName "Noto Sans CJK JP"
+skinparam ActivityFontName "Noto Sans CJK JP"
+
+title 注文の状態を見る
+
+start
+note right: 読むだけ。注文の状態は変えない
+:ログインしているか確認する処理\nrequireSession();
+if (ログインしている?) then (はい)
+  :注文の状態を返す処理\ngetOrderStatus();
+  if (本人の注文がある?) then (はい)
+    :状態を返す;
+  else (いいえ)
+    :失敗を返す\nORDER_NOT_FOUND;
+    note right: 他人の注文も、無い注文と同じ
+  endif
+else (いいえ)
+  :失敗を返す\nUNAUTHORIZED;
+endif
+stop
+@enduml

@@ -9,14 +9,23 @@ title アカウントを復旧する
 
 start
 :確認リンクを送る処理\nrequestRecovery();
-note right: 1回限り。期限は15分。登録したメールアドレスへ送る
-:確認リンクを確かめる処理\nconfirmRecovery();
-if (トークンは有効?) then (はい)
-  :セッションを作る処理\ncreateSession();
-  :Cookie でセッションを返す;
-  note right: このあと、新しい端末でパスキーを登録し、なくした端末のパスキーを削除できる
+if (依頼の上限内?) then (はい)
+  :確認リンクを登録メールへ送る;
+  note right: 1回限り。期限は15分。保存するのはハッシュだけ
+  :確認リンクを確かめる処理\nconfirmRecovery();
+  if (トークンは有効?) then (はい)
+    :今までのセッションを無効にする処理\nrevokeAllSessions();
+    :今までのパスキーを無効にする処理\nrevokeAllPasskeys();
+    note right: なくした端末でログインできなくする
+    :セッションを作る処理\ncreateSession();
+    :Cookie でセッションを返す;
+    note right: このあと、新しい端末でパスキーを登録し直す
+  else (いいえ)
+    :失敗を返す\nINVALID_TOKEN;
+  endif
 else (いいえ)
-  :失敗を返す\nINVALID_TOKEN;
+  :失敗を返す\nTOO_MANY_REQUESTS;
+  note right: 同じメール宛に1時間3回、同じIPから1時間10回まで
 endif
 stop
 @enduml

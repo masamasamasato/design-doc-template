@@ -132,6 +132,11 @@ nav:
           - 用語: apis/create-payment/用語.md
           - 処理詳細: apis/create-payment/処理詳細.md
           - 変更履歴: apis/create-payment/変更履歴.md
+      - 記入例 注文の状態を見る:
+          - 入口: apis/get-order/README.md
+          - 用語: apis/get-order/用語.md
+          - 処理詳細: apis/get-order/処理詳細.md
+          - 変更履歴: apis/get-order/変更履歴.md
       - 記入例 決済の結果を受け取る:
           - 入口: apis/payment-webhook/README.md
           - 用語: apis/payment-webhook/用語.md

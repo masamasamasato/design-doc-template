@@ -82,6 +82,7 @@ apis/login-passkey/               記入例。パスキーでログインするA
 apis/recover-account/             記入例。アカウントを復旧するAPI
 apis/register-card/               記入例。カードを登録するAPI
 apis/create-payment/              記入例。支払うAPI
+apis/get-order/                   記入例。注文の状態を見るAPI
 apis/payment-webhook/             記入例。決済の結果を受け取るAPI
 decisions/                        決めたことと、捨てた案
 mkdocs.yml                        サイトの設定
@@ -183,7 +184,7 @@ cp -a apis/_template apis/予約を確定する
 
 記入例は [プロフィールを公開する](apis/publish-profile/README.md) です。本人確認が済んでいる人だけ、プロフィールを公開中にします。コードのパスは架空で、`src/services/profile.ts` です。
 
-ほかの記入例は、[ログインする](apis/login/README.md)、[ログアウトする](apis/logout/README.md)、[商品詳細を取得する](apis/get-product/README.md)、[商品一覧を取得する](apis/list-products/README.md)、[商品を検索する](apis/search-products/README.md)、[パスキーを登録する](apis/register-passkey/README.md)、[パスキーでログインする](apis/login-passkey/README.md)、[アカウントを復旧する](apis/recover-account/README.md)、[カードを登録する](apis/register-card/README.md)、[支払う](apis/create-payment/README.md)、[決済の結果を受け取る](apis/payment-webhook/README.md) です。認証は `src/services/auth.ts`、パスキーは `src/services/passkey.ts`、商品は `src/services/product.ts`、支払いは `src/services/payment.ts` です。業務フローの記入例は、[ログインして商品を探す](docs/business/ログインして商品を探す/README.md)、[カードで支払う](docs/business/カードで支払う/README.md)、[パスキーの端末をなくす](docs/business/パスキーの端末をなくす/README.md) です。
+ほかの記入例は、[ログインする](apis/login/README.md)、[ログアウトする](apis/logout/README.md)、[商品詳細を取得する](apis/get-product/README.md)、[商品一覧を取得する](apis/list-products/README.md)、[商品を検索する](apis/search-products/README.md)、[パスキーを登録する](apis/register-passkey/README.md)、[パスキーでログインする](apis/login-passkey/README.md)、[アカウントを復旧する](apis/recover-account/README.md)、[カードを登録する](apis/register-card/README.md)、[支払う](apis/create-payment/README.md)、[注文の状態を見る](apis/get-order/README.md)、[決済の結果を受け取る](apis/payment-webhook/README.md) です。認証は `src/services/auth.ts`、パスキーは `src/services/passkey.ts`、商品は `src/services/product.ts`、支払いは `src/services/payment.ts` です。業務フローの記入例は、[ログインして商品を探す](docs/business/ログインして商品を探す/README.md)、[カードで支払う](docs/business/カードで支払う/README.md)、[パスキーの端末をなくす](docs/business/パスキーの端末をなくす/README.md) です。
 
 新しい業務フローを足すときは、既存のフォルダをコピーして、中身を書き換えます。
 

@@ -12,13 +12,19 @@ note right: 登録の前にログインが必要。カード番号は自社を�
 :ログインしているか確認する処理\nrequireSession();
 if (ログインしている?) then (はい)
   :カード登録の準備を作る処理\ncreateCardSetup();
-  :預かり番号を保存する処理\nsavePaymentMethod();
-  if (認証が済み、預かり番号が使える?) then (はい)
-    :預かり番号と表示用の情報を保存する;
-    note right: カード番号は保存しない
+  :本人のカードか確かめる処理\nverifyCardOwner();
+  if (本人の準備からできた番号?) then (はい)
+    :預かり番号を保存する処理\nsavePaymentMethod();
+    if (認証が済み、預かり番号が使える?) then (はい)
+      :預かり番号を利用者に結びつけて保存する;
+      note right: カード番号は保存しない
+    else (いいえ)
+      :失敗を返す\nAUTHENTICATION_REQUIRED など;
+      note right: 失敗の理由は処理詳細.md を見る
+    endif
   else (いいえ)
-    :失敗を返す\nAUTHENTICATION_REQUIRED など;
-    note right: 失敗の理由は処理詳細.md を見る
+    :失敗を返す\nPAYMENT_METHOD_NOT_OWNED;
+    note right: 既に他人に結びついた番号も同じ
   endif
 else (いいえ)
   :失敗を返す\nUNAUTHORIZED;

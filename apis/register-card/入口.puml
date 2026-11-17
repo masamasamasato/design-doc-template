@@ -19,7 +19,7 @@ alt ログインしていない
   Screen --> User : ログインが必要
 else ログインしている
   API -> API : createCardSetup()
-  API -> PSP : 登録の準備を作る
+  API -> PSP : 利用者IDを付けて、登録の準備を作る
   PSP --> API : 準備
   API --> Screen : 200 準備
   Screen -> PSP : カード番号・有効期限・CVC を送る
@@ -33,9 +33,15 @@ else ログインしている
   alt 決済サービスが受け付ける
     PSP --> Screen : 預かり番号
     Screen -> API : POST /cards
-    API -> API : savePaymentMethod()
-    API --> Screen : 200 ブランドと下4桁
-    Screen --> User : 登録できた
+    API -> API : verifyCardOwner()
+    alt 本人の準備からできた番号
+      API -> API : savePaymentMethod()
+      API --> Screen : 200 ブランドと下4桁
+      Screen --> User : 登録できた
+    else 他人の番号
+      API --> Screen : 403 PAYMENT_METHOD_NOT_OWNED
+      Screen --> User : 登録できない
+    end
   else 認証が済んでいない、または受け付けない
     PSP --> Screen : 失敗
     Screen --> User : 登録できない
