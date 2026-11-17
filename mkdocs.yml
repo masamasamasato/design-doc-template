@@ -58,6 +58,7 @@ markdown_extensions:
 
 nav:
   - はじめに: README.md
+  - 使い始める設定: docs/setup.md
   - 用語集: 用語集.md
   - 業務フロー:
       - プロフィールを公開する:

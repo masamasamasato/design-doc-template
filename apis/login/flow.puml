@@ -16,7 +16,7 @@ else (いいえ)
   if (本人?) then (はい)
     :セッションを作る処理\ncreateSession();
     :ログイン通知メールを送る処理\nnotifyLogin();
-    note right: SESで送る。送信に失敗してもログインは成功のまま
+    note right: SESで、登録したメールアドレスに送る。送信に失敗してもログインは成功のまま
     :Cookie でセッションを返す;
   else (いいえ)
     if (連続失敗が5回目?) then (はい)

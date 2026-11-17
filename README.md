@@ -10,6 +10,8 @@
 4. 読み物サイトは `NO_MKDOCS_2_WARNING=1 mkdocs serve -a 127.0.0.1:8765` で見ます。
 5. PRタイトルは、何をどう変えたかを日本語で書きます。`fix` などの接頭辞は使いません。
 
+[GitHub の設定](docs/setup.md)
+
 記入例は [ログインする](apis/login/README.md)、[ログインして商品を探す](docs/business/ログインして商品を探す/README.md)、[AWSのインフラ構成](docs/infra/index.md) です。決めた理由は [ADR 0000](decisions/0000-template.md) にあります。
 
 ## フォルダ
@@ -17,6 +19,7 @@
 ```text
 README.md              使い方
 用語集.md              APIをまたいで使う言葉
+docs/setup.md          GitHub の設定
 docs/business/<業務>/  業務フロー
 docs/infra/            インフラ構成図
 apis/_template/        新しいAPIの型
@@ -62,6 +65,7 @@ APIの入口は `apis/<名前>/README.md` です。開いてすぐ見える部�
 ```text
 README.md                         使い方。詳細はAI向けの details
 用語集.md                         APIをまたいで使う言葉
+docs/setup.md                     GitHub の設定（権限、Pages、PREVIEW_TOKEN）
 docs/business/<業務>/             業務フロー（README、flow.puml、変更履歴.md）
 docs/infra/                       記入例。AWSのインフラ構成図
 apis/_template/                   新しいAPIを作るときにコピーする型
@@ -279,7 +283,7 @@ Material for MkDocs は 2027-05-05 まで保守されます。起動時の案内
 </details>
 
 <details markdown>
-<summary>AI向け：自動化とGitHubの設定</summary>
+<summary>AI向け：自動化</summary>
 
 | いつ | 何をする |
 | --- | --- |
@@ -310,27 +314,12 @@ PRコメントの赤い図は、`scripts/highlight-puml-diff.py` が作ります
 
 SVGのコミットメッセージには `[plantuml-svg]` が付きます。`GITHUB_TOKEN` による push は、次の workflow を起動しません。図の変換が無限に繰り返されないためです。
 
-変更履歴の1行は、次の形です。日付は日本時間です。対象のAPIと業務フローは、マージしたPRが触ったファイルだけを見て決めます。以前 main に入った変更は含めません。1行足して main に push できたときだけ、サイト公開のワークフローを起動します。
+変更履歴の1行は、次の形です。日付は日本時間です。対象のAPIと業務フローは、マージしたPRが触ったファイルだけを見て決めます。`_template` など、`_` で始まるフォルダは対象外です。以前 main に入った変更は含めません。1行足して main に push できたときだけ、サイト公開のワークフローを起動します。
 
 ```text
 2026-11-16 #12 公開時に本人確認を追加
 ```
 
-作業ブランチでは、サイトを公開しません。Pages へ出すのは `main` だけです。公開は、`main` への push か、手動実行で動きます。
-
-**公開に必要な GitHub の設定**
-
-テンプレートからリポジトリを作ったあと、次を有効にします。
-
-1. Settings → Actions → General → Workflow permissions を **Read and write permissions** にする。SVGと変更履歴のコミットに必要です。
-2. Settings → Pages → Build and deployment → Source を **GitHub Actions** にする。
-3. Settings → General → **Template repository** にチェックを入れる。
-4. Settings → General → Pull Requests → Allow squash merging の既定メッセージを **Pull request title and description** にする。全コミット文が本文に入ると、bot のコミット文が混ざり、main の自動処理が止まることがあります。
-5. 一人で使うリポジトリだけ、Settings → Secrets and variables → Actions に `PREVIEW_TOKEN` を登録する。中身は、このリポジトリだけを選んだ fine-grained の個人トークンで、権限は Contents と Pull requests の Read and write です。期限を付けます。
-   - **共同編集者がいるリポジトリでは設定しません。** 書き込みできる人は、ワークフローを書き換えてこのトークンを外へ送れます。送られると、期限まであなたとして書き込まれます。
-   - 図のコメントは、bot ではなくトークンの持ち主の名前で付きます。
-   - 無い・期限切れのときは、警告を出して、図をリンクで載せます。
-
-ブランチ保護で bot の push が拒否されるときは、`github-actions[bot]` の更新を許可します。
+作業ブランチでは、サイトを公開しません。Pages へ出すのは `main` だけです。公開は、`main` への push か、手動実行で動きます。人がやる GitHub の設定は [GitHub の設定](docs/setup.md) です。
 
 </details>
