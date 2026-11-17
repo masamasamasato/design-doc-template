@@ -14,7 +14,7 @@ participant "商品API" as API
 User -> Screen : 一覧を見る
 Screen -> API : GET /products?page=1&limit=20
 API -> API : セッション検証と指定の検証\nrequireSession()、listProducts()
-alt セッションが有効で、page・limit・sort・order が決まりどおりの場合
+alt セッションが有効で、page が1以上の整数、limit が1〜100の整数、\nsort が created_at か price、order が asc か desc の場合
   API --> Screen : 200 一覧\n何も保存しない
   Screen --> User : 一覧が見えた
 else セッションの Cookie が無い、または無効な場合

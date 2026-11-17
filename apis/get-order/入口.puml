@@ -12,7 +12,7 @@ participant "支払い画面" as Screen
 participant "決済API" as API
 
 User -> Screen : 支払いの結果を待つ
-note right of Screen : 支払うAPIが処理中を返した直後から呼ぶ
+note right of Screen : 支払うAPIが処理中か 502 を返した直後から呼ぶ
 loop 200 で処理中のあいだ、2秒おき。最長60秒。401・404 ならやめる
   Screen -> API : GET /orders/{orderId}
   API -> API : セッション検証と注文の持ち主検証\nrequireSession()、getOrderStatus()

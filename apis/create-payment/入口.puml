@@ -25,7 +25,7 @@ else セッションの Cookie が有効な場合
     API --> Screen : 400 MISSING_IDEMPOTENCY_KEY\n何も保存しない
     Screen --> User : 支払えない
   else 同じキーで、注文IDと預かり番号も同じ場合
-    API --> Screen : 前と同じ結果（200 処理中、または 402 PAYMENT_DECLINED）\n何も保存しない。新たに請求しない
+    API --> Screen : 前と同じ結果（200 処理中、または 402 PAYMENT_DECLINED）\n何も保存しない。新たに請求しない。502 のあとは 200 処理中
     Screen --> User : 前と同じ結果を表示する
   else 同じキーで、注文IDまたは預かり番号が違う場合
     API --> Screen : 422 IDEMPOTENCY_KEY_REUSED\n何も保存しない
@@ -36,25 +36,27 @@ else セッションの Cookie が有効な場合
       API --> Screen : 404 CARD_NOT_FOUND\n何も保存しない。キーも保存しない
       Screen --> User : カードが使えない
     else 本人のカードで、注文が無い、他人の注文、または処理中・支払い済み・失敗の場合
-      API --> Screen : 409 ORDER_NOT_PAYABLE\n何も保存しない。キーも保存しない
+      API --> Screen : 409 ORDER_NOT_PAYABLE\n何も保存しない。キーも保存しない。\n502 のあとに新しいキーで送られた場合もここ
       Screen --> User : この注文は支払えない
     else 本人のカードで、本人の注文が未払いの場合
       API -> API : 注文の状態検証と支払いの開始\nstartPayment()
       API -> PSP : 注文を処理中にし、注文の金額で、同じキーで支払いを依頼する
       alt 決済サービスが依頼を断った場合（カードが使えない など）
         PSP --> API : 失敗
-        API --> Screen : 402 PAYMENT_DECLINED\n注文を未払いに戻し、キーと結果を保存する（例：24時間）
+        API --> Screen : 402 PAYMENT_DECLINED\nまだ処理中の場合だけ注文を未払いに戻す（支払い済みなら変えない）。\nキーと結果を保存する（例：24時間）
         Screen --> User : このカードでは支払えない。別のカードを選ぶ
         note right of Screen : やり直すときは、画面が新しいキーを作る
-      else 決済サービスから返事が無い、または通信に失敗した場合
-        API --> Screen : 502 PAYMENT_PROVIDER_ERROR\n注文を未払いに戻す。キーは保存しない
-        Screen --> User : 支払えなかった。もう一度押す
-        note right of Screen : 同じキーで送り直す。\n例：返事を10秒待って打ち切る
-      else 決済サービスが依頼を受け付けた場合
-        PSP --> API : 受け付けた
-        API --> Screen : 200 処理中\n注文を処理中にし、キーと結果を保存する（例：24時間）
+      else 決済サービスが依頼を受け付けた、または返事が無い・通信に失敗した場合
+        alt 決済サービスが依頼を受け付けた場合
+          PSP --> API : 受け付けた
+          API --> Screen : 200 処理中\n注文を処理中にし、キーと結果を保存する（例：24時間）
+        else 決済サービスから返事が無い、または通信に失敗した場合
+          API --> Screen : 502 PAYMENT_PROVIDER_ERROR\n注文は処理中のまま。キーと結果（処理中）を保存する（例：24時間）
+          note right of API : 例：返事を10秒待って打ち切る。\n通知が例：30分来なければ、運用者へ警告する
+        end
         Screen --> User : 処理中
-        loop 処理中のあいだ、2秒おき。最長60秒
+        note right of Screen : 502 でも、処理中と同じく状態を取りに行く
+        loop 200 で処理中のあいだ、2秒おき。最長60秒。401・404 ならやめる
           Screen -> API : GET /orders/{orderId}
           API --> Screen : 200 注文の状態、401、または404
         end
