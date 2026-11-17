@@ -1,0 +1,174 @@
+' インフラ構成の記入例。ログインと商品APIを動かす想定。
+' 変換はローカルの plantuml.jar と Graphviz。図の中身は外部へ送らない。
+' アイコンは jar 同梱の awslib（AWS Icons for PlantUML）を使う。
+' 補足は黄色い付箋を、対象の箱の真横（または真下）に短い点線でつなぐ。
+' 付箋は対象と同じ枠の内側に置く。
+@startuml
+!include <awslib/AWSCommon>
+!include <awslib/Groups/AWSCloud>
+!include <awslib/Groups/VPC>
+!include <awslib/Groups/AvailabilityZone>
+!include <awslib/Groups/PublicSubnet>
+!include <awslib/Groups/PrivateSubnet>
+!include <awslib/Groups/Generic>
+!include <awslib/General/Users>
+!include <awslib/NetworkingContentDelivery/Route53>
+!include <awslib/NetworkingContentDelivery/CloudFront>
+!include <awslib/Storage/SimpleStorageService>
+!include <awslib/NetworkingContentDelivery/ElasticLoadBalancingApplicationLoadBalancer>
+!include <awslib/NetworkingContentDelivery/VPCNATGateway>
+!include <awslib/Containers/ElasticContainerService>
+!include <awslib/Containers/ElasticContainerRegistry>
+!include <awslib/Database/RDS>
+!include <awslib/Database/ElastiCache>
+!include <awslib/ManagementGovernance/CloudWatchLogs>
+!include <awslib/ManagementGovernance/CloudWatchAlarm>
+!include <awslib/SecurityIdentityCompliance/CertificateManager>
+!include <awslib/SecurityIdentityCompliance/WAF>
+!include <awslib/SecurityIdentityCompliance/SecretsManager>
+!include <awslib/BusinessApplications/SimpleEmailService>
+!include <awslib/ApplicationIntegration/SimpleNotificationService>
+
+skinparam shadowing false
+skinparam defaultFontName "Noto Sans CJK JP"
+skinparam ActivityFontName "Noto Sans CJK JP"
+
+hide stereotype
+
+title AWSインフラ構成（ログインと商品API）
+
+together {
+  rectangle "ECRにイメージを置き、\nECSへデプロイ" as n_gha #FFFFCC
+  rectangle "GitHub Actions" as gha
+}
+Users(user, "利用者", "ブラウザ")
+
+AWSCloudGroup(aws, "AWS クラウド") {
+  Route53(dns, "Route 53", "名前解決")
+  together {
+    WAF(waf, "AWS WAF", "Web ACL")
+    rectangle "CloudFrontに付ける。\n不正な要求を落とす" as n_waf #FFFFCC
+  }
+
+  SimpleStorageService(s3, "静的画面", "S3")
+  rectangle "OAC経由のみ。\n例: login.html" as n_s3 #FFFFCC
+  CloudFront(cf, "CloudFront", "CDN")
+  rectangle "HTTPSで配信する。\nOACでS3だけに繋ぐ" as n_cf #FFFFCC
+  together {
+    CertificateManager(acm, "ACM", "HTTPS")
+    rectangle "CloudFrontとALBの\nHTTPS証明書" as n_acm #FFFFCC
+  }
+
+  together {
+    rectangle "APIのイメージを置く。\nNAT経由で取得" as n_ecr #FFFFCC
+    ElasticContainerRegistry(ecr, "ECR", "レジストリ")
+  }
+  together {
+    rectangle "両APIのログを集める。\nパスワードは出さない" as n_logs #FFFFCC
+    CloudWatchLogs(logs, "CloudWatch Logs", "ログ")
+  }
+  CloudWatchAlarm(alarm, "CloudWatch Alarm", "アラーム")
+  together {
+    rectangle "5xxが増えたら、\n開発者へメールやSlack" as n_sns #FFFFCC
+    SimpleNotificationService(sns, "Amazon SNS", "通知")
+  }
+  together {
+    rectangle "例: ログイン通知メール" as n_ses #FFFFCC
+    SimpleEmailService(ses, "SES", "メール")
+  }
+  together {
+    rectangle "DBパスワード。\nログには出さない" as n_sm #FFFFCC
+    SecretsManager(sm, "Secrets Manager", "機密")
+  }
+
+  VPCGroup(vpc, "VPC") {
+    PublicSubnetGroup(pub, "パブリックサブネット（2つのAZ）") {
+      VPCNATGateway(nat1, "NAT Gateway（1a）", "NAT")
+      ElasticLoadBalancingApplicationLoadBalancer(alb, "ALB", "負荷分散")
+      VPCNATGateway(nat2, "NAT Gateway（1c）", "NAT")
+    }
+
+    AvailabilityZoneGroup(az1, "AZ ap-northeast-1a") {
+      PrivateSubnetGroup(pri1, "プライベートサブネット") {
+        together {
+          ElasticContainerService(ecs1, "APIサービス", "ECS Fargate")
+          rectangle "例: POST /sessions" as n_ecs1 #FFFFCC
+        }
+      }
+    }
+    AvailabilityZoneGroup(az2, "AZ ap-northeast-1c") {
+      PrivateSubnetGroup(pri2, "プライベートサブネット") {
+        together {
+          rectangle "例: GET /products/search" as n_ecs2 #FFFFCC
+          ElasticContainerService(ecs2, "APIサービス", "ECS Fargate")
+        }
+      }
+    }
+
+    rectangle "両APIから" as j
+
+    GenericGroup(data, "データ（マルチAZ）") {
+      together {
+        rectangle "セッションを置く。\nどのAPIでもログインが続く" as n_cache #FFFFCC
+        ElastiCache(cachep, "ElastiCache プライマリ", "Redis")
+      }
+      together {
+        RDS(rdsp, "RDS プライマリ", "商品・利用者")
+        rectangle "例: hana@example.com。\nスタンバイは故障時に昇格" as n_rds #FFFFCC
+      }
+      ElastiCache(cacher, "ElastiCache レプリカ", "Redis")
+      RDS(rdss, "RDS スタンバイ", "マルチAZ")
+    }
+  }
+}
+
+' ---- 通信の流れ ----
+user -down-> dns
+dns -down-> cf
+dns -[hidden]right- waf
+waf -[dotted]right- n_waf
+waf -down..> cf
+cf -left-> s3
+s3 -[dotted]down- n_s3
+cf -[dotted]down- n_cf
+n_s3 -[hidden]right- n_cf
+acm -[dotted]right- n_acm
+acm -left..> cf : 証明書
+acm -down..> alb : 証明書
+cf -down-> alb
+nat1 -[hidden]right- alb
+alb -[hidden]right- nat2
+alb -down-> ecs1
+alb -down-> ecs2
+ecs1 -[dotted]right- n_ecs1
+n_ecs2 -[dotted]right- ecs2
+ecs1 -down-> j
+ecs2 -down-> j
+j -down-> cachep
+j -down-> rdsp
+cachep -down-> cacher
+rdsp -down-> rdss
+n_cache -[dotted]right- cachep
+rdsp -[dotted]right- n_rds
+cachep -[hidden]right- rdsp
+cacher -[hidden]right- rdss
+j -right-> ses
+j -right-> sm
+ses -[hidden]down- sm
+az1 -[hidden]right- az2
+
+' ---- 左列（AWSクラウド内・VPC外）とデプロイ ----
+gha -[hidden]right- user
+n_gha -[dotted]right- gha
+gha -down-> ecr
+n_ecr -[dotted]right- ecr
+n_logs -[dotted]right- logs
+n_sns -[dotted]right- sns
+n_ses -[dotted]right- ses
+n_sm -[dotted]right- sm
+ecr -[hidden]down- logs
+logs -down-> alarm
+alarm -down-> sns
+ecr -[hidden]right- vpc
+
+@enduml
