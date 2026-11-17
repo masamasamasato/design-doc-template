@@ -13,28 +13,31 @@ participant "決済サービス" as PSP
 
 User -> Screen : 支払う
 Screen -> API : POST /payments\nIdempotency-Key
-note right of Screen : 同じ注文を2回処理しないためのキー
-API -> API : requireSession()
-alt ログインしていない
+note right of Screen : 同じ支払いを2回請求しないためのキー
+API -> API : セッション検証\nrequireSession()
+alt セッションの Cookie が無い、または無効な場合
   API --> Screen : 401 UNAUTHORIZED
   Screen --> User : ログインが必要
-else ログインしている
-  API -> API : checkIdempotencyKey()
-  alt 同じキーで、注文IDと預かり番号も同じ
+else セッションの Cookie が有効な場合
+  API -> API : 冪等キー検証\ncheckIdempotencyKey()
+  alt ヘッダーに Idempotency-Key が無い場合
+    API --> Screen : 400 MISSING_IDEMPOTENCY_KEY
+    Screen --> User : 支払えない
+  else 同じキーで、注文IDと預かり番号も同じ場合
     API --> Screen : 200 前と同じ結果（例: 処理中）
     Screen --> User : 前と同じ結果を表示する
-  else 同じキーで、注文IDか預かり番号が違う
+  else 同じキーで、注文IDまたは預かり番号が違う場合
     API --> Screen : 422 IDEMPOTENCY_KEY_REUSED
     Screen --> User : 支払えない
-  else 新しいキー
-    API -> API : findOwnCard()
-    alt 本人のカードでない
+  else 新しいキーの場合
+    API -> API : カード所有者検証\nfindOwnCard()
+    alt 預かり番号が本人のカードでない場合
       API --> Screen : 404 CARD_NOT_FOUND
       Screen --> User : カードが使えない
-    else 本人のカードで、注文が未払いでない
+    else 本人のカードで、注文が未払いでない場合
       API --> Screen : 409 ORDER_NOT_PAYABLE
       Screen --> User : この注文は支払えない
-    else 本人のカードで、注文が未払い
+    else 本人のカードで、注文が未払いの場合
       API -> API : startPayment()
       API -> PSP : 注文の金額で、同じキーで支払いを依頼する
       API --> Screen : 200 処理中
@@ -43,10 +46,10 @@ else ログインしている
         Screen -> API : GET /orders/{orderId}
         API --> Screen : 200 注文の状態
       end
-      alt 支払い済み、または失敗になった
+      alt 支払い済み、または失敗になった場合
         Screen --> User : 支払い済み、または失敗を表示する
-      else 60秒たっても処理中
-        Screen --> User : 注文履歴で確かめるよう表示する
+      else 60秒たっても処理中の場合
+        Screen --> User : 「60秒たっても処理中です。\n注文履歴で結果を見てください」と表示する
       end
     end
   end

@@ -12,15 +12,15 @@ participant "商品API" as API
 
 User -> Screen : 一覧を見る
 Screen -> API : GET /products?page=1&limit=20
-API -> API : requireSession()
-alt ログインしていて、ページ分けと並び順が正しい
+API -> API : セッション検証\nrequireSession()
+alt セッションが有効で、ページ分けと並び順が決まりどおりの場合
   API -> API : listProducts()
   API --> Screen : 200 一覧
   Screen --> User : 一覧が見えた
-else ログインしていない
+else セッションの Cookie が無い、または無効な場合
   API --> Screen : 401 UNAUTHORIZED
   Screen --> User : ログインが必要
-else ページ分けまたは並び順が正しくない
+else ページ分けまたは並び順が決まりどおりでない場合
   API --> Screen : 400 INVALID_QUERY
   Screen --> User : ページまたは並び順の指定を直す
 end

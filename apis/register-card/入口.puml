@@ -13,11 +13,11 @@ participant "決済サービス" as PSP
 
 User -> Screen : カードを登録する
 Screen -> API : POST /cards/setup
-API -> API : requireSession()
-alt ログインしていない
+API -> API : セッション検証\nrequireSession()
+alt セッションの Cookie が無い、または無効な場合
   API --> Screen : 401 UNAUTHORIZED
   Screen --> User : ログインが必要
-else ログインしている
+else セッションの Cookie が有効な場合
   API -> API : createCardSetup()
   API -> PSP : 利用者IDを付けて、登録の準備を作る
   PSP --> API : 準備
@@ -26,29 +26,29 @@ else ログインしている
   User -> Screen : カード番号・有効期限・CVC を入れる
   Screen -> PSP : カード番号・有効期限・CVC を送る
   note right of PSP : 自社サーバーは通さない
-  alt 3Dセキュアが必要
+  alt 決済サービスが3Dセキュアを求めた場合
     PSP --> Screen : 本人認証を求める
     Screen --> User : 本人認証する
     User -> Screen : 認証する
     Screen -> PSP : 本人認証の結果を送る
   end
-  alt 決済サービスがカードを受け付けない
+  alt 決済サービスがカードを受け付けない場合
     PSP --> Screen : 失敗
     Screen --> User : このカードは登録できない
-  else 預かり番号が返る
+  else 預かり番号が返る場合
     PSP --> Screen : 預かり番号
     Screen -> API : POST /cards
-    API -> API : 準備の利用者IDと今の利用者を比べる\nverifyCardOwner()
-    alt 本人の準備からできた番号でない
+    API -> API : カード所有者検証\nverifyCardOwner()
+    alt 本人の準備からできた番号でない場合
       API --> Screen : 403 PAYMENT_METHOD_NOT_OWNED
       Screen --> User : 登録できない
-    else 3Dセキュアが済んでいない
+    else 3Dセキュアが済んでいない場合
       API --> Screen : 400 AUTHENTICATION_REQUIRED
       Screen --> User : 本人認証をやり直す
-    else 預かり番号が使えない
+    else 預かり番号が使えない場合
       API --> Screen : 400 INVALID_PAYMENT_METHOD
       Screen --> User : このカードは登録できない
-    else 本人の番号で、使える
+    else 本人の番号で、使える場合
       API -> API : savePaymentMethod()
       API --> Screen : 200 ブランドと下4桁
       Screen --> User : 登録できた

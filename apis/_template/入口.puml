@@ -12,11 +12,11 @@ participant "（APIの名前）" as API
 
 User -> Screen : （操作）。例: 公開する
 Screen -> API : （メソッドとパス）。例: POST /profiles/{id}/publish
-API -> API : （何を確かめるか）\nmethodName()
-alt （成功する条件）。例: 本人確認が済んでいる
+API -> API : （〜検証。何と何を照合するか）\nmethodName()
+alt （成功する条件。〜の場合）。例: 本人確認が済んでいる場合
   API --> Screen : （200 と返すもの）
   Screen --> User : （画面に出す言葉）。例: 公開できた
-else （失敗する条件）。例: 本人確認が済んでいない
+else （失敗する条件。〜の場合）。例: 本人確認が済んでいない場合
   API --> Screen : （コード）。例: 403 NOT_VERIFIED
   Screen --> User : （画面に出す言葉）。例: 先に本人確認が必要
 end

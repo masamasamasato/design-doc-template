@@ -12,22 +12,22 @@ participant "認証API" as API
 
 User -> Screen : パスキーを登録する
 Screen -> API : POST /passkeys/options
-API -> API : requireSession()
-alt ログインしていない
+API -> API : セッション検証\nrequireSession()
+alt セッションの Cookie が無い、または無効な場合
   API --> Screen : 401 UNAUTHORIZED
   Screen --> User : ログインが必要
-else ログインしている
+else セッションの Cookie が有効な場合
   API -> API : チャレンジを発行する\nissueRegistrationOptions()
   API --> Screen : 200 チャレンジ
-  note right of Screen : チャレンジは、この登録だけに使う\n5分で消える一度きりの値
+  note right of Screen : チャレンジは1回限りで、期限は5分
   Screen --> User : 端末で登録する（PIN か生体認証）
-  User -> Screen : 端末がパスキーを作り、\n作った証明（attestation）を返す
+  User -> Screen : 端末がパスキーを作り、\nattestation を返す
   Screen -> API : POST /passkeys
-  API -> API : verifyAndSavePasskey()
-  alt 発行したチャレンジと照合できる
+  API -> API : attestation 検証と保存\nverifyAndSavePasskey()
+  alt attestation が、保存したチャレンジ・origin・rpId と合い、\nuser verification 済みの場合
     API --> Screen : 200 登録した
     Screen --> User : 登録できた
-  else チャレンジが期限切れ・使用済み、または照合できない
+  else チャレンジが期限切れ・使用済み、または照合できない場合
     API --> Screen : 400 INVALID_CHALLENGE
     Screen --> User : 登録できない。やり直す
   end

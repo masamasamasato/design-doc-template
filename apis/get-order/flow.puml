@@ -9,16 +9,16 @@ title 注文の状態を見る
 
 start
 note right: 読むだけ。注文の状態は変えない
-:ログインしているか確認する処理\nrequireSession();
-if (ログインしている?) then (はい)
+:セッション検証\nリクエストの Cookie を、保存済みの有効なセッションと照合\nrequireSession();
+if (セッションの Cookie が有効な場合) then (有効な場合)
   :注文の状態を返す処理\ngetOrderStatus();
-  if (本人の注文がある?) then (はい)
+  if (本人の注文がある場合) then (ある場合)
     :状態を返す;
-  else (いいえ)
+  else (注文が無い、または\n他人の注文の場合)
     :失敗を返す\nORDER_NOT_FOUND;
     note right: 他人の注文も、無い注文と同じ
   endif
-else (いいえ)
+else (セッションの Cookie が無い、\nまたは無効な場合)
   :失敗を返す\nUNAUTHORIZED;
 endif
 stop

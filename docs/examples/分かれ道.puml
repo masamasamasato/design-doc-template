@@ -7,9 +7,9 @@ title 分かれ道の例
 
 start
 :プロフィールを公開する;
-if (本人確認は済みか?) then (済み)
+if (本人確認が済んでいる場合) then (済んでいる場合)
   :プロフィールを公開中にする;
-else (まだ)
+else (済んでいない場合)
   :NOT_VERIFIED を返す;
 endif
 stop

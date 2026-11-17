@@ -9,30 +9,29 @@ title カードを登録する
 
 start
 note right: 登録の前にログインが必要。カード番号は自社を通さない
-:ログインしているか確認する処理\nrequireSession();
-if (ログインしている?) then (はい)
+:セッション検証\nリクエストの Cookie を、保存済みの有効なセッションと照合\nrequireSession();
+if (セッションの Cookie が有効な場合) then (有効な場合)
   :カード登録の準備を作る処理\ncreateCardSetup();
   note right: 準備に利用者IDを付ける。1回目の呼び出し POST /cards/setup
   :画面がカード番号を決済サービスへ送り、\n預かり番号を受け取る;
   note right: ここはサーバーの外。次は2回目の呼び出し POST /cards
-  :本人のカードか確かめる処理\nverifyCardOwner();
-  if (準備の利用者IDが、今の利用者と同じ?) then (はい)
+  :カード所有者検証\n準備の利用者IDと、今の利用者IDを照合\nverifyCardOwner();
+  if (準備の利用者IDが、今の利用者IDと同じ場合) then (同じ場合)
     :預かり番号を保存する処理\nsavePaymentMethod();
-    if (3Dセキュアが済んでいる?) then (はい)
-      if (決済サービスが預かり番号を使えると返す?) then (はい)
+    if (3Dセキュアが不要、または済みの場合) then (不要または済みの場合)
+      if (決済サービスが預かり番号を使えると返す場合) then (使える場合)
         :預かり番号を利用者に結びつけて保存する;
-        note right: カード番号は保存しない
-      else (いいえ)
+        note right: カード番号は保存しない。\n例：同じカードなら、既に保存した預かり番号を返す
+      else (使えない場合)
         :失敗を返す\nINVALID_PAYMENT_METHOD;
       endif
-    else (いいえ)
+    else (3Dセキュアが必要で、\nまだ済んでいない場合)
       :失敗を返す\nAUTHENTICATION_REQUIRED;
     endif
-  else (いいえ)
+  else (違う場合、または既に\n他の利用者に結びついている場合)
     :失敗を返す\nPAYMENT_METHOD_NOT_OWNED;
-    note right: 既に他人に結びついた番号も同じ
   endif
-else (いいえ)
+else (セッションの Cookie が無い、\nまたは無効な場合)
   :失敗を返す\nUNAUTHORIZED;
 endif
 stop

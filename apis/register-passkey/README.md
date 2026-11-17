@@ -11,19 +11,26 @@
 | 名前 | 必須 | 説明 |
 | --- | --- | --- |
 | セッションの Cookie | はい | ログイン時に付いた Cookie。例: `session_789` |
-| 端末名 | いいえ | 利用者が見る名前。例: `雅人のスマホ` |
+| 端末名 | いいえ | 利用者が見る名前。例: `雅人のスマホ`。例：30文字まで |
 | attestation | はい | 端末が作った登録の証明。2回目の `POST /passkeys` で送ります |
 
-流れは2段階です。`POST /passkeys/options` でチャレンジ（この登録だけに使う、5分で消える一度きりの値）を発行します。画面はそれを端末に渡し、端末はパスキーを作って attestation（パスキーを作った証明）を返します。`POST /passkeys` で、attestation を発行したチャレンジと照合し、公開鍵を保存します。保存するのは公開鍵、credential ID、署名カウンタ、端末名だけです。
+流れは2段階です。`POST /passkeys/options` でチャレンジを発行します。チャレンジは1回限りで、期限は5分です。画面はそれを端末に渡し、端末はパスキーを作って attestation を返します。`POST /passkeys` で attestation を検証し、公開鍵を保存します。検証では、発行したチャレンジ、origin、rpId、user verification を照合します。保存するのは公開鍵、credential ID、署名カウンタ、端末名だけです。
 
 ## 失敗するとき
 
 | コード | いつ | 結果 |
 | --- | --- | --- |
-| UNAUTHORIZED | ログインしていない | 登録しない |
-| INVALID_CHALLENGE | チャレンジが無い、期限切れ、既に使った、または attestation を検証できない | 登録しない |
+| UNAUTHORIZED | セッションの Cookie が無い、または無効な場合 | `401`。登録しない |
+| INVALID_CHALLENGE | チャレンジが無い、発行から5分を超えた、既に使った、または attestation がチャレンジ・origin・rpId・user verification と合わない場合 | `400`。登録しない |
+| INVALID_DEVICE_NAME | 端末名が30文字（例：）を超える場合 | `400`。登録しない |
 
-削除（`DELETE /passkeys/{credentialId}`）の失敗は、[処理詳細](処理詳細.md) にあります。
+削除（`DELETE /passkeys/{credentialId}`）の失敗です。削除の図はまだ載せていません。
+
+| コード | いつ | 結果 |
+| --- | --- | --- |
+| UNAUTHORIZED | セッションの Cookie が無い、または無効な場合 | `401`。消さない |
+| PASSKEY_NOT_FOUND | その credential ID が無い、または他人のパスキーの場合 | `404`。消さない |
+| LAST_PASSKEY | 本人のパスキーがこれ1つだけの場合 | `409`。消さない |
 
 ## 関連リンク
 
@@ -43,9 +50,10 @@
 これは深さ2です。画面とAPIのつながりだけを書きます。
 
 - チャレンジは、発行したときのログイン中の利用者に結びつけます。別の利用者のセッションでは使えません。
-- 検証では、origin（呼んだ画面のURL）と rpId（このサービスのドメイン）が自社のものかを確かめます。
-- 登録のとき、端末での PIN か生体認証を必須にします（user verification）。
-- 削除は `DELETE /passkeys/{credentialId}` です。ログインしている本人のパスキーだけ消せます。最後の1つは消せません。消すとパスキーでログインできなくなり、メールの復旧に頼ることになるためです。
+- origin / rpId 検証では、attestation の origin を自社の画面の origin（スキーム・ホスト・ポート）と比べ、rpId を自社ドメインと比べます。
+- 例：同じ端末で2回登録させないよう、チャレンジと一緒に、その利用者の登録済み credential ID を端末へ渡します（excludeCredentials）。登録済みの端末は、端末側で登録を断ります。
+- 登録のとき、user verification（端末での PIN か生体認証）を必須にします。
+- 削除は `DELETE /passkeys/{credentialId}` です。ログインしている本人のパスキーだけ消せます。最後の1つは消せません。消すとパスキーでログインできなくなり、メールアドレスでの復旧に頼ることになるためです。
 - 端末をなくして [アカウントを復旧する](../recover-account/README.md) を使ったときは、すべてのパスキーが無効になります。1つずつ消す必要はありません。
 
 </details>

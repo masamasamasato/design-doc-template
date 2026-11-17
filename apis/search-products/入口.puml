@@ -12,15 +12,15 @@ participant "商品API" as API
 
 User -> Screen : 検索する
 Screen -> API : GET /products/search?q=デスク&page=1&limit=20
-API -> API : requireSession()
-alt ログインしていて、検索語、ページ分け、並び順が正しい
+API -> API : セッション検証\nrequireSession()
+alt セッションが有効で、検索語・ページ分け・並び順が決まりどおりの場合
   API -> API : searchProducts()
-  API --> Screen : 200 一覧
+  API --> Screen : 200 検索結果
   Screen --> User : 結果が見えた
-else ログインしていない
+else セッションの Cookie が無い、または無効な場合
   API --> Screen : 401 UNAUTHORIZED
   Screen --> User : ログインが必要
-else 検索語、ページ分け、または並び順が正しくない
+else 検索語が無い・空・100文字超、またはページ分けや並び順が決まりどおりでない場合
   API --> Screen : 400 INVALID_QUERY
   Screen --> User : 検索語、ページ、または並び順を直す
 end

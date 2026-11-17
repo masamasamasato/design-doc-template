@@ -9,17 +9,17 @@ title 商品を検索する
 
 start
 note right: 検索する前にログインが必要
-:ログインしているか確認する処理\nrequireSession();
-if (ログインしている?) then (はい)
+:セッション検証\nリクエストの Cookie を、保存済みの有効なセッションと照合\nrequireSession();
+if (セッションの Cookie が有効な場合) then (有効な場合)
   :商品名に検索語を含む、公開中の商品を返す処理\nsearchProducts();
-  if (検索語、ページ分け、並び順の指定が正しい?) then (はい)
-    :一覧を返す;
-    note right: 0件でも成功。空の一覧を返す
-  else (いいえ)
+  if (検索語が1〜100文字で、ページ分けと並び順が決まりどおりの場合) then (決まりどおりの場合)
+    :検索結果を返す;
+    note right: 0件でも成功。空の結果を返す
+  else (検索語が無い・空・100文字超、または\nページ分けや並び順が決まりどおりでない場合)
     :失敗を返す\nINVALID_QUERY;
-    note right: 例: 検索語が空、101文字以上、limit=200
+    note right: 例: 検索語が空、101文字、limit=200
   endif
-else (いいえ)
+else (セッションの Cookie が無い、\nまたは無効な場合)
   :失敗を返す\nUNAUTHORIZED;
 endif
 stop

@@ -115,12 +115,12 @@ AWSCloudGroup(aws, "AWS クラウド") {
 
     GenericGroup(data, "データ（マルチAZ）") {
       together {
-        rectangle "どのAPIでもログインが続く" as n_cache #FFFFCC
+        rectangle "どのAPIでもログインが続く\n例：セッションは24時間" as n_cache #FFFFCC
         ElastiCache(cachep, "ElastiCache プライマリ（1a）\nセッションを置く", "Redis")
       }
       together {
         RDS(rdsp, "RDS プライマリ（1a）\n商品・利用者を置く", "DB")
-        rectangle "例: hana@example.com" as n_rds #FFFFCC
+        rectangle "例: masato@example.com" as n_rds #FFFFCC
       }
       ElastiCache(cacher, "ElastiCache レプリカ（1c）\n障害時の読み取り先", "Redis")
       RDS(rdss, "RDS スタンバイ（1c）\n障害時に昇格する", "マルチAZ")

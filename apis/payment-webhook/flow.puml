@@ -8,36 +8,36 @@ skinparam ActivityFontName "Noto Sans CJK JP"
 title 決済の結果を受け取る
 
 start
-note right: 確かめないと、誰でも偽の通知で支払い済みにできる
-:署名を確かめる処理\nverifyWebhookSignature();
-note right: 受け取ったもとの本文で計算し、ヘッダーの署名と比べる
-if (署名が合い、タイムスタンプが5分以内?) then (いいえ)
-  :400 を返す\nINVALID_SIGNATURE;
-  note right: 注文は変えない
-else (はい)
-  :通知を保存してすぐ返す処理\nenqueuePaymentEvent();
+note right: 署名検証をしないと、誰でも偽の通知で支払い済みにできる
+:通知署名検証\nもとの本文とタイムスタンプから計算した署名を、ヘッダーの署名と照合\nverifyWebhookSignature();
+note right: 例：署名の方式は HMAC-SHA256
+if (署名が合い、タイムスタンプのずれが前後5分以内の場合) then (合う場合)
+  :通知を保存し、反映を待たずに返す処理\nenqueuePaymentEvent();
   :200 を返す;
-  note right: 同じイベントIDは重ねて保存しない
+  note right: 保存が終わったら返す。同じイベントIDは重ねて保存しない
   :保存した通知を反映に回す処理\nprocessSavedPaymentEvents();
-  note right: 返事のあとで行う。失敗したら同じ保存からやり直す。反映は1回
-  :注文と合うか確かめる処理\nmatchOrder();
-  if (注文ID・金額・通貨が注文と合う?) then (いいえ)
-    :運用者へ警告する;
-    note right: 注文は変えない。通知の中身を記録する
-  else (はい)
+  note right: 返事のあとで行う。反映は1回。\n例：失敗したら1分・5分・30分・2時間・6時間で最大5回やり直す。\n5回とも失敗したら「反映失敗」を記録して警告。そのあとは人がやり直す
+  :注文照合検証\n通知の注文ID・金額・通貨を、保存した注文と照合\nmatchOrder();
+  if (注文ID・金額・通貨がすべて同じ場合) then (すべて同じ場合)
     :決済の結果を反映する処理\napplyPaymentEvent();
-    if (同じイベントIDを処理済み?) then (はい)
+    if (同じイベントIDを既に反映済みの場合) then (反映済みの場合)
       :何もしない;
-    else (いいえ)
-      if (注文は支払い済み?) then (はい)
+    else (まだ反映していない場合)
+      if (注文が支払い済みの場合) then (支払い済みの場合)
         :支払い済みのまま変えない;
         note right: 状態は一方向。支払い済みは戻さない
-      else (いいえ)
+      else (注文が処理中、または失敗の場合)
         :通知のとおり、\n支払い済みまたは失敗にする;
         note right: 失敗から支払い済みへは、合う成功の通知のときだけ
       endif
     endif
+  else (どれかが違う場合)
+    :運用者へ警告する;
+    note right: 注文は変えない。通知の中身を記録する
   endif
+else (署名が合わない、または\n前後5分を超えてずれる場合)
+  :400 を返す\nINVALID_SIGNATURE;
+  note right: 注文は変えない
 endif
 stop
 @enduml

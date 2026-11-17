@@ -9,21 +9,20 @@ title パスキーを登録する
 
 start
 note right: 削除（DELETE）の流れは処理詳細.md の 4 を見る
-:ログインしているか確認する処理\nrequireSession();
-if (ログインしている?) then (はい)
+:セッション検証\nリクエストの Cookie を、保存済みの有効なセッションと照合\nrequireSession();
+if (セッションの Cookie が有効な場合) then (有効な場合)
   :登録用のチャレンジを発行する処理\nissueRegistrationOptions();
-  note right: 今の利用者に結びつけ、5分だけ保存する
-  :画面がチャレンジを端末へ渡し、\n端末が作った証明（attestation）を受け取る;
+  note right: 今の利用者に結びつけ、5分だけ保存する。\n例：登録済みの credential ID も端末へ渡す
+  :画面がチャレンジを端末へ渡し、\n端末が作った attestation を受け取る;
   note right: 端末で PIN か生体認証をする。ここはサーバーの外
-  :attestation を検証して保存する処理\nverifyAndSavePasskey();
-  if (発行したチャレンジと照合できる?) then (はい)
+  :attestation 検証と保存\nチャレンジ・origin・rpId・user verification を照合し、公開鍵を保存\nverifyAndSavePasskey();
+  if (attestation が、保存したチャレンジ・origin・rpId と合い、\nuser verification 済みの場合) then (検証が通る場合)
     :公開鍵、credential ID、署名カウンタ、\n端末名を保存する;
     note right: 秘密鍵は受け取らない。1人で複数の端末を登録できる
-  else (いいえ)
+  else (チャレンジが期限切れ・使用済み、\nまたは照合できない場合)
     :失敗を返す\nINVALID_CHALLENGE;
-    note right: 期限切れ、使用済み、照合失敗は同じ失敗
   endif
-else (いいえ)
+else (セッションの Cookie が無い、\nまたは無効な場合)
   :失敗を返す\nUNAUTHORIZED;
 endif
 stop
