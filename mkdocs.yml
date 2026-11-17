@@ -64,6 +64,12 @@ nav:
       - ログインして商品を探す:
           - 概要: docs/business/ログインして商品を探す/README.md
           - 変更履歴: docs/business/ログインして商品を探す/変更履歴.md
+      - カードで支払う:
+          - 概要: docs/business/カードで支払う/README.md
+          - 変更履歴: docs/business/カードで支払う/変更履歴.md
+      - パスキーの端末をなくす:
+          - 概要: docs/business/パスキーの端末をなくす/README.md
+          - 変更履歴: docs/business/パスキーの端末をなくす/変更履歴.md
   - インフラ構成: docs/infra/index.md
   - API:
       - 新しいAPIの型:
@@ -101,5 +107,40 @@ nav:
           - 用語: apis/search-products/用語.md
           - 処理詳細: apis/search-products/処理詳細.md
           - 変更履歴: apis/search-products/変更履歴.md
+      - 記入例 パスキーを登録する:
+          - 入口: apis/register-passkey/README.md
+          - 用語: apis/register-passkey/用語.md
+          - 処理詳細: apis/register-passkey/処理詳細.md
+          - 変更履歴: apis/register-passkey/変更履歴.md
+      - 記入例 パスキーでログインする:
+          - 入口: apis/login-passkey/README.md
+          - 用語: apis/login-passkey/用語.md
+          - 処理詳細: apis/login-passkey/処理詳細.md
+          - 変更履歴: apis/login-passkey/変更履歴.md
+      - 記入例 アカウントを復旧する:
+          - 入口: apis/recover-account/README.md
+          - 用語: apis/recover-account/用語.md
+          - 処理詳細: apis/recover-account/処理詳細.md
+          - 変更履歴: apis/recover-account/変更履歴.md
+      - 記入例 カードを登録する:
+          - 入口: apis/register-card/README.md
+          - 用語: apis/register-card/用語.md
+          - 処理詳細: apis/register-card/処理詳細.md
+          - 変更履歴: apis/register-card/変更履歴.md
+      - 記入例 支払う:
+          - 入口: apis/create-payment/README.md
+          - 用語: apis/create-payment/用語.md
+          - 処理詳細: apis/create-payment/処理詳細.md
+          - 変更履歴: apis/create-payment/変更履歴.md
+      - 記入例 注文の状態を見る:
+          - 入口: apis/get-order/README.md
+          - 用語: apis/get-order/用語.md
+          - 処理詳細: apis/get-order/処理詳細.md
+          - 変更履歴: apis/get-order/変更履歴.md
+      - 記入例 決済の結果を受け取る:
+          - 入口: apis/payment-webhook/README.md
+          - 用語: apis/payment-webhook/用語.md
+          - 処理詳細: apis/payment-webhook/処理詳細.md
+          - 変更履歴: apis/payment-webhook/変更履歴.md
   - 決定記録:
       - テンプレートの方針: decisions/0000-template.md

@@ -7,7 +7,7 @@
 ## 関連リンク
 
 - [処理のイメージ](flow.puml)
-- [プロフィール公開API](../../../apis/publish-profile/README.md)
+- [プロフィール公開APIの入口](../../../apis/publish-profile/README.md)
 - [変更履歴](変更履歴.md)
 
 <details markdown>

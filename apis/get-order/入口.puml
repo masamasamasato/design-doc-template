@@ -1,0 +1,32 @@
+@startuml
+skinparam shadowing false
+skinparam defaultFontName "Noto Sans CJK JP"
+skinparam SequenceFontName "Noto Sans CJK JP"
+hide footbox
+
+title 注文の状態を見る
+
+actor "利用者" as User
+participant "支払い画面" as Screen
+participant "決済API" as API
+
+User -> Screen : 支払う
+note right of Screen : 支払うAPIが処理中を返したあと
+loop 2秒おき。最長60秒
+  Screen -> API : GET /orders/{orderId}
+  API -> API : requireSession()
+  alt ログインしていて、本人の注文がある
+    API -> API : getOrderStatus()
+    API --> Screen : 200 注文の状態
+  else ログインしていない
+    API --> Screen : 401 UNAUTHORIZED
+  else 注文が無い、または他人の注文
+    API --> Screen : 404 ORDER_NOT_FOUND
+  end
+end
+alt 支払い済み、または失敗
+  Screen --> User : 結果が見えた
+else 60秒たっても処理中
+  Screen --> User : 注文履歴で確かめる
+end
+@enduml

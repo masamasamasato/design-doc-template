@@ -1,0 +1,27 @@
+' 深さ3。パスキーを登録する処理のイメージ。
+' スイムレーンは業務フロー側に書く。ここはメソッドの順番だけを書く。
+@startuml
+skinparam shadowing false
+skinparam defaultFontName "Noto Sans CJK JP"
+skinparam ActivityFontName "Noto Sans CJK JP"
+
+title パスキーを登録する
+
+start
+note right: 登録の前にログインが必要
+:ログインしているか確認する処理\nrequireSession();
+if (ログインしている?) then (はい)
+  :登録用のチャレンジを発行する処理\nissueRegistrationOptions();
+  :attestation を検証して保存する処理\nverifyAndSavePasskey();
+  if (検証できる?) then (はい)
+    :公開鍵などを保存する;
+    note right: 秘密鍵は受け取らない。1人で複数の端末を登録できる
+  else (いいえ)
+    :失敗を返す\nINVALID_CHALLENGE;
+    note right: 失敗の理由は処理詳細.md を見る
+  endif
+else (いいえ)
+  :失敗を返す\nUNAUTHORIZED;
+endif
+stop
+@enduml

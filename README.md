@@ -12,7 +12,7 @@
 
 [GitHub の設定](docs/setup.md)
 
-記入例は [ログインする](apis/login/README.md)、[ログインして商品を探す](docs/business/ログインして商品を探す/README.md)、[AWSのインフラ構成](docs/infra/index.md) です。決めた理由は [ADR 0000](decisions/0000-template.md) にあります。
+記入例は [ログインする](apis/login/README.md)、[ログインして商品を探す](docs/business/ログインして商品を探す/README.md)、[カードで支払う](docs/business/カードで支払う/README.md)、[AWSのインフラ構成](docs/infra/index.md) です。決めた理由は [ADR 0000](decisions/0000-template.md) にあります。
 
 ## フォルダ
 
@@ -77,6 +77,13 @@ apis/logout/                      記入例。ログアウトするAPI
 apis/get-product/                 記入例。商品詳細を取得するAPI
 apis/list-products/               記入例。商品一覧を取得するAPI
 apis/search-products/             記入例。商品を検索するAPI
+apis/register-passkey/            記入例。パスキーを登録するAPI
+apis/login-passkey/               記入例。パスキーでログインするAPI
+apis/recover-account/             記入例。アカウントを復旧するAPI
+apis/register-card/               記入例。カードを登録するAPI
+apis/create-payment/              記入例。支払うAPI
+apis/get-order/                   記入例。注文の状態を見るAPI
+apis/payment-webhook/             記入例。決済の結果を受け取るAPI
 decisions/                        決めたことと、捨てた案
 mkdocs.yml                        サイトの設定
 mkdocs/docs/                      サイトが読む原稿へのリンク
@@ -106,7 +113,7 @@ scripts/                          ローカル変換と、履歴の追記
 | --- | --- | --- |
 | 業務フロー | PlantUML のスイムレーン | [プロフィールを公開する](docs/business/プロフィールを公開する/README.md) |
 | インフラ構成 | PlantUML（awslib のアイコン） | [AWSのインフラ構成](docs/infra/index.md) |
-| 処理の順番 | PlantUML のシーケンス図 | [プロフィール公開API](apis/publish-profile/README.md) |
+| 処理の順番 | PlantUML のシーケンス図 | [プロフィール公開APIの入口](apis/publish-profile/README.md) |
 | 分かれ道 | PlantUML のアクティビティ図 | この下の図 |
 | データ | PlantUML の ER 図 | この下の図 |
 | 状態 | PlantUML の状態図 | この下の図 |
@@ -177,7 +184,7 @@ cp -a apis/_template apis/予約を確定する
 
 記入例は [プロフィールを公開する](apis/publish-profile/README.md) です。本人確認が済んでいる人だけ、プロフィールを公開中にします。コードのパスは架空で、`src/services/profile.ts` です。
 
-ほかの記入例は、[ログインする](apis/login/README.md)、[ログアウトする](apis/logout/README.md)、[商品詳細を取得する](apis/get-product/README.md)、[商品一覧を取得する](apis/list-products/README.md)、[商品を検索する](apis/search-products/README.md) です。認証は `src/services/auth.ts`、商品は `src/services/product.ts` です。
+ほかの記入例は、[ログインする](apis/login/README.md)、[ログアウトする](apis/logout/README.md)、[商品詳細を取得する](apis/get-product/README.md)、[商品一覧を取得する](apis/list-products/README.md)、[商品を検索する](apis/search-products/README.md)、[パスキーを登録する](apis/register-passkey/README.md)、[パスキーでログインする](apis/login-passkey/README.md)、[アカウントを復旧する](apis/recover-account/README.md)、[カードを登録する](apis/register-card/README.md)、[支払う](apis/create-payment/README.md)、[注文の状態を見る](apis/get-order/README.md)、[決済の結果を受け取る](apis/payment-webhook/README.md) です。認証は `src/services/auth.ts`、パスキーは `src/services/passkey.ts`、商品は `src/services/product.ts`、支払いは `src/services/payment.ts` です。業務フローの記入例は、[ログインして商品を探す](docs/business/ログインして商品を探す/README.md)、[カードで支払う](docs/business/カードで支払う/README.md)、[パスキーの端末をなくす](docs/business/パスキーの端末をなくす/README.md) です。
 
 新しい業務フローを足すときは、既存のフォルダをコピーして、中身を書き換えます。
 

@@ -1,0 +1,46 @@
+@startuml
+skinparam shadowing false
+skinparam defaultFontName "Noto Sans CJK JP"
+skinparam SequenceFontName "Noto Sans CJK JP"
+hide footbox
+
+title 支払う
+
+actor "利用者" as User
+participant "支払い画面" as Screen
+participant "決済API" as API
+participant "決済サービス" as PSP
+
+User -> Screen : 支払う
+Screen -> API : POST /payments\nIdempotency-Key
+API -> API : requireSession()
+alt ログインしていない
+  API --> Screen : 401 UNAUTHORIZED
+  Screen --> User : ログインが必要
+else ログインしている
+  API -> API : checkIdempotencyKey()
+  alt 同じキーで、中身も同じ
+    API --> Screen : 200 前の結果
+    Screen --> User : 結果が見えた
+  else 同じキーで、中身が違う
+    API --> Screen : 422 IDEMPOTENCY_KEY_REUSED
+    Screen --> User : 支払えない
+  else 新しいキー
+    API -> API : findOwnCard()
+    alt 本人のカードでない
+      API --> Screen : 404 CARD_NOT_FOUND
+      Screen --> User : カードが使えない
+    else 本人のカード
+      API -> API : startPayment()
+      API -> PSP : 同じキーで支払いを依頼する
+      API --> Screen : 200 処理中
+      Screen --> User : 処理中
+      loop 2秒おき。最長60秒
+        Screen -> API : GET /orders/{orderId}
+        API --> Screen : 200 注文の状態
+      end
+      Screen --> User : 支払い済み、または失敗
+    end
+  end
+end
+@enduml

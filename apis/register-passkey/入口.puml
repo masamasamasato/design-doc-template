@@ -1,0 +1,34 @@
+@startuml
+skinparam shadowing false
+skinparam defaultFontName "Noto Sans CJK JP"
+skinparam SequenceFontName "Noto Sans CJK JP"
+hide footbox
+
+title パスキーを登録する
+
+actor "利用者" as User
+participant "設定画面" as Screen
+participant "認証API" as API
+
+User -> Screen : パスキーを登録する
+Screen -> API : POST /passkeys/options
+API -> API : requireSession()
+alt ログインしていない
+  API --> Screen : 401 UNAUTHORIZED
+  Screen --> User : ログインが必要
+else ログインしている
+  API -> API : issueRegistrationOptions()
+  API --> Screen : 200 チャレンジ
+  Screen --> User : 端末で登録する
+  User -> Screen : attestation を返す
+  Screen -> API : POST /passkeys
+  alt attestation を検証できる
+    API -> API : verifyAndSavePasskey()
+    API --> Screen : 200 登録した
+    Screen --> User : 登録できた
+  else チャレンジが無効、または検証できない
+    API --> Screen : 400 INVALID_CHALLENGE
+    Screen --> User : 登録できない
+  end
+end
+@enduml
