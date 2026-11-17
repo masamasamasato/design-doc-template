@@ -10,6 +10,8 @@
 4. 読み物サイトは `NO_MKDOCS_2_WARNING=1 mkdocs serve -a 127.0.0.1:8765` で見ます。
 5. PRタイトルは、何をどう変えたかを日本語で書きます。`fix` などの接頭辞は使いません。
 
+テンプレートから作ったあとの GitHub の設定（権限、Pages、PREVIEW_TOKEN）は、[公開に必要な GitHub の設定](#github-settings) を見てください。
+
 記入例は [ログインする](apis/login/README.md)、[ログインして商品を探す](docs/business/ログインして商品を探す/README.md)、[AWSのインフラ構成](docs/infra/index.md) です。決めた理由は [ADR 0000](decisions/0000-template.md) にあります。
 
 ## フォルダ
@@ -310,13 +312,15 @@ PRコメントの赤い図は、`scripts/highlight-puml-diff.py` が作ります
 
 SVGのコミットメッセージには `[plantuml-svg]` が付きます。`GITHUB_TOKEN` による push は、次の workflow を起動しません。図の変換が無限に繰り返されないためです。
 
-変更履歴の1行は、次の形です。日付は日本時間です。対象のAPIと業務フローは、マージしたPRが触ったファイルだけを見て決めます。以前 main に入った変更は含めません。1行足して main に push できたときだけ、サイト公開のワークフローを起動します。
+変更履歴の1行は、次の形です。日付は日本時間です。対象のAPIと業務フローは、マージしたPRが触ったファイルだけを見て決めます。`_template` など、`_` で始まるフォルダは対象外です。以前 main に入った変更は含めません。1行足して main に push できたときだけ、サイト公開のワークフローを起動します。
 
 ```text
 2026-11-16 #12 公開時に本人確認を追加
 ```
 
 作業ブランチでは、サイトを公開しません。Pages へ出すのは `main` だけです。公開は、`main` への push か、手動実行で動きます。
+
+<a id="github-settings"></a>
 
 **公開に必要な GitHub の設定**
 

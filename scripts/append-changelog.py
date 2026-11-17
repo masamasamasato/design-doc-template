@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""変わった apis/<名前>/ と docs/business/<業務>/ の変更履歴.md に、マージ日とPRを1行足す。"""
+"""変わった apis/<名前>/ と docs/business/<業務>/ の変更履歴.md に、マージ日とPRを1行足す。
+フォルダ名が _ で始まるもの（apis/_template など）は対象外。"""
 
 from __future__ import annotations
 
@@ -63,6 +64,9 @@ def main() -> None:
             seen.add(key)
             directory = parent / item
             rel = directory.relative_to(ROOT)
+            if item.startswith("_"):
+                print(f"ひな形のため飛ばします: {rel}")
+                continue
             if not directory.is_dir():
                 print(f"削除済みのため飛ばします: {rel}")
                 continue
