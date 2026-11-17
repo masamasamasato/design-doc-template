@@ -18,5 +18,5 @@
 - **ECS Fargate（APIサービス）**: ログインや商品のAPIを動かします。例: `POST /sessions`、`GET /products/search`。各AZのプライベートサブネットに1つずつ置きます。2つのAPIからの線は「両APIから」で合流し、データ帯の ElastiCache と RDS の両方へ分かれます。
 - **RDS**: 利用者と商品のデータを置きます。例: メール `hana@example.com`、商品 `product_1001`。マルチAZ（プライマリとスタンバイ）です。どちらのAPIからも使えます。
 - **ElastiCache**: セッションを置きます。レプリカがあります。どのAPIサーバーに当たっても、ログイン状態が続きます。例: セッション `session_789`。
-- **CloudWatch Logs**: VPC の右に置き、両APIのログを集めます。図では線を引かず、注記で示します。パスワードはログに出しません。
+- **CloudWatch Logs**: VPC の右（AWS クラウドの枠内）に置き、両APIのログを集めます。図では線を引かず、ラベルで示します。パスワードはログに出しません。
 - **VPC とサブネット**: ALB はパブリックサブネット、API は各AZのプライベートサブネット、RDS と ElastiCache はプライベートのデータ帯に置きます。AZ は `ap-northeast-1a` と `ap-northeast-1c` の2つです。
