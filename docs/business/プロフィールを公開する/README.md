@@ -7,12 +7,12 @@
 ## 関連リンク
 
 - [処理のイメージ](flow.puml)
-- [公開APIの入口](../../../apis/publish-profile/README.md)
+- [プロフィール公開API](../../../apis/publish-profile/README.md)
 - [変更履歴](変更履歴.md)
 
 <details markdown>
 <summary>AI向け：書き方と補足</summary>
 
-これは深さ1の業務フローです。レーンは「ユーザー」「プロフィール画面」「プロフィールAPI」です。
+これは深さ1の業務フローです。レーンは「利用者」「プロフィール画面」「プロフィールAPI」です。
 
 </details>

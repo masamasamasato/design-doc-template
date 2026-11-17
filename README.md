@@ -7,7 +7,7 @@
 1. このリポジトリをテンプレートにして、新しいリポジトリを作ります。
 2. 業務フローは `docs/business/<業務>/` に、APIは `apis/_template` をコピーして書きます。
 3. 図は PlantUML だけです。Mermaid は使いません。`./scripts/render-puml.sh` で SVG にします。
-4. 読み物サイトは `NO_MKDOCS_2_WARNING=1 mkdocs serve -a 127.0.0.1:8765` で見ます。
+4. サイトは `NO_MKDOCS_2_WARNING=1 mkdocs serve -a 127.0.0.1:8765` で見ます。
 5. PRタイトルは、何をどう変えたかを日本語で書きます。`fix` などの接頭辞は使いません。
 
 [GitHub の設定](docs/setup.md)
@@ -39,7 +39,7 @@ README は、人が読む最低限だけを開いてすぐ見えるところに�
 | --- | --- | --- | --- |
 | 1 業務 | 誰が何を渡し、仕事がどこまで進むか | PlantUML のスイムレーン | 利用者が公開し、APIが公開中にする |
 | 2 機能 | 画面とAPIのつながり | PlantUML のシーケンス図 | 画面が `POST /profiles/{id}/publish` を呼ぶ |
-| 3 サービスメソッド | 1つの目的を持つ処理と、メソッド名 | `flow.puml` のアクティビティ図 | `checkOwner()` で本人確認を見る |
+| 3 サービスメソッド | 1つの目的を持つ処理と、メソッド名 | `flow.puml` のアクティビティ図 | `checkOwner()` で本人確認する |
 
 深さ3の文は、次の形にします。
 
@@ -78,7 +78,7 @@ apis/get-product/                 記入例。商品詳細を取得するAPI
 apis/list-products/               記入例。商品一覧を取得するAPI
 apis/search-products/             記入例。商品を検索するAPI
 decisions/                        決めたことと、捨てた案
-mkdocs.yml                        読み物サイトの設定
+mkdocs.yml                        サイトの設定
 mkdocs/docs/                      サイトが読む原稿へのリンク
 .github/workflows/                図の変換、公開、変更履歴
 .github/pull_request_template.md  PRの書き方
@@ -106,7 +106,7 @@ scripts/                          ローカル変換と、履歴の追記
 | --- | --- | --- |
 | 業務フロー | PlantUML のスイムレーン | [プロフィールを公開する](docs/business/プロフィールを公開する/README.md) |
 | インフラ構成 | PlantUML（awslib のアイコン） | [AWSのインフラ構成](docs/infra/index.md) |
-| 処理の順番 | PlantUML のシーケンス図 | [公開APIの入口](apis/publish-profile/README.md) |
+| 処理の順番 | PlantUML のシーケンス図 | [プロフィール公開API](apis/publish-profile/README.md) |
 | 分かれ道 | PlantUML のアクティビティ図 | この下の図 |
 | データ | PlantUML の ER 図 | この下の図 |
 | 状態 | PlantUML の状態図 | この下の図 |
@@ -138,7 +138,7 @@ scripts/                          ローカル変換と、履歴の追記
 スイムレーンの書き方は次のとおりです。全文は [業務フロー](docs/business/プロフィールを公開する/flow.puml) にあります。
 
 ```plantuml
-|ユーザー|
+|利用者|
 start
 :公開するボタンを押す;
 |プロフィールAPI|
@@ -239,7 +239,7 @@ SVGにするときは、次を実行します。
 
 **3. mkdocs serve で見る**
 
-読み物サイトは MkDocs Material です。PlantUML から作った SVG を表示します。検索は日本語です。
+サイトは MkDocs Material です。PlantUML から作った SVG を表示します。検索は日本語です。
 
 ```bash
 python3 -m venv .venv
@@ -276,7 +276,7 @@ PRコメントの赤い図は、`scripts/highlight-puml-diff.py` が作ります
 | ノート `note right: …`、`note … end note` | ノートを薄い赤にする |
 | 矢印 `-> ラベル;`、`A -> B : メッセージ` | 線とラベルを赤くする |
 | 要素の宣言 `participant` `class` `component` など | 背景を薄い赤にする。クラスの中の行を変えたときは、クラスごと赤くする |
-| `else` `endif` `start` `stop` スイムレーン `skinparam` `title` など | 色を付けない。コメントの「色を付けられなかった変更」に出す |
+| `else` `endif` `start` `stop` スイムレーン `skinparam` `title` など | 色を付けない。コメントの「色は付けていませんが、図の形には入っています」に出す |
 
 - 消した行は図に出せないため、「消したもの」として図の下に並べます。変えた行は「変えたもの（前 → 後）」にも出ます。
 - 並べ替えただけの行（同じ文が比較元にも PR にもある行）は、足した・変えた・消したにしません。

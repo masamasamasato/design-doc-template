@@ -6,7 +6,7 @@ hide footbox
 
 title 商品詳細を取得する
 
-actor "ユーザー" as User
+actor "利用者" as User
 participant "商品画面" as Screen
 participant "商品API" as API
 
