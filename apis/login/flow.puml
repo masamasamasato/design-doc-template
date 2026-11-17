@@ -4,6 +4,7 @@
 skinparam shadowing false
 skinparam defaultFontName "Noto Sans CJK JP"
 skinparam ActivityFontName "Noto Sans CJK JP"
+skinparam NoteBackgroundColor #FFFFCC
 
 title ログインする
 
@@ -11,21 +12,23 @@ start
 note right: セッションを作る前に、メアド・パスワード検証が必要
 :メアド・パスワード検証\n登録済みメアドのパスワードハッシュと入力パスワードを照合\nauthenticate();
 if (ロック中（連続5回失敗から15分以内）の場合) then (ロック中の場合)
-  :失敗を返す\nACCOUNT_LOCKED;
-  note right: 例：15分たつと自動で解除
+  :失敗を返す\n403 ACCOUNT_LOCKED;
+  note right: 保存しない。失敗回数もロックの期限も変えない。\n例：15分たつと自動で解除
 else (ロック中でない場合)
   switch (メアド・パスワード検証の結果)
   case (メールアドレス・パスワードが\n正しい場合)
     :セッションを作る処理\ncreateSession();
+    note right: 保存：セッション（例：24時間有効）。\n削除：そのメールアドレスの失敗回数
     :ログイン通知メールを送る処理\nnotifyLogin();
     note right: 送信に失敗しても\nログインは成功のまま
-    :Cookie でセッションを返す;
+    :200 Cookie でセッションを返す;
     note right: 以降のAPIは、この Cookie を付けて呼ぶ
   case (メールアドレス・パスワードが異なり、\n連続失敗(5回以上)の場合)
-    :失敗を返す\nACCOUNT_LOCKED;
-    note right: 例：15分ロックする
+    :失敗を返す\n403 ACCOUNT_LOCKED;
+    note right: 保存：ロック（例：15分で自動解除）。\nセッションは作らない
   case (メールアドレス・パスワードが異なり、\n連続失敗(5回未満)の場合)
-    :失敗を返す\nINVALID_CREDENTIALS;
+    :失敗を返す\n401 INVALID_CREDENTIALS;
+    note right: 保存：失敗回数を1増やす（例：15分で消える）。\nセッションは作らない
   endswitch
 endif
 stop

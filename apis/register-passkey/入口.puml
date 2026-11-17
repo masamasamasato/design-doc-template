@@ -2,6 +2,7 @@
 skinparam shadowing false
 skinparam defaultFontName "Noto Sans CJK JP"
 skinparam SequenceFontName "Noto Sans CJK JP"
+skinparam NoteBackgroundColor #FFFFCC
 hide footbox
 
 title パスキーを登録する
@@ -14,24 +15,27 @@ User -> Screen : パスキーを登録する
 Screen -> API : POST /passkeys/options
 API -> API : セッション検証\nrequireSession()
 alt セッションの Cookie が無い、または無効な場合
-  API --> Screen : 401 UNAUTHORIZED
+  API --> Screen : 401 UNAUTHORIZED\n何も保存しない
   Screen --> User : ログインが必要
 else セッションの Cookie が有効な場合
   API -> API : チャレンジを発行する\nissueRegistrationOptions()
-  API --> Screen : 200 チャレンジ
-  note right of Screen : チャレンジは1回限りで、期限は5分
+  API --> Screen : 200 チャレンジ\nチャレンジを保存する
+  note right of Screen : 例：チャレンジは1回限りで、5分で消える
   Screen --> User : 端末で登録する（PIN か生体認証）
   User -> Screen : 端末がパスキーを作り、\nattestation を返す
   Screen -> API : POST /passkeys
-  API -> API : attestation 検証と保存\nverifyAndSavePasskey()
-  alt 端末名が30文字を超える場合
-    API --> Screen : 400 INVALID_DEVICE_NAME
+  API -> API : セッション検証と attestation 検証\nrequireSession()、verifyAndSavePasskey()
+  alt セッションの Cookie が無い、または無効な場合
+    API --> Screen : 401 UNAUTHORIZED\n何も保存しない
+    Screen --> User : ログインが必要
+  else チャレンジが無い・期限切れ・使用済み・他の利用者のもの、\norigin・rpId が合わない、または user verification が無い場合
+    API --> Screen : 400 INVALID_CHALLENGE\nチャレンジを消す。パスキーは保存しない
     Screen --> User : 登録できない。やり直す
-  else チャレンジが期限切れ・使用済み、または照合できない場合
-    API --> Screen : 400 INVALID_CHALLENGE
-    Screen --> User : 登録できない。やり直す
-  else attestation が、保存したチャレンジ・origin・rpId と合い、\nuser verification 済みの場合
-    API --> Screen : 200 登録した
+  else 検証が通り、端末名が30文字を超える場合
+    API --> Screen : 400 INVALID_DEVICE_NAME\nチャレンジを消す。パスキーは保存しない
+    Screen --> User : 端末名を30文字以内にしてやり直す
+  else 検証が通り、端末名が30文字以内の場合
+    API --> Screen : 200 登録した\n公開鍵などを保存し、チャレンジを消す
     Screen --> User : 登録できた
   end
 end

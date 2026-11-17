@@ -2,6 +2,7 @@
 ' ここは分岐が分かるアクティビティ図にする。
 @startuml
 skinparam shadowing false
+skinparam NoteBackgroundColor #FFFFCC
 skinparam defaultFontName "Noto Sans CJK JP"
 
 title （APIの名前）

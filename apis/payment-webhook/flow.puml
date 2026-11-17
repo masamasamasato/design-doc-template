@@ -4,6 +4,7 @@
 skinparam shadowing false
 skinparam defaultFontName "Noto Sans CJK JP"
 skinparam ActivityFontName "Noto Sans CJK JP"
+skinparam NoteBackgroundColor #FFFFCC
 
 title 決済の結果を受け取る
 
@@ -12,32 +13,69 @@ note right: 署名検証をしないと、誰でも偽の通知で支払い済�
 :通知署名検証\nもとの本文とタイムスタンプから計算した署名を、ヘッダーの署名と照合\nverifyWebhookSignature();
 note right: 例：署名の方式は HMAC-SHA256
 if (署名が合い、タイムスタンプのずれが前後5分以内の場合) then (合う場合)
-  :通知を保存し、反映を待たずに返す処理\nenqueuePaymentEvent();
-  :200 を返す;
-  note right: 保存が終わったら返す。同じイベントIDは重ねて保存しない
+  :通知を保存する処理\n通知のイベントIDを、保存済みのイベントIDと照合\nenqueuePaymentEvent();
+  switch (保存の結果)
+  case (同じイベントIDを\n既に保存している場合)
+    :200 を返す;
+    note right: 重ねて保存しない
+    stop
+  case (通知を保存できなかった場合)
+    :失敗を返す\n500 EVENT_SAVE_FAILED;
+    note right: 保存しない。200 も 2xx も返さないので、\n決済サービスが同じ通知を再送する
+    stop
+  case (新しいイベントIDを\n保存できた場合)
+    :200 を返す;
+    note right: 保存：通知とイベントID。\n注文への反映を待たずに返す
+  endswitch
   :保存した通知を反映に回す処理\nprocessSavedPaymentEvents();
   note right: 返事のあとで行う。反映は1回。\n例：失敗したら1分・5分・30分・2時間・6時間で最大5回やり直す。\n5回とも失敗したら「反映失敗」を記録して警告。そのあとは人がやり直す
   :注文照合検証\n通知の注文ID・金額・通貨を、保存した注文と照合\nmatchOrder();
-  if (注文ID・金額・通貨がすべて同じ場合) then (すべて同じ場合)
-    :決済の結果を反映する処理\napplyPaymentEvent();
-    if (同じイベントIDを既に反映済みの場合) then (反映済みの場合)
+  if (注文があり、金額・通貨がすべて同じ場合) then (すべて同じ場合)
+    :決済の結果を反映する処理\n通知のイベントIDを、反映済みのイベントIDと照合\napplyPaymentEvent();
+    switch (イベントIDと注文の状態)
+    case (同じイベントIDを\n既に反映済みの場合)
       :何もしない;
-    else (まだ反映していない場合)
-      if (注文が支払い済みの場合) then (支払い済みの場合)
+      note right: 保存も削除もしない
+    case (注文が\n支払い済みの場合)
+      if (別のイベントIDの、\n支払い済みの通知の場合) then (支払い済みの場合)
+        :支払い済みのまま変えず、\n運用者へ警告する;
+        note right: 保存：通知の記録と\n反映済みの印。\n二重に請求された疑い
+      else (失敗の通知の場合)
         :支払い済みのまま変えない;
-        note right: 状態は一方向。支払い済みは戻さない
-      else (注文が処理中、または失敗の場合)
-        :通知のとおり、\n支払い済みまたは失敗にする;
-        note right: 失敗から支払い済みへは、合う成功の通知のときだけ
+        note right: 保存：通知の記録と\n反映済みの印
       endif
-    endif
-  else (どれかが違う場合)
+    case (注文が\n未払いの場合)
+      if (支払い済みの通知の場合) then (支払い済みの場合)
+        :支払い済みにし、\n運用者へ警告する;
+        note right: 保存：注文の状態と\n反映済みの印。\n402 で断られたのに\n請求された疑い
+      else (失敗の通知の場合)
+        :未払いのまま変えない;
+        note right: 保存：反映済みの印
+      endif
+    case (注文が\n処理中の場合)
+      if (支払い済みの通知の場合) then (支払い済みの場合)
+        :支払い済みにする;
+        note right: 保存：注文の状態と\n反映済みの印
+      else (失敗の通知の場合)
+        :失敗にする;
+        note right: 保存：注文の状態と\n反映済みの印
+      endif
+    case (注文が\n失敗の場合)
+      if (支払い済みの通知の場合) then (支払い済みの場合)
+        :支払い済みにする;
+        note right: 保存：注文の状態と反映済みの印。\n遅れて届いた成功の通知のため
+      else (失敗の通知の場合)
+        :失敗のまま変えない;
+        note right: 保存：反映済みの印
+      endif
+    endswitch
+  else (注文が無い、または\n金額・通貨のどれかが違う場合)
     :運用者へ警告する;
-    note right: 注文は変えない。通知の中身を記録する
+    note right: 保存：通知の中身の記録。注文は変えない。\n再送されても結果は同じなので、やり直さない
   endif
-else (署名が合わない、または\n前後5分を超えてずれる場合)
-  :400 を返す\nINVALID_SIGNATURE;
-  note right: 注文は変えない
+else (署名が合わない、または\nタイムスタンプが前後5分を超えてずれる場合)
+  :失敗を返す\n400 INVALID_SIGNATURE;
+  note right: 保存しない。注文は変えない
 endif
 stop
 @enduml

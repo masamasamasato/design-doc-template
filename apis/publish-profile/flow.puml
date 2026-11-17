@@ -4,29 +4,40 @@
 skinparam shadowing false
 skinparam defaultFontName "Noto Sans CJK JP"
 skinparam ActivityFontName "Noto Sans CJK JP"
+skinparam NoteBackgroundColor #FFFFCC
 
 title プロフィールを公開する
 
 start
 :セッション検証\nリクエストの Cookie を、保存済みの有効なセッションと照合\nrequireSession();
 if (セッションの Cookie が有効な場合) then (有効な場合)
-  :持ち主・本人確認の検証\nセッションの利用者IDとプロフィールの持ち主を照合\ncheckOwner();
+  :持ち主・本人確認の検証\nセッションの利用者IDをプロフィールの持ち主と、\n本人確認の状態を確認済みと照合\ncheckOwner();
   if (プロフィールがある場合) then (ある場合)
-    if (呼んだ人が持ち主の場合) then (持ち主の場合)
+    if (セッションの利用者IDが、\nプロフィールの持ち主と同じ場合) then (持ち主の場合)
       if (本人確認が済んでいる場合) then (済んでいる場合)
-        :公開中にする処理\npublish();
-        :公開中を返す;
+        if (既に公開中の場合) then (公開中の場合)
+          :200 公開中を返す;
+          note right: 保存しない。publishedAt は変えない
+        else (公開中でない場合)
+          :公開中にする処理\npublish();
+          note right: 保存：状態を公開中に。publishedAt に現在日時
+          :200 公開中を返す;
+        endif
       else (本人確認が済んでいない場合)
-        :失敗を返す\nNOT_VERIFIED;
+        :失敗を返す\n403 NOT_VERIFIED;
+        note right: 保存しない。公開中にはしない
       endif
     else (持ち主でない場合)
-      :失敗を返す\nFORBIDDEN;
+      :失敗を返す\n403 FORBIDDEN;
+      note right: 保存しない
     endif
   else (プロフィールが無い場合)
-    :失敗を返す\nNOT_FOUND;
+    :失敗を返す\n404 NOT_FOUND;
+    note right: 保存しない
   endif
 else (セッションの Cookie が無い、\nまたは無効な場合)
-  :失敗を返す\nUNAUTHORIZED;
+  :失敗を返す\n401 UNAUTHORIZED;
+  note right: 保存しない
 endif
 stop
 @enduml

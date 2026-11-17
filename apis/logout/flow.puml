@@ -4,12 +4,22 @@
 skinparam shadowing false
 skinparam defaultFontName "Noto Sans CJK JP"
 skinparam ActivityFontName "Noto Sans CJK JP"
+skinparam NoteBackgroundColor #FFFFCC
 
 title ログアウトする
 
 start
-note right: セッションが既に無効でも成功とする
-:今のセッションを無効にする処理\ninvalidateSession();
-:セッションの Cookie を消して\n成功を返す;
+note right: 失敗は返さない。どの場合も 200
+:セッション検証\nリクエストの Cookie を、保存済みの有効なセッションと照合\ninvalidateSession();
+switch (セッション検証の結果)
+case (セッションの Cookie が\n有効な場合)
+  :今のセッションを無効にする処理;
+  note right: 削除：保存済みのセッション
+case (セッションの Cookie が無い、\nまたは既に無効な場合)
+  :何もしない;
+  note right: 保存も削除もしない
+endswitch
+:200 を返し、\nセッションの Cookie を消す;
+note right: 削除：ブラウザのセッションの Cookie
 stop
 @enduml

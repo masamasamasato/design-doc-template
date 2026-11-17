@@ -2,6 +2,7 @@
 skinparam shadowing false
 skinparam defaultFontName "Noto Sans CJK JP"
 skinparam SequenceFontName "Noto Sans CJK JP"
+skinparam NoteBackgroundColor #FFFFCC
 hide footbox
 
 title 商品一覧を取得する
@@ -12,16 +13,15 @@ participant "商品API" as API
 
 User -> Screen : 一覧を見る
 Screen -> API : GET /products?page=1&limit=20
-API -> API : セッション検証\nrequireSession()
-alt セッションが有効で、ページ分けと並び順が決まりどおりの場合
-  API -> API : listProducts()
-  API --> Screen : 200 一覧
+API -> API : セッション検証と指定の検証\nrequireSession()、listProducts()
+alt セッションが有効で、page が1以上の整数、limit が1〜100の整数、\nsort が created_at か price、order が asc か desc の場合
+  API --> Screen : 200 一覧\n何も保存しない
   Screen --> User : 一覧が見えた
 else セッションの Cookie が無い、または無効な場合
-  API --> Screen : 401 UNAUTHORIZED
+  API --> Screen : 401 UNAUTHORIZED\n何も保存しない
   Screen --> User : ログインが必要
-else ページ分けまたは並び順が決まりどおりでない場合
-  API --> Screen : 400 INVALID_QUERY
+else セッションが有効で、page が1以上の整数でない、limit が1〜100の整数でない、\nsort が created_at・price 以外、または order が asc・desc 以外の場合
+  API --> Screen : 400 INVALID_QUERY\n何も保存しない
   Screen --> User : ページまたは並び順の指定を直す
 end
 @enduml

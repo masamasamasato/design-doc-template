@@ -2,6 +2,7 @@
 skinparam shadowing false
 skinparam defaultFontName "Noto Sans CJK JP"
 skinparam SequenceFontName "Noto Sans CJK JP"
+skinparam NoteBackgroundColor #FFFFCC
 hide footbox
 
 title カードを登録する
@@ -15,13 +16,13 @@ User -> Screen : カードを登録する
 Screen -> API : POST /cards/setup
 API -> API : セッション検証\nrequireSession()
 alt セッションの Cookie が無い、または無効な場合
-  API --> Screen : 401 UNAUTHORIZED
+  API --> Screen : 401 UNAUTHORIZED\n何も保存しない
   Screen --> User : ログインが必要
 else セッションの Cookie が有効な場合
-  API -> API : createCardSetup()
+  API -> API : カード登録の準備を作る\ncreateCardSetup()
   API -> PSP : 利用者IDを付けて、登録の準備を作る
   PSP --> API : 準備
-  API --> Screen : 200 準備
+  API --> Screen : 200 準備\n自社には保存しない
   note right of Screen : 準備は、カード番号を自社に渡さず\n決済サービスへ直接送るための材料
   User -> Screen : カード番号・有効期限・CVC を入れる
   Screen -> PSP : カード番号・有効期限・CVC を送る
@@ -33,24 +34,31 @@ else セッションの Cookie が有効な場合
     Screen -> PSP : 本人認証の結果を送る
   end
   alt 決済サービスがカードを受け付けない場合
-    PSP --> Screen : 失敗
+    PSP --> Screen : 決済サービスのエラー
     Screen --> User : このカードは登録できない
+    note right of Screen : 自社APIは呼ばない。\n自社には何も保存しない
   else 預かり番号が返る場合
     PSP --> Screen : 預かり番号
     Screen -> API : POST /cards
-    API -> API : カード所有者検証\nverifyCardOwner()
-    alt 本人の準備からできた番号でない場合
-      API --> Screen : 403 PAYMENT_METHOD_NOT_OWNED
+    API -> API : セッション検証、カード所有者検証、\n3Dセキュア・預かり番号の検証\nrequireSession()、verifyCardOwner()、savePaymentMethod()
+    alt セッションの Cookie が無い、または無効な場合
+      API --> Screen : 401 UNAUTHORIZED\n何も保存しない
+      Screen --> User : ログインが必要
+    else 準備の利用者IDが今の利用者IDと違う、または既に他の利用者に結びついている場合
+      API --> Screen : 403 PAYMENT_METHOD_NOT_OWNED\n何も保存しない
       Screen --> User : 登録できない
-    else 3Dセキュアが済んでいない場合
-      API --> Screen : 400 AUTHENTICATION_REQUIRED
+    else 本人の番号で、3Dセキュアが必要なのに済んでいない場合
+      API --> Screen : 400 AUTHENTICATION_REQUIRED\n何も保存しない
       Screen --> User : 本人認証をやり直す
-    else 預かり番号が使えない場合
-      API --> Screen : 400 INVALID_PAYMENT_METHOD
+    else 本人の番号で、決済サービスが預かり番号を使えないと返す場合
+      API --> Screen : 400 INVALID_PAYMENT_METHOD\n何も保存しない
       Screen --> User : このカードは登録できない
-    else 本人の番号で、使える場合
-      API -> API : savePaymentMethod()
-      API --> Screen : 200 ブランドと下4桁
+    else 本人の番号で使え、同じカードを既に保存している場合
+      API --> Screen : 200 既に保存した預かり番号\n新しく保存しない
+      Screen --> User : 登録済みと表示する
+    else 本人の番号で使え、まだ保存していないカードの場合
+      API -> API : 預かり番号を保存する\nsavePaymentMethod()
+      API --> Screen : 200 ブランドと下4桁\n預かり番号と表示用の情報を保存する
       Screen --> User : 登録できた
     end
   end

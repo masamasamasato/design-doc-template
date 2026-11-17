@@ -4,6 +4,7 @@
 skinparam shadowing false
 skinparam defaultFontName "Noto Sans CJK JP"
 skinparam ActivityFontName "Noto Sans CJK JP"
+skinparam NoteBackgroundColor #FFFFCC
 
 title プロフィールを公開する
 
@@ -15,24 +16,49 @@ start
 :プロフィール公開APIを呼ぶ\nPOST /profiles/{id}/publish;
 
 |プロフィールAPI|
-if (呼んだ人がプロフィールの持ち主でない場合) then (持ち主でない場合)
+:セッション検証\nリクエストの Cookie を、\n保存済みの有効なセッションと照合;
+if (セッションの Cookie が無い、または無効な場合) then (無効な場合)
+  :何も保存しない;
   |プロフィール画面|
-  :公開できないと表示する;
+  :ログインが必要と表示する\n401 UNAUTHORIZED;
+  stop
+else (有効な場合)
+endif
+|プロフィールAPI|
+:持ち主・本人確認の検証\nセッションの利用者IDをプロフィールの持ち主と、\n本人確認の状態を確認済みと照合;
+if (プロフィールが無い場合) then (無い場合)
+  :何も保存しない;
+  |プロフィール画面|
+  :プロフィールが無いと表示する\n404 NOT_FOUND;
+  stop
+else (ある場合)
+endif
+|プロフィールAPI|
+if (セッションの利用者IDが、\nプロフィールの持ち主と違う場合) then (持ち主でない場合)
+  :何も保存しない;
+  |プロフィール画面|
+  :公開できないと表示する\n403 FORBIDDEN;
   stop
 else (持ち主の場合)
 endif
 |プロフィールAPI|
-if (本人確認が済んでいない場合) then (済んでいない場合)
+if (持ち主だが、本人確認が済んでいない場合) then (済んでいない場合)
+  :何も保存しない;
   |プロフィール画面|
-  :先に本人確認が必要と表示する;
+  :先に本人確認が必要と表示する\n403 NOT_VERIFIED;
   stop
-else (済んでいる場合)
+else (持ち主で、本人確認が済んでいる場合)
 endif
 |プロフィールAPI|
-:プロフィールを公開中にする;
+if (既に公開中の場合) then (公開中の場合)
+  :何も保存しない;
+  note left: publishedAt は変えない
+else (公開中でない場合)
+  :状態を公開中にし、\npublishedAt を保存する;
+endif
 
 |プロフィール画面|
-:公開できたと表示する;
+:公開できたと表示する\n200 公開中;
 
 |利用者|
 :公開されたことを確認する;

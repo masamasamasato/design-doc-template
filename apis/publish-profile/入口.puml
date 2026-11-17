@@ -2,6 +2,7 @@
 skinparam shadowing false
 skinparam defaultFontName "Noto Sans CJK JP"
 skinparam SequenceFontName "Noto Sans CJK JP"
+skinparam NoteBackgroundColor #FFFFCC
 hide footbox
 
 title プロフィールを公開する
@@ -14,22 +15,25 @@ User -> Screen : 公開する
 Screen -> API : POST /profiles/{id}/publish\nセッションの Cookie を付ける
 API -> API : セッション検証\nrequireSession()
 alt セッションの Cookie が無い、または無効な場合
-  API --> Screen : 401 UNAUTHORIZED
+  API --> Screen : 401 UNAUTHORIZED\n何も保存しない
   Screen --> User : ログインが必要
 else セッションの Cookie が有効な場合
   API -> API : 持ち主・本人確認の検証\ncheckOwner()
   alt プロフィールが無い場合
-    API --> Screen : 404 NOT_FOUND
+    API --> Screen : 404 NOT_FOUND\n何も保存しない
     Screen --> User : プロフィールが無い
-  else 呼んだ人が持ち主でない場合
-    API --> Screen : 403 FORBIDDEN
+  else プロフィールがあり、セッションの利用者IDが持ち主と違う場合
+    API --> Screen : 403 FORBIDDEN\n何も保存しない
     Screen --> User : 公開できない
   else 持ち主だが、本人確認が済んでいない場合
-    API --> Screen : 403 NOT_VERIFIED
+    API --> Screen : 403 NOT_VERIFIED\n何も保存しない
     Screen --> User : 先に本人確認が必要
-  else 持ち主で、本人確認が済んでいる場合
-    API -> API : publish()
-    API --> Screen : 200 公開中
+  else 持ち主で、本人確認が済んでいて、既に公開中の場合
+    API --> Screen : 200 公開中\n何も保存しない。publishedAt は変えない
+    Screen --> User : 公開できた
+  else 持ち主で、本人確認が済んでいて、まだ公開中でない場合
+    API -> API : 公開中にする\npublish()
+    API --> Screen : 200 公開中\n状態と publishedAt を保存する
     Screen --> User : 公開できた
   end
 end
