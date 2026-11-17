@@ -185,7 +185,7 @@ PlantUML と Mermaid で足りる図は、draw.io にしません。
 </details>
 
 <details markdown>
-<summary>AI向け：新しいAPIを足す手順</summary>
+<summary>AI向け：新しいAPIと業務フローを足す手順</summary>
 
 `apis/_template` をコピーして、中身を埋めます。
 
@@ -198,6 +198,14 @@ cp -a apis/_template apis/予約を確定する
 記入例は [プロフィールを公開する](apis/publish-profile/README.md) です。本人確認が済んでいる人だけ、プロフィールを公開中にします。コードのパスは架空で、`src/services/profile.ts` です。
 
 ほかの記入例は、[ログインする](apis/login/README.md)、[ログアウトする](apis/logout/README.md)、[商品詳細を取得する](apis/get-product/README.md)、[商品一覧を取得する](apis/list-products/README.md)、[商品を検索する](apis/search-products/README.md) です。認証は `src/services/auth.ts`、商品は `src/services/product.ts` です。
+
+新しい業務フローを足すときは、既存のフォルダをコピーして、中身を書き換えます。
+
+```bash
+cp -a docs/business/プロフィールを公開する docs/business/予約を確定する
+```
+
+コピーした `変更履歴.md` は空の説明に戻します。`mkdocs.yml` の nav に、新しいフォルダの README と変更履歴を追加します。フォルダ名に `/` は使いません。パスが壊れるためです。
 
 </details>
 

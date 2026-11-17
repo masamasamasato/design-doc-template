@@ -19,8 +19,12 @@ else (いいえ)
     note right: SESで送る。送信に失敗してもログインは成功のまま
     :Cookie でセッションを返す;
   else (いいえ)
-    :失敗を返す\nINVALID_CREDENTIALS;
-    note right: 失敗回数はメールごとに数える。メールが無くても5回でロックする
+    if (連続失敗が5回目?) then (はい)
+      :失敗を返す\nACCOUNT_LOCKED;
+    else (いいえ)
+      :失敗を返す\nINVALID_CREDENTIALS;
+    endif
+    note right: 失敗回数はメールごとに数える。メールが無くても5回目は ACCOUNT_LOCKED
   endif
 endif
 stop
