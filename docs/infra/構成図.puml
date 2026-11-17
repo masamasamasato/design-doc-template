@@ -25,6 +25,7 @@
 !include <awslib/SecurityIdentityCompliance/WAF>
 !include <awslib/SecurityIdentityCompliance/SecretsManager>
 !include <awslib/BusinessApplications/SimpleEmailService>
+!include <awslib/ApplicationIntegration/SimpleNotificationService>
 
 skinparam shadowing false
 skinparam defaultFontName "Noto Sans CJK JP"
@@ -39,11 +40,11 @@ rectangle "GitHub Actions\nECRにイメージを置き\nECSへデプロイ" as g
 
 AWSCloudGroup(aws, "AWS クラウド") {
   Route53(dns, "Route 53\n例: www.example.com", "名前解決")
-  WAF(waf, "AWS WAF\n不正な要求を落とす", "Web ACL")
+  WAF(waf, "AWS WAF\nCloudFrontに付ける\n不正な要求を落とす", "Web ACL")
   CertificateManager(acm, "ACM\nCloudFrontとALBの証明書", "HTTPS")
   CloudFront(cf, "CloudFront\nHTTPSで配信\nOACでS3だけに繋ぐ", "CDN")
   SimpleStorageService(s3, "静的画面（S3）\nOAC経由のみ\n例: login.html", "S3")
-  ElasticContainerRegistry(ecr, "ECR\nAPIのコンテナイメージ", "レジストリ")
+  ElasticContainerRegistry(ecr, "ECR\nAPIのコンテナイメージ\nNAT経由で取得", "レジストリ")
 
   VPCGroup(vpc, "VPC") {
     PublicSubnetGroup(pub, "パブリックサブネット（2つのAZ）") {
@@ -76,14 +77,17 @@ AWSCloudGroup(aws, "AWS クラウド") {
 
   CloudWatchLogs(logs, "CloudWatch Logs\n両APIのログ\nパスワードは出さない", "ログ")
   CloudWatchAlarm(alarm, "CloudWatch Alarm\n例: 5xxが増えたら通知", "アラーム")
+  SimpleNotificationService(sns, "Amazon SNS\n開発者へメールやSlack", "通知")
   SimpleEmailService(ses, "SES\n例: ログイン通知メール", "メール")
 }
 
 user -down-> dns
 dns -down-> cf
-waf -down-> cf
+waf -[hidden]right- dns
+waf -down..> cf
 cf -left-> s3
-acm -left-> cf
+acm -left..> cf : 証明書
+acm -down..> alb : 証明書
 cf -down-> alb
 nat1 -[hidden]right- alb
 alb -[hidden]right- nat2
@@ -99,13 +103,14 @@ cachep -[hidden]right- rdsp
 cacher -[hidden]right- rdss
 j -right-> sm
 data -[hidden]right- sm
+j -right-> ses
 
 gha -[hidden]right- user
 gha -down-> ecr
 ecr -[hidden]right- vpc
 vpc -[hidden]right- logs
 logs -down-> alarm
-alarm -down-> ses
+alarm -down-> sns
 az1 -[hidden]right- az2
 
 @enduml
