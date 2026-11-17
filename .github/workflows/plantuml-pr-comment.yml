@@ -54,10 +54,10 @@ jobs:
           HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
         run: |
           set -euo pipefail
-          git diff --no-renames --name-only --diff-filter=ACMR "origin/${BASE_REF}...HEAD" -- '*.puml' '*.plantuml' \
+          git -c core.quotepath=false diff --no-renames --name-only --diff-filter=ACMR "origin/${BASE_REF}...HEAD" -- '*.puml' '*.plantuml' \
             > "$RUNNER_TEMP/changed-puml.txt" || true
           # 図を消しただけのPRにも、「消した図」のコメントを付ける
-          git diff --no-renames --name-only --diff-filter=D "origin/${BASE_REF}...HEAD" -- '*.puml' '*.plantuml' \
+          git -c core.quotepath=false diff --no-renames --name-only --diff-filter=D "origin/${BASE_REF}...HEAD" -- '*.puml' '*.plantuml' \
             > "$RUNNER_TEMP/deleted-puml.txt" || true
           if [[ ! -s "$RUNNER_TEMP/changed-puml.txt" && ! -s "$RUNNER_TEMP/deleted-puml.txt" ]]; then
             echo "changed=false" >> "$GITHUB_OUTPUT"

@@ -7,13 +7,16 @@ before="${1:-}"
 sha="${2:-HEAD}"
 filter="${3:-ACMR}"
 
+# 日本語などのパスを、引用符や八進エスケープ付きで出さない。
+GIT_PATHS=(git -c core.quotepath=false)
+
 paths_from_diff() {
   local base="$1"
-  git diff --name-only --diff-filter="$filter" "$base" "$sha" -- '*.puml' '*.plantuml'
+  "${GIT_PATHS[@]}" diff --name-only --diff-filter="$filter" "$base" "$sha" -- '*.puml' '*.plantuml'
 }
 
 paths_from_commit() {
-  git diff-tree --root --no-commit-id --name-only --diff-filter="$filter" -r "$sha" \
+  "${GIT_PATHS[@]}" diff-tree --root --no-commit-id --name-only --diff-filter="$filter" -r "$sha" \
     | awk '/\.puml$|\.plantuml$/'
 }
 

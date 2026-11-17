@@ -16,7 +16,7 @@ API_RE = re.compile(r"^apis/([^/]+)/")
 
 def changed_files(base: str, head: str) -> list[str]:
     result = subprocess.run(
-        ["git", "diff", "--name-only", f"{base}...{head}"],
+        ["git", "-c", "core.quotepath=false", "diff", "--name-only", f"{base}...{head}"],
         cwd=ROOT,
         check=True,
         text=True,

@@ -53,7 +53,7 @@ jobs:
         run: |
           set -euo pipefail
           ./scripts/render-changed.sh "$BEFORE" "$SHA" > "$RUNNER_TEMP/plantuml-svgs.txt"
-          status="$(git status --porcelain -uall -- '*.svg' '**/*.svg')"
+          status="$(git -c core.quotepath=false status --porcelain -uall -- '*.svg' '**/*.svg')"
           if [[ ! -s "$RUNNER_TEMP/plantuml-svgs.txt" && -z "$status" ]]; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "図の変更はありません"
@@ -85,7 +85,7 @@ jobs:
         if: steps.render.outputs.changed == 'true'
         run: |
           set -euo pipefail
-          mapfile -t paths < <(git status --porcelain -uall -- '*.svg' '**/*.svg' | cut -c4-)
+          mapfile -t paths < <(git -c core.quotepath=false status --porcelain -uall -- '*.svg' '**/*.svg' | cut -c4-)
           if ((${#paths[@]} > 0)); then
             git add -- "${paths[@]}"
           fi
