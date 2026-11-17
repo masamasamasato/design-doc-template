@@ -1,10 +1,35 @@
 # 設計書テンプレート
 
-人が読む設計書を、リポジトリで残すための型です。公開するときの名前は `design-doc-template` です。GitHub の Template repository として使います。
+人が読む設計書を、リポジトリで残すための型です。公開するときの名前は `design-doc-template` です。GitHub の Template repository として使います。人が書くのは深さ3までです。それより細かい処理は、AIがコードを読んで扱います。
 
-人が書くのは深さ3までです。それより細かい処理は、AIがコードを読んで扱います。
+## 使い始める
 
-## 深さのルール
+1. このリポジトリをテンプレートにして、新しいリポジトリを作ります。
+2. 業務フローは `docs/business/<業務>/` に、APIは `apis/_template` をコピーして書きます。
+3. 図は基本 Mermaid です。スイムレーンとインフラ構成は PlantUML にし、`./scripts/render-puml.sh` で SVG にします。
+4. 読み物サイトは `NO_MKDOCS_2_WARNING=1 mkdocs serve -a 127.0.0.1:8765` で見ます。
+5. PRタイトルは、何をどう変えたかを日本語で書きます。`fix` などの接頭辞は使いません。
+
+記入例は [ログインする](apis/login/README.md)、[ログインして商品を探す](docs/business/ログインして商品を探す/README.md)、[AWSのインフラ構成](docs/infra/index.md) です。決めた理由は [ADR 0000](decisions/0000-template.md) にあります。
+
+## フォルダ
+
+```text
+README.md              使い方
+用語集.md              APIをまたいで使う言葉
+docs/business/<業務>/  業務フロー
+docs/infra/            インフラ構成図
+apis/_template/        新しいAPIの型
+apis/<名前>/           APIの設計書
+decisions/             決めたことと、捨てた案
+```
+
+<details markdown>
+<summary>AI向け：書き方の決まり</summary>
+
+README は、人が読む最低限だけを開いてすぐ見えるところに書きます。命名規則、書き方のルール、やってはいけないこと、手順の詳細、チェックリスト、図の書き方の細則は、`<details>` に入れて閉じます。`summary` は `AI向け：` で始めます。GitHub では `summary` のあと空行が必要です。MkDocs では `<details markdown>` を使い、`md_in_html` を有効にします。
+
+**深さのルール**
 
 | 深さ | 何を書くか | 図 | 例 |
 | --- | --- | --- | --- |
@@ -18,7 +43,55 @@
 
 `if` の中の式や、SQLの1行は書きません。例として、確認済みかの判定そのものは `src/services/profile.ts` の `checkOwner()` を読めば足ります。
 
-## 図の使い分け
+**APIと処理詳細の書き方**
+
+APIの入口は `apis/<名前>/README.md` です。開いてすぐ見える部分は、何をするか1–2行、図、入力と結果、失敗するとき、関連リンクだけにします。
+
+処理詳細は、次の順で書きます。
+
+1. 前提用語
+2. 処理の概要
+3. 処理のイメージ
+4. 処理詳細
+5. 入力と結果
+6. 失敗するとき
+7. コード（ファイルパス）
+
+**フォルダ（詳細）**
+
+```text
+README.md                         使い方。詳細はAI向けの details
+用語集.md                         APIをまたいで使う言葉
+docs/business/<業務>/             業務フロー（README、flow.puml、変更履歴.md）
+docs/infra/                       記入例。AWSのインフラ構成図
+apis/_template/                   新しいAPIを作るときにコピーする型
+apis/publish-profile/             記入例。プロフィールを公開するAPI
+apis/login/                       記入例。ログインするAPI
+apis/logout/                      記入例。ログアウトするAPI
+apis/get-product/                 記入例。商品詳細を取得するAPI
+apis/list-products/               記入例。商品一覧を取得するAPI
+apis/search-products/             記入例。商品を検索するAPI
+decisions/                        決めたことと、捨てた案
+mkdocs.yml                        読み物サイトの設定
+mkdocs/docs/                      サイトが読む原稿へのリンク
+.github/workflows/                図の変換、公開、変更履歴
+.github/pull_request_template.md  PRの書き方
+.vscode/                          ローカルプレビューの設定
+scripts/                          ローカル変換と、履歴の追記
+```
+
+**やってはいけないこと**
+
+- 深さ3より細かいロジックを、設計書に写さない。
+- 図の中身を、PlantUML.com や Kroki に送らない。
+- PlantUML で URL を `!include` しない。アイコンは jar 同梱の `<awslib/...>` を使う。
+- PRタイトルを `fix` や `feat:` にしない。何をどう変えたかを日本語で書きます。例: `公開時に本人確認を追加`。
+- draw.io を変えたのに、変更前と変更後のスクリーンショットを貼らない。
+
+</details>
+
+<details markdown>
+<summary>AI向け：図の書き方</summary>
 
 基本は Mermaid です。スイムレーンと、インフラ構成のアイコンは PlantUML にします。
 
@@ -92,7 +165,7 @@ start
 :本人確認が済んでいるか確認する;
 ```
 
-### 構成図（PlantUML）の書き方
+**構成図（PlantUML）の書き方**
 
 インフラ構成図は PlantUML と awslib のアイコンで書きます。記入例は [AWSのインフラ構成](docs/infra/index.md) です。
 
@@ -100,7 +173,7 @@ start
 
 例です。箱は `ElastiCache プライマリ（1a）／セッションを置く`、付箋は `どのAPIでもログインが続く` です。NAT と ALB も、箱の中に役割を1行書きます。
 
-### draw.io を使うとき
+**draw.io を使うとき**
 
 draw.io の差分は、レビューで追いにくいです。使う場合は次の2つを守ります。
 
@@ -109,42 +182,10 @@ draw.io の差分は、レビューで追いにくいです。使う場合は次
 
 PlantUML と Mermaid で足りる図は、draw.io にしません。
 
-## フォルダ
+</details>
 
-```text
-README.md                         使い方、深さ、図の使い分けと書き方
-用語集.md                         APIをまたいで使う言葉
-docs/business/<業務>/             業務フロー（README、flow.puml、変更履歴.md）
-docs/infra/                       記入例。AWSのインフラ構成図
-apis/_template/                   新しいAPIを作るときにコピーする型
-apis/publish-profile/             記入例。プロフィールを公開するAPI
-apis/login/                       記入例。ログインするAPI
-apis/logout/                      記入例。ログアウトするAPI
-apis/get-product/                 記入例。商品詳細を取得するAPI
-apis/list-products/               記入例。商品一覧を取得するAPI
-apis/search-products/             記入例。商品を検索するAPI
-decisions/                        決めたことと、捨てた案
-mkdocs.yml                        読み物サイトの設定
-mkdocs/docs/                      サイトが読む原稿へのリンク
-.github/workflows/                図の変換、公開、変更履歴
-.github/pull_request_template.md  PRの書き方
-.vscode/                          ローカルプレビューの設定
-scripts/                          ローカル変換と、履歴の追記
-```
-
-APIの入口は `apis/<名前>/README.md` です。概要、入力と結果、失敗するとき、各文書へのリンクを書きます。
-
-処理詳細は、次の順で書きます。
-
-1. 前提用語
-2. 処理の概要
-3. 処理のイメージ
-4. 処理詳細
-5. 入力と結果
-6. 失敗するとき
-7. コード（ファイルパス）
-
-## 新しいAPIを追加する
+<details markdown>
+<summary>AI向け：新しいAPIと業務フローを足す手順</summary>
 
 `apis/_template` をコピーして、中身を埋めます。
 
@@ -158,11 +199,22 @@ cp -a apis/_template apis/予約を確定する
 
 ほかの記入例は、[ログインする](apis/login/README.md)、[ログアウトする](apis/logout/README.md)、[商品詳細を取得する](apis/get-product/README.md)、[商品一覧を取得する](apis/list-products/README.md)、[商品を検索する](apis/search-products/README.md) です。認証は `src/services/auth.ts`、商品は `src/services/product.ts` です。
 
-## ローカルプレビュー
+新しい業務フローを足すときは、既存のフォルダをコピーして、中身を書き換えます。
+
+```bash
+cp -a docs/business/プロフィールを公開する docs/business/予約を確定する
+```
+
+コピーした `変更履歴.md` は空の説明に戻します。`mkdocs.yml` の nav に、新しいフォルダの README と変更履歴を追加します。フォルダ名に `/` は使いません。パスが壊れるためです。
+
+</details>
+
+<details markdown>
+<summary>AI向け：図の変換とローカルプレビュー</summary>
 
 図の変換は、自分のマシンと GitHub Actions の中だけで行います。PlantUML.com や Kroki には、図の中身を送りません。
 
-### 1. 変換ツールを入れる
+**1. 変換ツールを入れる**
 
 Java と Graphviz が必要です。日本語の図には、Noto CJK フォントがあると字形が揃います。
 
@@ -191,7 +243,7 @@ SVGにするときは、次を実行します。
 
 `.svg` は `.puml` と同じ場所にできます。
 
-### 2. VS Code / Cursor で見る
+**2. VS Code / Cursor で見る**
 
 推奨拡張は `.vscode/extensions.json` に書いてあります。
 
@@ -207,7 +259,7 @@ SVGにするときは、次を実行します。
 
 Mermaid は、Markdown Preview Enhanced のプレビューにそのまま出ます。
 
-### 3. mkdocs serve で見る
+**3. mkdocs serve で見る**
 
 読み物サイトは MkDocs Material です。Mermaid と、PlantUML から作った SVG を表示します。検索は日本語です。
 
@@ -224,7 +276,10 @@ MkDocs は、設定ファイルのあるフォルダ自体を原稿フォルダ�
 
 Material for MkDocs は 2027-05-05 まで保守されます。起動時の案内は、上の環境変数で消せます。
 
-## 自動化
+</details>
+
+<details markdown>
+<summary>AI向け：自動化とGitHubの設定</summary>
 
 | いつ | 何をする |
 | --- | --- |
@@ -263,7 +318,7 @@ SVGのコミットメッセージには `[plantuml-svg]` が付きます。`GITH
 
 作業ブランチでは、サイトを公開しません。Pages へ出すのは `main` だけです。公開は、`main` への push か、手動実行で動きます。
 
-### 公開に必要な GitHub の設定
+**公開に必要な GitHub の設定**
 
 テンプレートからリポジトリを作ったあと、次を有効にします。
 
@@ -278,12 +333,4 @@ SVGのコミットメッセージには `[plantuml-svg]` が付きます。`GITH
 
 ブランチ保護で bot の push が拒否されるときは、`github-actions[bot]` の更新を許可します。
 
-## やってはいけないこと
-
-- 深さ3より細かいロジックを、設計書に写さない。
-- 図の中身を、PlantUML.com や Kroki に送らない。
-- PlantUML で URL を `!include` しない。アイコンは jar 同梱の `<awslib/...>` を使う。
-- PRタイトルを `fix` や `feat:` にしない。何をどう変えたかを日本語で書きます。例: `公開時に本人確認を追加`。
-- draw.io を変えたのに、変更前と変更後のスクリーンショットを貼らない。
-
-決めた理由と、捨てた案は [ADR 0000](decisions/0000-template.md) にあります。
+</details>
