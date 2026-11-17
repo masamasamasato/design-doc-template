@@ -56,6 +56,7 @@ nav:
   - はじめに: README.md
   - GitHub の設定: docs/setup.md
   - 用語集: 用語集.md
+  - 図の書き方の例: docs/examples/index.md
   - 業務フロー:
       - プロフィールを公開する:
           - 概要: docs/business/プロフィールを公開する/README.md
