@@ -6,7 +6,7 @@ hide footbox
 
 title （APIの名前）
 
-actor "ユーザー" as User
+actor "利用者" as User
 participant "（画面の名前）" as Screen
 participant "（APIの名前）" as API
 

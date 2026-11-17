@@ -1,13 +1,13 @@
 # 設計書テンプレート
 
-人が読む設計書を、リポジトリで残すための型です。公開するときの名前は `design-doc-template` です。GitHub の Template repository として使います。人が書くのは深さ3までです。それより細かい処理は、AIがコードを読んで扱います。
+人が読む設計書を、リポジトリに残す型です。リポジトリ名は `design-doc-template` です。GitHub の Template repository として使います。人が書くのは深さ3までです。それより細かい処理は、AIがコードを読んで扱います。
 
 ## 使い始める
 
 1. このリポジトリをテンプレートにして、新しいリポジトリを作ります。
 2. 業務フローは `docs/business/<業務>/` に、APIは `apis/_template` をコピーして書きます。
 3. 図は PlantUML だけです。Mermaid は使いません。`./scripts/render-puml.sh` で SVG にします。
-4. 読み物サイトは `NO_MKDOCS_2_WARNING=1 mkdocs serve -a 127.0.0.1:8765` で見ます。
+4. サイトは `NO_MKDOCS_2_WARNING=1 mkdocs serve -a 127.0.0.1:8765` で見ます。
 5. PRタイトルは、何をどう変えたかを日本語で書きます。`fix` などの接頭辞は使いません。
 
 [GitHub の設定](docs/setup.md)
@@ -37,15 +37,15 @@ README は、人が読む最低限だけを開いてすぐ見えるところに�
 
 | 深さ | 何を書くか | 図 | 例 |
 | --- | --- | --- | --- |
-| 1 業務 | 誰が何を渡し、仕事がどこまで進むか | PlantUML のスイムレーン | 利用者が公開を依頼し、APIが公開中にする |
+| 1 業務 | 誰が何を渡し、仕事がどこまで進むか | PlantUML のスイムレーン | 利用者が公開し、APIが公開中にする |
 | 2 機能 | 画面とAPIのつながり | PlantUML のシーケンス図 | 画面が `POST /profiles/{id}/publish` を呼ぶ |
-| 3 サービスメソッド | 1つの目的を持つ処理と、メソッド名 | `flow.puml` のアクティビティ図 | `checkOwner()` で本人確認を見る |
+| 3 サービスメソッド | 1つの目的を持つ処理と、メソッド名 | `flow.puml` のアクティビティ図 | `checkOwner()` で本人確認する |
 
 深さ3の文は、次の形にします。
 
 > 公開中にする処理。見ている人にプロフィールを見せるのが目的。対応メソッドは `publish()`。
 
-`if` の中の式や、SQLの1行は書きません。例として、確認済みかの判定そのものは `src/services/profile.ts` の `checkOwner()` を読めば足ります。
+`if` の中の式や、SQLの1行は書きません。確認済みかどうかは、`src/services/profile.ts` の `checkOwner()` を読めば足ります。
 
 **APIと処理詳細の書き方**
 
@@ -78,7 +78,7 @@ apis/get-product/                 記入例。商品詳細を取得するAPI
 apis/list-products/               記入例。商品一覧を取得するAPI
 apis/search-products/             記入例。商品を検索するAPI
 decisions/                        決めたことと、捨てた案
-mkdocs.yml                        読み物サイトの設定
+mkdocs.yml                        サイトの設定
 mkdocs/docs/                      サイトが読む原稿へのリンク
 .github/workflows/                図の変換、公開、変更履歴
 .github/pull_request_template.md  PRの書き方
@@ -106,39 +106,39 @@ scripts/                          ローカル変換と、履歴の追記
 | --- | --- | --- |
 | 業務フロー | PlantUML のスイムレーン | [プロフィールを公開する](docs/business/プロフィールを公開する/README.md) |
 | インフラ構成 | PlantUML（awslib のアイコン） | [AWSのインフラ構成](docs/infra/index.md) |
-| 処理の順番 | PlantUML のシーケンス図 | [公開APIの入口](apis/publish-profile/README.md) |
+| 処理の順番 | PlantUML のシーケンス図 | [プロフィール公開API](apis/publish-profile/README.md) |
 | 分かれ道 | PlantUML のアクティビティ図 | この下の図 |
 | データ | PlantUML の ER 図 | この下の図 |
 | 状態 | PlantUML の状態図 | この下の図 |
 
-処理の順番の例です。画面がAPIを呼び、本人確認のあとで公開します。
+画面がAPIを呼び、本人確認のあとで公開する例です。
 
 ![処理の順番の例](docs/examples/処理の順番.svg)
 
-ソースは [処理の順番.puml](docs/examples/処理の順番.puml) です。
+ソース: [処理の順番.puml](docs/examples/処理の順番.puml)
 
-分かれ道の例です。確認済みの人だけ公開中にします。
+確認済みの人だけ公開中にする例です。
 
 ![分かれ道の例](docs/examples/分かれ道.svg)
 
-ソースは [分かれ道.puml](docs/examples/分かれ道.puml) です。
+ソース: [分かれ道.puml](docs/examples/分かれ道.puml)
 
-データの例です。利用者はプロフィールを複数持てます。
+利用者がプロフィールを複数持てる例です。
 
 ![データの例](docs/examples/データ.svg)
 
-ソースは [データ.puml](docs/examples/データ.puml) です。
+ソース: [データ.puml](docs/examples/データ.puml)
 
-状態の例です。下書きから、確認済みの公開で公開中になります。
+本人確認済みで公開すると、下書きから公開中になる例です。
 
 ![状態の例](docs/examples/状態.svg)
 
-ソースは [状態.puml](docs/examples/状態.puml) です。
+ソース: [状態.puml](docs/examples/状態.puml)
 
 スイムレーンの書き方は次のとおりです。全文は [業務フロー](docs/business/プロフィールを公開する/flow.puml) にあります。
 
 ```plantuml
-|ユーザー|
+|利用者|
 start
 :公開するボタンを押す;
 |プロフィールAPI|
@@ -192,7 +192,7 @@ cp -a docs/business/プロフィールを公開する docs/business/予約を確
 <details markdown>
 <summary>AI向け：図の変換とローカルプレビュー</summary>
 
-図の変換は、自分のマシンと GitHub Actions の中だけで行います。PlantUML.com や Kroki には、図の中身を送りません。
+図は、自分のマシンと GitHub Actions の中だけで変換します。PlantUML.com や Kroki には、図の中身を送りません。
 
 **1. 変換ツールを入れる**
 
@@ -221,7 +221,7 @@ SVGにするときは、次を実行します。
 ./scripts/render-puml.sh docs/business/プロフィールを公開する/flow.puml
 ```
 
-`.svg` は `.puml` と同じ場所にできます。
+`.svg` は `.puml` と同じ場所に置きます。
 
 **2. VS Code / Cursor で見る**
 
@@ -235,11 +235,11 @@ SVGにするときは、次を実行します。
 - `plantuml.render` は `Local`、`plantuml.server` は空です。`.puml` を開いて `Alt+D`（Mac は `Option+D`）でプレビューします。
 - Markdown Preview Enhanced の `plantumlServer` も空です。空のときだけ、`tools/plantuml.jar` を使います。ここに URL を書くと、図の中身がそのサーバーへ送られます。
 - jar が見つからないときは、`markdown-preview-enhanced.plantumlJarPath` を `tools/plantuml.jar` の絶対パスに変えます。`scripts/install-plantuml.sh` が絶対パスを表示します。
-- Kroki と WebSequenceDiagrams の送信先は `127.0.0.1:9` にしてあります。この2つの記法は使わないでください。
+- Kroki と WebSequenceDiagrams の送信先は `127.0.0.1:9` にしてあります。この2つの記法は使いません。
 
 **3. mkdocs serve で見る**
 
-読み物サイトは MkDocs Material です。PlantUML から作った SVG を表示します。検索は日本語です。
+サイトは MkDocs Material です。PlantUML から作った SVG を表示します。検索は日本語です。
 
 ```bash
 python3 -m venv .venv
@@ -250,7 +250,7 @@ NO_MKDOCS_2_WARNING=1 mkdocs serve -a 127.0.0.1:8765
 
 ブラウザで <http://127.0.0.1:8765> を開きます。`NO_MKDOCS_2_WARNING=1 mkdocs build --strict` で、リンク切れも確認できます。結果は `site/` に出ます。
 
-MkDocs は、設定ファイルのあるフォルダ自体を原稿フォルダにできません。そのため `mkdocs/docs` から、このリポジトリの原稿へリンクしています。リンクが無いときは `./scripts/prepare-docs.sh` を実行します。Windows でリンクが実体にならないときは、同じスクリプトを実行します。
+MkDocs は、設定ファイルのあるフォルダ自体を原稿フォルダにできません。そのため `mkdocs/docs` から、このリポジトリの原稿へリンクしています。リンクが無いときや、Windows でリンクが実体にならないときは、`./scripts/prepare-docs.sh` を実行します。
 
 Material for MkDocs は 2027-05-05 まで保守されます。起動時の案内は、上の環境変数で消せます。
 
@@ -276,7 +276,7 @@ PRコメントの赤い図は、`scripts/highlight-puml-diff.py` が作ります
 | ノート `note right: …`、`note … end note` | ノートを薄い赤にする |
 | 矢印 `-> ラベル;`、`A -> B : メッセージ` | 線とラベルを赤くする |
 | 要素の宣言 `participant` `class` `component` など | 背景を薄い赤にする。クラスの中の行を変えたときは、クラスごと赤くする |
-| `else` `endif` `start` `stop` スイムレーン `skinparam` `title` など | 色を付けない。コメントの「色を付けられなかった変更」に出す |
+| `else` `endif` `start` `stop` スイムレーン `skinparam` `title` など | 色を付けない。コメントの「色は付けていませんが、図の形には入っています」に出す |
 
 - 消した行は図に出せないため、「消したもの」として図の下に並べます。変えた行は「変えたもの（前 → 後）」にも出ます。
 - 並べ替えただけの行（同じ文が比較元にも PR にもある行）は、足した・変えた・消したにしません。
@@ -284,7 +284,7 @@ PRコメントの赤い図は、`scripts/highlight-puml-diff.py` が作ります
 - 図を消しただけの PR にも、「消した図」のコメントを付けます。
 - `#pink :処理;` のような古い書き方の色は、赤くするときに外します。
 - 色を付けると変換できない図は、警告を出して、ふだんの色で載せます。
-- アーティファクトの PNG も、赤くした図です。
+- Actions の成果物 PNG も、赤くした図です。
 
 SVGのコミットメッセージには `[plantuml-svg]` が付きます。`GITHUB_TOKEN` による push は、次の workflow を起動しません。図の変換が無限に繰り返されないためです。
 

@@ -96,7 +96,7 @@ def diff_lines(info: dict, attach: bool, failed: bool) -> list[str]:
         lines.append("")
     uncolored = info.get("uncolored") or []
     if uncolored and attach and not failed:
-        lines.extend(["**色を付けられなかった変更**（図には反映済み）", ""])
+        lines.extend(["**色は付けていませんが、図の形には入っています**", ""])
         lines.extend(bullets([code(u) for u in uncolored]))
         lines.append("")
     return lines

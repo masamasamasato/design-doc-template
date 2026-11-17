@@ -6,7 +6,7 @@ hide footbox
 
 title プロフィールを公開する
 
-actor "ユーザー" as User
+actor "利用者" as User
 participant "プロフィール画面" as Screen
 participant "プロフィールAPI" as API
 

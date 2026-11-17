@@ -6,7 +6,7 @@ hide footbox
 
 title 商品一覧を取得する
 
-actor "ユーザー" as User
+actor "利用者" as User
 participant "商品画面" as Screen
 participant "商品API" as API
 
@@ -16,7 +16,7 @@ API -> API : requireSession()
 alt ログインしていて、ページ分けが正しい
   API -> API : listProducts()
   API --> Screen : 200 一覧
-  Screen --> User : 一覧を見られた
+  Screen --> User : 一覧が見えた
 else ログインしていない
   API --> Screen : 401 UNAUTHORIZED
   Screen --> User : ログインが必要

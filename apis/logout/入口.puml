@@ -6,7 +6,7 @@ hide footbox
 
 title ログアウトする
 
-actor "ユーザー" as User
+actor "利用者" as User
 participant "設定画面" as Screen
 participant "認証API" as API
 

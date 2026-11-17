@@ -6,7 +6,7 @@ hide footbox
 
 title 処理の順番の例
 
-actor "ユーザー" as User
+actor "利用者" as User
 participant "プロフィール画面" as Screen
 participant "プロフィールAPI" as API
 

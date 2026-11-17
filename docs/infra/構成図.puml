@@ -38,7 +38,7 @@ hide stereotype
 title AWSインフラ構成（ログインと商品API）
 
 together {
-  rectangle "イメージを押し、\nECSを更新する" as n_gha #FFFFCC
+  rectangle "イメージを push し、\nECSを更新する" as n_gha #FFFFCC
   rectangle "GitHub Actions\nECRへデプロイ" as gha
 }
 Users(user, "利用者\nブラウザから操作する", "ブラウザ")
@@ -56,7 +56,7 @@ AWSCloudGroup(aws, "AWS クラウド") {
   CloudFront(cf, "CloudFront\nHTTPSで配信する", "CDN")
   rectangle "OACでS3だけに繋ぐ" as n_cf #FFFFCC
   together {
-    CertificateManager(acm, "ACM\nHTTPSの証明書を出す", "HTTPS")
+    CertificateManager(acm, "ACM\nHTTPSの証明書を発行する", "HTTPS")
     rectangle "CloudFrontとALBに付ける" as n_acm #FFFFCC
   }
 
@@ -123,7 +123,7 @@ AWSCloudGroup(aws, "AWS クラウド") {
         rectangle "例: hana@example.com" as n_rds #FFFFCC
       }
       ElastiCache(cacher, "ElastiCache レプリカ（1c）\n障害時の読み取り先", "Redis")
-      RDS(rdss, "RDS スタンバイ（1c）\n故障時に昇格する", "マルチAZ")
+      RDS(rdss, "RDS スタンバイ（1c）\n障害時に昇格する", "マルチAZ")
     }
   }
 }

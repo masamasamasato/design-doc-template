@@ -7,12 +7,12 @@ skinparam ActivityFontName "Noto Sans CJK JP"
 
 title プロフィールを公開する
 
-|ユーザー|
+|利用者|
 start
 :公開するボタンを押す;
 
 |プロフィール画面|
-:公開APIを呼ぶ;
+:プロフィール公開APIを呼ぶ;
 
 |プロフィールAPI|
 if (本人確認は済みか?) then (済み)
@@ -24,7 +24,7 @@ endif
 |プロフィール画面|
 :結果を表示する;
 
-|ユーザー|
+|利用者|
 :結果を確認する;
 stop
 @enduml
