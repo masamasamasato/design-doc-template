@@ -13,6 +13,7 @@ on:
       - ".github/workflows/plantuml-pr-comment.yml"
       - "scripts/format-plantuml-comment.py"
       - "scripts/post-plantuml-comment.sh"
+      - "scripts/highlight-puml-diff.py"
 
 permissions:
   contents: read
@@ -92,16 +93,39 @@ jobs:
           done < "$RUNNER_TEMP/changed-puml.txt"
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
-      - name: 変わった図をローカルでSVGにする
+      - name: 変わった図をローカルでSVGにする（PRで足した・変えた部分を赤くする）
         if: steps.list.outputs.changed == 'true'
+        env:
+          BASE_REF: ${{ github.base_ref }}
         run: |
           set -euo pipefail
           # リポジトリのSVGは、botの更新前だと古いことがある。
           # コメントには、いまの .puml から作り直したSVGを載せる。
+          # このジョブは push しない。色付きの .puml と SVG は、このランナーの中だけで使う。
           mapfile -t changed < "$RUNNER_TEMP/changed-puml.txt"
-          if ((${#changed[@]} > 0)); then
-            ./scripts/render-puml.sh "${changed[@]}"
+          : > "$RUNNER_TEMP/highlight-failed.txt"
+          if ((${#changed[@]} == 0)); then
+            exit 0
           fi
+          base="$(git merge-base "origin/${BASE_REF}" HEAD)"
+          if ! python3 scripts/highlight-puml-diff.py \
+            --base "$base" \
+            --summary "$RUNNER_TEMP/plantuml-diff.json" \
+            "${changed[@]}"; then
+            echo "::warning::差分の色付けに失敗したため、図はふだんの色で載せます"
+            git checkout -- "${changed[@]}"
+            rm -f "$RUNNER_TEMP/plantuml-diff.json"
+          fi
+          for puml in "${changed[@]}"; do
+            if ! ./scripts/render-puml.sh "$puml"; then
+              # 色を付けた形で変換できないときは、元の .puml で作り直す。
+              # 元の .puml でも失敗するなら、ここで赤くなる。
+              echo "::warning::${puml} は色を付けると変換できないため、ふだんの色で載せます"
+              git checkout -- "$puml"
+              printf '%s\n' "$puml" >> "$RUNNER_TEMP/highlight-failed.txt"
+              ./scripts/render-puml.sh "$puml"
+            fi
+          done
           : > "$RUNNER_TEMP/plantuml-svgs.txt"
           while IFS= read -r puml; do
             [[ -z "$puml" ]] && continue
@@ -130,6 +154,8 @@ jobs:
           FILE_LIST: ${{ runner.temp }}/plantuml-svgs.txt
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
+          DIFF_SUMMARY: ${{ runner.temp }}/plantuml-diff.json
+          HIGHLIGHT_FAILED: ${{ runner.temp }}/highlight-failed.txt
           # 画像の添付には個人トークン（PREVIEW_TOKEN）が要る。
           # 無い・期限切れ・権限不足のときは、自動トークンでリンク形式のコメントを書く。
           PREVIEW_TOKEN: ${{ secrets.PREVIEW_TOKEN }}
