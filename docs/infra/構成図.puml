@@ -1,7 +1,8 @@
 ' インフラ構成の記入例。ログインと商品APIを動かす想定。
 ' 変換はローカルの plantuml.jar と Graphviz。図の中身は外部へ送らない。
 ' アイコンは jar 同梱の awslib（AWS Icons for PlantUML）を使う。
-' 補足は黄色い付箋（rectangle）にし、対象と同じ枠の内側に置く。
+' 補足は黄色い付箋を、対象の箱の真横（または真下）に短い点線でつなぐ。
+' 付箋は対象と同じ枠の内側に置く。
 @startuml
 !include <awslib/AWSCommon>
 !include <awslib/Groups/AWSCloud>
@@ -37,38 +38,47 @@ hide stereotype
 title AWSインフラ構成（ログインと商品API）
 
 together {
-  rectangle "GitHub Actions" as gha
   rectangle "ECRにイメージを置き、\nECSへデプロイ" as n_gha #FFFFCC
+  rectangle "GitHub Actions" as gha
 }
 Users(user, "利用者", "ブラウザ")
 
 AWSCloudGroup(aws, "AWS クラウド") {
-  together {
-    rectangle "CloudFrontに付ける。\n不正な要求を落とす" as n_waf #FFFFCC
-    WAF(waf, "AWS WAF", "Web ACL")
-  }
   Route53(dns, "Route 53", "名前解決")
+  together {
+    WAF(waf, "AWS WAF", "Web ACL")
+    rectangle "CloudFrontに付ける。\n不正な要求を落とす" as n_waf #FFFFCC
+  }
 
-  together {
-    rectangle "OAC経由のみ。\n例: login.html" as n_s3 #FFFFCC
-    SimpleStorageService(s3, "静的画面", "S3")
-  }
-  together {
-    CloudFront(cf, "CloudFront", "CDN")
-    rectangle "HTTPSで配信する。\nOACでS3だけに繋ぐ" as n_cf #FFFFCC
-  }
+  SimpleStorageService(s3, "静的画面", "S3")
+  rectangle "OAC経由のみ。\n例: login.html" as n_s3 #FFFFCC
+  CloudFront(cf, "CloudFront", "CDN")
+  rectangle "HTTPSで配信する。\nOACでS3だけに繋ぐ" as n_cf #FFFFCC
   together {
     CertificateManager(acm, "ACM", "HTTPS")
     rectangle "CloudFrontとALBの\nHTTPS証明書" as n_acm #FFFFCC
   }
 
   together {
+    rectangle "APIのイメージを置く。\nNAT経由で取得" as n_ecr #FFFFCC
+    ElasticContainerRegistry(ecr, "ECR", "レジストリ")
+  }
+  together {
     rectangle "両APIのログを集める。\nパスワードは出さない" as n_logs #FFFFCC
     CloudWatchLogs(logs, "CloudWatch Logs", "ログ")
   }
+  CloudWatchAlarm(alarm, "CloudWatch Alarm", "アラーム")
   together {
-    ElasticContainerRegistry(ecr, "ECR", "レジストリ")
-    rectangle "APIのイメージを置く。\nNAT経由で取得" as n_ecr #FFFFCC
+    rectangle "5xxが増えたら、\n開発者へメールやSlack" as n_sns #FFFFCC
+    SimpleNotificationService(sns, "Amazon SNS", "通知")
+  }
+  together {
+    rectangle "例: ログイン通知メール" as n_ses #FFFFCC
+    SimpleEmailService(ses, "SES", "メール")
+  }
+  together {
+    rectangle "DBパスワード。\nログには出さない" as n_sm #FFFFCC
+    SecretsManager(sm, "Secrets Manager", "機密")
   }
 
   VPCGroup(vpc, "VPC") {
@@ -109,28 +119,20 @@ AWSCloudGroup(aws, "AWS クラウド") {
       ElastiCache(cacher, "ElastiCache レプリカ", "Redis")
       RDS(rdss, "RDS スタンバイ", "マルチAZ")
     }
-    together {
-      SecretsManager(sm, "Secrets Manager", "機密")
-      rectangle "DBパスワード。\nログには出さない" as n_sm #FFFFCC
-    }
-  }
-
-  CloudWatchAlarm(alarm, "CloudWatch Alarm", "アラーム")
-  together {
-    SimpleNotificationService(sns, "Amazon SNS", "通知")
-    rectangle "5xxが増えたら、\n開発者へメールやSlack" as n_sns #FFFFCC
-  }
-  together {
-    SimpleEmailService(ses, "SES", "メール")
-    rectangle "例: ログイン通知メール" as n_ses #FFFFCC
   }
 }
 
+' ---- 通信の流れ ----
 user -down-> dns
 dns -down-> cf
-waf -[hidden]right- dns
+dns -[hidden]right- waf
+waf -[dotted]right- n_waf
 waf -down..> cf
 cf -left-> s3
+s3 -[dotted]down- n_s3
+cf -[dotted]down- n_cf
+n_s3 -[hidden]right- n_cf
+acm -[dotted]right- n_acm
 acm -left..> cf : 証明書
 acm -down..> alb : 証明書
 cf -down-> alb
@@ -138,37 +140,35 @@ nat1 -[hidden]right- alb
 alb -[hidden]right- nat2
 alb -down-> ecs1
 alb -down-> ecs2
+ecs1 -[dotted]right- n_ecs1
+n_ecs2 -[dotted]right- ecs2
 ecs1 -down-> j
 ecs2 -down-> j
 j -down-> cachep
 j -down-> rdsp
 cachep -down-> cacher
 rdsp -down-> rdss
+n_cache -[dotted]right- cachep
+rdsp -[dotted]right- n_rds
 cachep -[hidden]right- rdsp
 cacher -[hidden]right- rdss
-n_cache -[hidden]right- cachep
-rdsp -[hidden]right- n_rds
-j -right-> sm
-data -[hidden]right- sm
 j -right-> ses
+j -right-> sm
+ses -[hidden]down- sm
+az1 -[hidden]right- az2
+
+' ---- 左列（AWSクラウド内・VPC外）とデプロイ ----
 gha -[hidden]right- user
+n_gha -[dotted]right- gha
 gha -down-> ecr
-n_gha -[hidden]right- gha
-n_waf -[hidden]right- waf
-s3 -[hidden]down- n_s3
-cf -[hidden]down- n_cf
-acm -[hidden]right- n_acm
-n_logs -[hidden]right- logs
-ecr -[hidden]right- n_ecr
-ecr -[hidden]right- vpc
-vpc -[hidden]right- logs
+n_ecr -[dotted]right- ecr
+n_logs -[dotted]right- logs
+n_sns -[dotted]right- sns
+n_ses -[dotted]right- ses
+n_sm -[dotted]right- sm
+ecr -[hidden]down- logs
 logs -down-> alarm
 alarm -down-> sns
-sns -[hidden]down- n_sns
-ses -[hidden]right- n_ses
-ecs1 -[hidden]right- n_ecs1
-n_ecs2 -[hidden]right- ecs2
-sm -[hidden]down- n_sm
-az1 -[hidden]right- az2
+ecr -[hidden]right- vpc
 
 @enduml
