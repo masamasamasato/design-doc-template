@@ -1,8 +1,8 @@
 ' インフラ構成の記入例。ログインと商品APIを動かす想定。
 ' 変換はローカルの plantuml.jar と Graphviz。図の中身は外部へ送らない。
 ' アイコンは jar 同梱の awslib（AWS Icons for PlantUML）を使う。
-' 補足は黄色い付箋を、対象の箱の真横（または真下）に短い点線でつなぐ。
-' 付箋は対象と同じ枠の内側に置く。
+' 箱には名前と役割を書く。詳しい補足と具体例は黄色い付箋に書き、
+' 対象の箱の真横（または真下）に短い点線でつなぐ。付箋は同じ枠の内側に置く。
 @startuml
 !include <awslib/AWSCommon>
 !include <awslib/Groups/AWSCloud>
@@ -38,69 +38,75 @@ hide stereotype
 title AWSインフラ構成（ログインと商品API）
 
 together {
-  rectangle "ECRにイメージを置き、\nECSへデプロイ" as n_gha #FFFFCC
-  rectangle "GitHub Actions" as gha
+  rectangle "イメージを押し、\nECSを更新する" as n_gha #FFFFCC
+  rectangle "GitHub Actions\nECRへデプロイ" as gha
 }
-Users(user, "利用者", "ブラウザ")
+Users(user, "利用者\nブラウザから操作する", "ブラウザ")
 
 AWSCloudGroup(aws, "AWS クラウド") {
-  Route53(dns, "Route 53", "名前解決")
+  Route53(dns, "Route 53\n名前を解決する", "DNS")
+  rectangle "例: www.example.com" as n_dns #FFFFCC
   together {
-    WAF(waf, "AWS WAF", "Web ACL")
-    rectangle "CloudFrontに付ける。\n不正な要求を落とす" as n_waf #FFFFCC
+    WAF(waf, "AWS WAF\n不正な要求を落とす", "Web ACL")
+    rectangle "CloudFrontに付ける" as n_waf #FFFFCC
   }
 
-  SimpleStorageService(s3, "静的画面", "S3")
+  SimpleStorageService(s3, "静的画面\n画面ファイルを置く", "S3")
   rectangle "OAC経由のみ。\n例: login.html" as n_s3 #FFFFCC
-  CloudFront(cf, "CloudFront", "CDN")
-  rectangle "HTTPSで配信する。\nOACでS3だけに繋ぐ" as n_cf #FFFFCC
+  CloudFront(cf, "CloudFront\nHTTPSで配信する", "CDN")
+  rectangle "OACでS3だけに繋ぐ" as n_cf #FFFFCC
   together {
-    CertificateManager(acm, "ACM", "HTTPS")
-    rectangle "CloudFrontとALBの\nHTTPS証明書" as n_acm #FFFFCC
+    CertificateManager(acm, "ACM\nHTTPSの証明書を出す", "HTTPS")
+    rectangle "CloudFrontとALBに付ける" as n_acm #FFFFCC
   }
 
   together {
-    rectangle "APIのイメージを置く。\nNAT経由で取得" as n_ecr #FFFFCC
-    ElasticContainerRegistry(ecr, "ECR", "レジストリ")
+    rectangle "NAT経由で取得する" as n_ecr #FFFFCC
+    ElasticContainerRegistry(ecr, "ECR\nAPIのイメージを置く", "レジストリ")
   }
   together {
-    rectangle "両APIのログを集める。\nパスワードは出さない" as n_logs #FFFFCC
-    CloudWatchLogs(logs, "CloudWatch Logs", "ログ")
+    rectangle "パスワードは出さない" as n_logs #FFFFCC
+    CloudWatchLogs(logs, "CloudWatch Logs\n両APIのログを集める", "ログ")
   }
-  CloudWatchAlarm(alarm, "CloudWatch Alarm", "アラーム")
+  CloudWatchAlarm(alarm, "CloudWatch Alarm\n障害を知らせる", "アラーム")
   together {
-    rectangle "5xxが増えたら、\n開発者へメールやSlack" as n_sns #FFFFCC
-    SimpleNotificationService(sns, "Amazon SNS", "通知")
-  }
-  together {
-    rectangle "例: ログイン通知メール" as n_ses #FFFFCC
-    SimpleEmailService(ses, "SES", "メール")
+    rectangle "例: 5xxが増えたら、\n開発者へメールやSlack" as n_sns #FFFFCC
+    SimpleNotificationService(sns, "Amazon SNS\nアラームの通知先", "通知")
   }
   together {
-    rectangle "DBパスワード。\nログには出さない" as n_sm #FFFFCC
-    SecretsManager(sm, "Secrets Manager", "機密")
+    rectangle "NAT経由。送信失敗でも\nログインは成功のまま" as n_ses #FFFFCC
+    SimpleEmailService(ses, "SES\nログイン通知メールを送る", "メール")
+  }
+  together {
+    rectangle "NAT経由。ログには出さない" as n_sm #FFFFCC
+    SecretsManager(sm, "Secrets Manager\nDBパスワードを置く", "機密")
   }
 
   VPCGroup(vpc, "VPC") {
-    PublicSubnetGroup(pub, "パブリックサブネット（2つのAZ）") {
-      VPCNATGateway(nat1, "NAT Gateway（1a）", "NAT")
-      ElasticLoadBalancingApplicationLoadBalancer(alb, "ALB", "負荷分散")
-      VPCNATGateway(nat2, "NAT Gateway（1c）", "NAT")
+    together {
+      ElasticLoadBalancingApplicationLoadBalancer(alb, "ALB\n2つのAZのAPIへ振り分ける", "負荷分散")
+      rectangle "2つのAZのパブリック\nサブネットにまたがる" as n_alb #FFFFCC
     }
 
     AvailabilityZoneGroup(az1, "AZ ap-northeast-1a") {
+      PublicSubnetGroup(pub1, "パブリックサブネット") {
+        VPCNATGateway(nat1, "NAT Gateway\nこのAZのAPIの出口", "1a")
+      }
       PrivateSubnetGroup(pri1, "プライベートサブネット") {
         together {
-          ElasticContainerService(ecs1, "APIサービス", "ECS Fargate")
+          ElasticContainerService(ecs1, "APIサービス\nログインと商品のAPI", "ECS Fargate")
           rectangle "例: POST /sessions" as n_ecs1 #FFFFCC
         }
       }
     }
     AvailabilityZoneGroup(az2, "AZ ap-northeast-1c") {
+      PublicSubnetGroup(pub2, "パブリックサブネット") {
+        VPCNATGateway(nat2, "NAT Gateway\nこのAZのAPIの出口", "1c")
+      }
       PrivateSubnetGroup(pri2, "プライベートサブネット") {
         together {
           rectangle "例: GET /products/search" as n_ecs2 #FFFFCC
-          ElasticContainerService(ecs2, "APIサービス", "ECS Fargate")
+          ElasticContainerService(ecs2, "APIサービス\nログインと商品のAPI", "ECS Fargate")
         }
       }
     }
@@ -109,15 +115,15 @@ AWSCloudGroup(aws, "AWS クラウド") {
 
     GenericGroup(data, "データ（マルチAZ）") {
       together {
-        rectangle "セッションを置く。\nどのAPIでもログインが続く" as n_cache #FFFFCC
-        ElastiCache(cachep, "ElastiCache プライマリ", "Redis")
+        rectangle "どのAPIでもログインが続く" as n_cache #FFFFCC
+        ElastiCache(cachep, "ElastiCache プライマリ（1a）\nセッションを置く", "Redis")
       }
       together {
-        RDS(rdsp, "RDS プライマリ", "商品・利用者")
-        rectangle "例: hana@example.com。\nスタンバイは故障時に昇格" as n_rds #FFFFCC
+        RDS(rdsp, "RDS プライマリ（1a）\n商品・利用者を置く", "DB")
+        rectangle "例: hana@example.com" as n_rds #FFFFCC
       }
-      ElastiCache(cacher, "ElastiCache レプリカ", "Redis")
-      RDS(rdss, "RDS スタンバイ", "マルチAZ")
+      ElastiCache(cacher, "ElastiCache レプリカ（1c）\n障害時の読み取り先", "Redis")
+      RDS(rdss, "RDS スタンバイ（1c）\n故障時に昇格する", "マルチAZ")
     }
   }
 }
@@ -125,6 +131,7 @@ AWSCloudGroup(aws, "AWS クラウド") {
 ' ---- 通信の流れ ----
 user -down-> dns
 dns -down-> cf
+dns -[dotted]down- n_dns
 dns -[hidden]right- waf
 waf -[dotted]right- n_waf
 waf -down..> cf
@@ -136,8 +143,13 @@ acm -[dotted]right- n_acm
 acm -left..> cf : 証明書
 acm -down..> alb : 証明書
 cf -down-> alb
-nat1 -[hidden]right- alb
-alb -[hidden]right- nat2
+alb -[dotted]right- n_alb
+nat1 -[hidden]down- ecs1
+nat2 -[hidden]down- ecs2
+alb -[hidden]down- az1
+alb -[hidden]down- az2
+az1 -[hidden]right- az2
+nat1 -[hidden]right- nat2
 alb -down-> ecs1
 alb -down-> ecs2
 ecs1 -[dotted]right- n_ecs1
@@ -152,8 +164,8 @@ n_cache -[dotted]right- cachep
 rdsp -[dotted]right- n_rds
 cachep -[hidden]right- rdsp
 cacher -[hidden]right- rdss
-j -right-> ses
-j -right-> sm
+j -right-> ses : NAT経由
+j -right-> sm : NAT経由
 ses -[hidden]down- sm
 az1 -[hidden]right- az2
 
@@ -170,5 +182,11 @@ ecr -[hidden]down- logs
 logs -down-> alarm
 alarm -down-> sns
 ecr -[hidden]right- vpc
+ecr -[hidden]right- alb
+logs -[hidden]right- az1
+alarm -[hidden]right- az1
+sns -[hidden]right- data
+ses -[hidden]right- j
+sm -[hidden]right- data
 
 @enduml
