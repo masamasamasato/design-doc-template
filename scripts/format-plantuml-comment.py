@@ -9,16 +9,25 @@ HIGHLIGHT_FAILED に、色付きで変換できなかった .puml の一覧フ�
 from __future__ import annotations
 
 import json
+import html
 import os
+import re
 import sys
 
 MAX_ITEMS = 30
 
 
 def code(text: str) -> str:
-    if "`" in text:
-        return f"`` {text} ``"
-    return f"`{text}`"
+    """インラインコードにする。中のバッククォートより長い区切りで囲む"""
+    if "`" not in text:
+        return f"`{text}`"
+    longest = max(len(run) for run in re.findall(r"`+", text))
+    fence = "`" * (longest + 1)
+    return f"{fence} {text} {fence}"
+
+
+def alt_text(text: str) -> str:
+    return text.replace("\\", "\\\\").replace("[", "\\[").replace("]", "\\]")
 
 
 def bullets(items: list[str]) -> list[str]:
@@ -59,7 +68,7 @@ def diff_lines(info: dict, attach: bool, failed: bool) -> list[str]:
     if status == "new":
         return ["新しい図です。全体が新しいため、色は付けていません。", ""]
     if status == "same":
-        return ["図の中身は変わっていません（空白などの変更だけ）。", ""]
+        return ["足した・変えた・消した行はありません（並べ替えや空白の変更だけ）。", ""]
     if attach and not failed:
         lines.append("**赤い部分が、このPRで足した・変えたところです。** リポジトリの SVG は、ふだんの色のままです。")
     elif attach and failed:
@@ -67,8 +76,6 @@ def diff_lines(info: dict, attach: bool, failed: bool) -> list[str]:
     else:
         lines.append("リンク形式のため、図に色は付いていません。変更は下の一覧を見てください。")
     lines.append("")
-    if info.get("base_path"):
-        lines.extend([f"名前を変えた図です（元: {code(info['base_path'])}）。", ""])
 
     changed = info.get("changed") or []
     changed_new = {after for _, after in changed}
@@ -113,27 +120,27 @@ def main() -> None:
         "コメントに画像が出ないときは、リンクを開いてください。",
         "",
     ]
-    if not paths:
+    deleted = summary.get("deleted_files") or []
+    if not paths and not deleted:
         lines.append("対象の図はありません。")
         lines.append("")
     for path in paths:
         url = f"{server}/{repository}/blob/{sha}/{path}"
         lines.extend(
             [
-                f"### `{path}`",
+                f"### {code(path)}",
                 "",
                 f"[SVGを開く]({url})",
                 "",
             ]
         )
         if attach:
-            lines.extend([f"![{path}](./{path})", ""])
+            lines.extend([f"![{alt_text(path)}](./{path})", ""])
         else:
-            lines.extend([f'<img alt="{path}" src="{url}?sanitize=true" />', ""])
+            lines.extend([f'<img alt="{html.escape(path)}" src="{html.escape(url)}?sanitize=true" />', ""])
         puml, info = find_summary(files, path)
         if info:
             lines.extend(diff_lines(info, attach, puml in failed))
-    deleted = summary.get("deleted_files") or []
     if deleted:
         lines.extend(["### 消した図", ""])
         lines.extend(bullets([code(d) for d in deleted]))

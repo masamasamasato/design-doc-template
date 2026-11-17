@@ -54,9 +54,12 @@ jobs:
           HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
         run: |
           set -euo pipefail
-          git diff --name-only --diff-filter=ACMR "origin/${BASE_REF}...HEAD" -- '*.puml' '*.plantuml' \
+          git diff --no-renames --name-only --diff-filter=ACMR "origin/${BASE_REF}...HEAD" -- '*.puml' '*.plantuml' \
             > "$RUNNER_TEMP/changed-puml.txt" || true
-          if [[ ! -s "$RUNNER_TEMP/changed-puml.txt" ]]; then
+          # 図を消しただけのPRにも、「消した図」のコメントを付ける
+          git diff --no-renames --name-only --diff-filter=D "origin/${BASE_REF}...HEAD" -- '*.puml' '*.plantuml' \
+            > "$RUNNER_TEMP/deleted-puml.txt" || true
+          if [[ ! -s "$RUNNER_TEMP/changed-puml.txt" && ! -s "$RUNNER_TEMP/deleted-puml.txt" ]]; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "図の変更はありません"
             exit 0
@@ -104,19 +107,18 @@ jobs:
           # このジョブは push しない。色付きの .puml と SVG は、このランナーの中だけで使う。
           mapfile -t changed < "$RUNNER_TEMP/changed-puml.txt"
           : > "$RUNNER_TEMP/highlight-failed.txt"
-          if ((${#changed[@]} == 0)); then
-            exit 0
-          fi
           base="$(git merge-base "origin/${BASE_REF}" HEAD)"
           if ! python3 scripts/highlight-puml-diff.py \
             --base "$base" \
             --summary "$RUNNER_TEMP/plantuml-diff.json" \
-            "${changed[@]}"; then
+            ${changed[@]+"${changed[@]}"}; then
             echo "::warning::差分の色付けに失敗したため、図はふだんの色で載せます"
-            git checkout -- "${changed[@]}"
+            if ((${#changed[@]} > 0)); then
+              git checkout -- "${changed[@]}"
+            fi
             rm -f "$RUNNER_TEMP/plantuml-diff.json"
           fi
-          for puml in "${changed[@]}"; do
+          for puml in ${changed[@]+"${changed[@]}"}; do
             if ! ./scripts/render-puml.sh "$puml"; then
               # 色を付けた形で変換できないときは、元の .puml で作り直す。
               # 元の .puml でも失敗するなら、ここで赤くなる。
