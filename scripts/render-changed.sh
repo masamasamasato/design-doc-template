@@ -16,7 +16,7 @@ if [[ "${1:-}" == "--all" ]]; then
   while IFS= read -r path; do
     [[ -z "$path" ]] && continue
     changed+=("$path")
-  done < <(git ls-files '*.puml' '*.plantuml')
+  done < <(git -c core.quotepath=false ls-files '*.puml' '*.plantuml')
 else
   before="${1:-}"
   sha="${2:-HEAD}"

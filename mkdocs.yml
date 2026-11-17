@@ -60,6 +60,7 @@ nav:
   - 用語集: 用語集.md
   - 業務フロー:
       - プロフィールを公開する: docs/business/index.md
+      - ログインして商品を探す: docs/business/ログインして商品を探す.md
   - API:
       - 新しいAPIの型:
           - 入口: apis/_template/README.md
@@ -71,5 +72,30 @@ nav:
           - 用語: apis/publish-profile/用語.md
           - 処理詳細: apis/publish-profile/処理詳細.md
           - 変更履歴: apis/publish-profile/変更履歴.md
+      - 記入例 ログインする:
+          - 入口: apis/login/README.md
+          - 用語: apis/login/用語.md
+          - 処理詳細: apis/login/処理詳細.md
+          - 変更履歴: apis/login/変更履歴.md
+      - 記入例 ログアウトする:
+          - 入口: apis/logout/README.md
+          - 用語: apis/logout/用語.md
+          - 処理詳細: apis/logout/処理詳細.md
+          - 変更履歴: apis/logout/変更履歴.md
+      - 記入例 商品詳細を取得する:
+          - 入口: apis/get-product/README.md
+          - 用語: apis/get-product/用語.md
+          - 処理詳細: apis/get-product/処理詳細.md
+          - 変更履歴: apis/get-product/変更履歴.md
+      - 記入例 商品一覧を取得する:
+          - 入口: apis/list-products/README.md
+          - 用語: apis/list-products/用語.md
+          - 処理詳細: apis/list-products/処理詳細.md
+          - 変更履歴: apis/list-products/変更履歴.md
+      - 記入例 商品を検索する:
+          - 入口: apis/search-products/README.md
+          - 用語: apis/search-products/用語.md
+          - 処理詳細: apis/search-products/処理詳細.md
+          - 変更履歴: apis/search-products/変更履歴.md
   - 決定記録:
       - テンプレートの方針: decisions/0000-template.md

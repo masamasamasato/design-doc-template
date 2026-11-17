@@ -275,7 +275,7 @@ def git_show(rev: str, path: str) -> str | None:
 def deleted_files(base: str) -> list[str]:
     # リネーム検出はしない。消した図と新しい図が似ていても、別々に扱う
     out = subprocess.run(
-        ["git", "diff", "--no-renames", "--name-only", "--diff-filter=D", base, "--", "*.puml", "*.plantuml"],
+        ["git", "-c", "core.quotepath=false", "diff", "--no-renames", "--name-only", "--diff-filter=D", base, "--", "*.puml", "*.plantuml"],
         check=True, capture_output=True, text=True,
     ).stdout
     return [p for p in out.splitlines() if p.strip()]

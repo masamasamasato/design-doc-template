@@ -1,0 +1,15 @@
+' 深さ3。ログアウトする処理のイメージ。
+' スイムレーンは業務フロー側に書く。ここはメソッドの順番だけを書く。
+@startuml
+skinparam shadowing false
+skinparam defaultFontName "Noto Sans CJK JP"
+skinparam ActivityFontName "Noto Sans CJK JP"
+
+title ログアウトする
+
+start
+note right: セッションが既に無効でも成功とする
+:今のセッションを無効にする処理\ninvalidateSession();
+:Cookie を消して成功を返す;
+stop
+@enduml

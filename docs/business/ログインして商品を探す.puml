@@ -1,0 +1,50 @@
+' 深さ1。業務のスイムレーン。レーンは |名前| と書く。
+' 変換はローカルの plantuml.jar と Graphviz。図の中身は外部へ送らない。
+@startuml
+skinparam shadowing false
+skinparam defaultFontName "Noto Sans CJK JP"
+skinparam ActivityFontName "Noto Sans CJK JP"
+
+title ログインして商品を探す
+
+|ユーザー|
+start
+:メールとパスワードを入れる;
+:ログインするボタンを押す;
+
+|ログイン画面|
+:ログインAPIを呼ぶ;
+
+|認証API|
+if (メールとパスワードは合うか?) then (合う)
+  :セッションを作る;
+else (合わない・ロック中)
+  :ログインしない;
+endif
+
+|ログイン画面|
+:結果を表示する;
+
+|ユーザー|
+if (ログインできたか?) then (できた)
+  :探したい言葉を入れる;
+  :検索するボタンを押す;
+else (できなかった)
+  :結果を確認する;
+  stop
+endif
+
+|商品画面|
+:検索APIを呼ぶ;
+
+|商品API|
+:公開中の商品を探す;
+:一覧を返す;
+
+|商品画面|
+:結果を表示する;
+
+|ユーザー|
+:結果を確認する;
+stop
+@enduml

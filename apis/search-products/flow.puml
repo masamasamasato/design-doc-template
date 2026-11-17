@@ -1,0 +1,21 @@
+' 深さ3。商品を検索する処理のイメージ。
+' スイムレーンは業務フロー側に書く。ここはメソッドの順番だけを書く。
+@startuml
+skinparam shadowing false
+skinparam defaultFontName "Noto Sans CJK JP"
+skinparam ActivityFontName "Noto Sans CJK JP"
+
+title 商品を検索する
+
+start
+note right: 検索する前にログインが必要
+:ログインしているか確認する処理\nrequireSession();
+if (ログインしていて、条件とページ分けが正しい?) then (はい)
+  :条件に合う公開中の商品を返す処理\nsearchProducts();
+  :一覧を返す;
+else (いいえ)
+  :失敗を返す\nUNAUTHORIZED など;
+  note right: 失敗理由の一覧は処理詳細.mdを見る
+endif
+stop
+@enduml
