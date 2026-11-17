@@ -10,8 +10,8 @@ title プロフィールを公開する
 start
 :本人確認が済んでいるか確かめる処理\ncheckOwner();
 if (本人で、確認済み?) then (はい)
-  :公開中にする処理\npublish();
   :公開した日時を記録する処理\nrecordPublishedAt();
+  :公開中にする処理\npublish();
   :公開中を返す;
 else (いいえ)
   :失敗を返す\nNOT_VERIFIED など;

@@ -4,7 +4,7 @@
 skinparam shadowing false
 skinparam defaultFontName "Noto Sans CJK JP"
 
-title （APIの名前）
+title （新しいAPIの名前）
 
 start
 :（何をする処理）\nmethodName();
