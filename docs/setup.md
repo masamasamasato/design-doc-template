@@ -7,7 +7,7 @@
 3. Settings → General → **Template repository** にチェックを入れる。
 4. Settings → General → Pull Requests → Allow squash merging の既定メッセージを **Pull request title and description** にする。全コミット文が本文に入ると、bot のコミット文が混ざり、main の自動処理が止まることがあります。
 5. 一人で使うリポジトリだけ、Settings → Secrets and variables → Actions に `PREVIEW_TOKEN` を登録する。中身は、このリポジトリだけを選んだ fine-grained の個人トークンで、権限は Contents と Pull requests の Read and write です。期限を付けます。
-   - **共同編集者がいるリポジトリでは設定しません。** 書き込みできる人は、ワークフローを書き換えてこのトークンを外へ送れます。送られると、期限まであなたとして書き込まれます。
+   - **共同編集者がいるリポジトリでは設定しません。** 書き込みできる人は、ワークフローを書き換えてこのトークンを外へ送れます。送られると、期限まで持ち主の権限で書き込まれます。
    - 図のコメントは、bot ではなくトークンの持ち主の名前で付きます。
    - 無い・期限切れのときは、警告を出して、図をリンクで載せます。
 

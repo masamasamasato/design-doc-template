@@ -16,11 +16,11 @@ if (ログインしている?) then (はい)
     :詳細を返す;
   else (いいえ)
     :失敗を返す\nNOT_FOUND;
-    note right: 失敗理由の一覧は処理詳細.mdを見る
+    note right: 失敗の理由は処理詳細.md を見る
   endif
 else (いいえ)
   :失敗を返す\nUNAUTHORIZED;
-  note right: 失敗理由の一覧は処理詳細.mdを見る
+  note right: 失敗の理由は処理詳細.md を見る
 endif
 stop
 @enduml

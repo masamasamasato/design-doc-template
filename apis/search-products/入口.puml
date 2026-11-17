@@ -16,7 +16,7 @@ API -> API : requireSession()
 alt ログインしていて、条件とページ分けが正しい
   API -> API : searchProducts()
   API --> Screen : 200 一覧
-  Screen --> User : 結果を見られた
+  Screen --> User : 結果が見えた
 else ログインしていない
   API --> Screen : 401 UNAUTHORIZED
   Screen --> User : ログインが必要

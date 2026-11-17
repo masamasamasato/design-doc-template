@@ -9,7 +9,7 @@
 
 図は PlantUML だけです。Mermaid は使いません。`.puml` を書いて SVG に変換し、Markdown から画像で参照します。
 
-図の変換は、開発者のマシンと GitHub Actions の中だけで行います。図の中身は、PlantUML.com や Kroki に送りません。
+図は、開発者のマシンと GitHub Actions の中だけで変換します。図の中身は、PlantUML.com や Kroki に送りません。
 
 `main` にマージされたときだけ、変わったAPIと業務フローの `変更履歴.md` に `YYYY-MM-DD #PR番号 PRタイトル` を1行足します。読み物サイトも、`main` だけを GitHub Pages に出します。
 
@@ -17,7 +17,7 @@
 
 設計書が実装の写しになると、すぐに古くなります。例として、`checkOwner()` の目的が「公開してよい人だけ次へ進める」と分かれば、確認済みかの式は `src/services/profile.ts` を読めば足ります。
 
-図の形式を PlantUML 一つにそろえると、書き方と変換の手順も一つになります。Mermaid は見にくく、AIが書いたような印象が残りやすいです。
+図を PlantUML にそろえると、書き方と変換の手順も一つで済みます。Mermaid は見にくく、AIが書いたような印象が残りやすいです。
 
 図を外部サーバーへ送ると、未公開の業務が外に出ます。jar と Graphviz を Actions の中で動かせば、図のテキストはリポジトリの外へ出ません。
 
