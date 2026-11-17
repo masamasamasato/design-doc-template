@@ -13,9 +13,9 @@ on:
 
 # GITHUB_TOKEN の push は、次の workflow を起動しない。
 # [plantuml-svg] は、トークンを PAT に変えたときもループしないための印。
+# PRコメントの図は plantuml-pr-comment.yml だけが書く（ここで書くと、色付きのコメントと競合する）。
 permissions:
   contents: write
-  pull-requests: write
 
 concurrency:
   group: plantuml-${{ github.ref }}
@@ -113,62 +113,3 @@ jobs:
           done
           echo "push に失敗しました" >&2
           exit 1
-
-      - name: PRに図を載せる
-        if: steps.render.outputs.changed == 'true'
-        uses: actions/github-script@v7
-        env:
-          COMMENT_SHA: ${{ steps.commit.outputs.sha || github.sha }}
-          FILE_LIST: ${{ runner.temp }}/plantuml-svgs.txt
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        with:
-          script: |
-            const fs = require("fs");
-            const { execFileSync } = require("child_process");
-            const sha = process.env.COMMENT_SHA;
-            const body = execFileSync("python3", ["scripts/format-plantuml-comment.py"], {
-              encoding: "utf8",
-              env: {
-                ...process.env,
-                COMMENT_SHA: sha,
-                RUN_URL: process.env.RUN_URL,
-              },
-              input: fs.readFileSync(process.env.FILE_LIST, "utf8"),
-            });
-            const branch = context.ref.replace("refs/heads/", "");
-            const { data: pulls } = await github.rest.pulls.list({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              head: `${context.repo.owner}:${branch}`,
-              state: "open",
-            });
-            if (pulls.length === 0) {
-              core.info("開いているPRはないため、コメントしません");
-              return;
-            }
-            const marker = "<!-- plantuml-preview -->";
-            for (const pull of pulls) {
-              const comments = await github.paginate(github.rest.issues.listComments, {
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: pull.number,
-              });
-              const existing = comments.find((comment) => (comment.body || "").includes(marker));
-              if (existing) {
-                await github.rest.issues.updateComment({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  comment_id: existing.id,
-                  body,
-                });
-                core.info(`PR #${pull.number} のコメントを更新しました`);
-              } else {
-                await github.rest.issues.createComment({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: pull.number,
-                  body,
-                });
-                core.info(`PR #${pull.number} にコメントしました`);
-              }
-            }
