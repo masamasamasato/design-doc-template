@@ -10,12 +10,18 @@ title ログインする
 start
 note right: セッションを作る前に、メールとパスワードの確認が必要
 :メールとパスワードを確かめる処理\nauthenticate();
-if (本人で、ロックされていない?) then (はい)
-  :セッションを作る処理\ncreateSession();
-  :Cookie でセッションを返す;
+if (ロックされている?) then (はい)
+  :失敗を返す\nACCOUNT_LOCKED;
 else (いいえ)
-  :失敗を返す\nINVALID_CREDENTIALS など;
-  note right: 失敗回数はメールごとに数える。メールが無くても5回でロックする
+  if (本人?) then (はい)
+    :セッションを作る処理\ncreateSession();
+    :ログイン通知メールを送る処理\nnotifyLogin();
+    note right: SESで送る。送信に失敗してもログインは成功のまま
+    :Cookie でセッションを返す;
+  else (いいえ)
+    :失敗を返す\nINVALID_CREDENTIALS;
+    note right: 失敗回数はメールごとに数える。メールが無くても5回でロックする
+  endif
 endif
 stop
 @enduml

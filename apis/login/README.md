@@ -1,10 +1,10 @@
 # ログインする
 
-メールとパスワードが合う利用者に、セッションを作ります。
+メールとパスワードが合う利用者に、セッションを作ります。成功したときは、ログイン通知メールも送ります。
 
 ## 概要
 
-利用者が画面で「ログインする」を押すと、認証APIがメールとパスワードを見ます。合っていて、ロックされていなければ、セッションを作ります。合わなければ、セッションは作りません。どちらが違うかは返しません。
+利用者が画面で「ログインする」を押すと、認証APIがメールとパスワードを見ます。ロックされていれば、そこで失敗します。合っていれば、セッションを作り、ログイン通知メールを送ります。合わなければ、セッションは作りません。どちらが違うかは返しません。メールが無いときも、ダミーのパスワード照合をして、応答時間をそろえます。
 
 これは深さ2です。画面とAPIのつながりだけを書きます。
 
@@ -16,16 +16,17 @@ sequenceDiagram
   User->>Screen: ログインする
   Screen->>API: POST /sessions
   API->>API: authenticate()
-  alt メールとパスワードが合う
+  alt アカウントがロックされている
+    API-->>Screen: 403 ACCOUNT_LOCKED
+    Screen-->>User: ロックされている
+  else メールとパスワードが合う
     API->>API: createSession()
+    API->>API: notifyLogin()
     API-->>Screen: 200 Cookie でセッションを返す
     Screen-->>User: ログインできた
   else メールまたはパスワードが違う
     API-->>Screen: 401 INVALID_CREDENTIALS
     Screen-->>User: ログインできない
-  else アカウントがロックされている
-    API-->>Screen: 403 ACCOUNT_LOCKED
-    Screen-->>User: ロックされている
   end
 ```
 
@@ -38,7 +39,7 @@ sequenceDiagram
 | メール | はい | ログインする人。例: `hana@example.com` |
 | パスワード | はい | 利用者が画面に入れた値。ログには残しません |
 
-成功すると、セッションが作られます。セッションIDは、HttpOnly、Secure、SameSite=Lax の Cookie で返します。本文には入れません。例: Cookie の値 `session_789`。
+成功すると、セッションが作られます。セッションIDは、HttpOnly、Secure、SameSite=Lax の Cookie で返します。本文には入れません。例: Cookie の値 `session_789`。続けて、SES でログイン通知メールを送ります。送信に失敗しても、ログインは成功のままです。
 
 ## 失敗するとき
 
