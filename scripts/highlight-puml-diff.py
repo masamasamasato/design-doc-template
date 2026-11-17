@@ -23,6 +23,7 @@ import os
 import re
 import subprocess
 import sys
+from collections import Counter
 from dataclasses import dataclass, field
 
 FILL = "#FFD6D6"
@@ -35,7 +36,8 @@ COND = re.compile(r"^(\s*)(?:#[\w]+\s*:\s*)?(if|elseif|while|repeat\s+while|swit
 NOTE = re.compile(r"^\s*(?:floating\s+)?(?:r|h)?note\b", re.IGNORECASE)
 END_NOTE = re.compile(r"^\s*end\s*(?:r|h)?note\b", re.IGNORECASE)
 ACT_ARROW = re.compile(r"^(\s*)(-+)(-?>)(\s*)(.*)$")
-LEGACY_COLOR = re.compile(r"^(\s*)#[\w]+\s*:")
+LEGACY_COLOR = re.compile(r"^(\s*)#[\w]+\s*:")  # #pink:if ( … の色。: ごと外す
+LEGACY_ACT = re.compile(r"^(\s*)#[\w]+\s*(?=:)")  # #pink :処理; の色。: は残す
 
 SEQ_DECL = {
     "participant", "actor", "boundary", "control", "entity", "database",
@@ -85,7 +87,6 @@ class Stmt:
 class FileResult:
     path: str
     status: str  # new / changed / same
-    base_path: str | None = None
     colored: list[str] = field(default_factory=list)
     uncolored: list[str] = field(default_factory=list)
     changed: list[list[str]] = field(default_factory=list)  # [前, 後]
@@ -154,7 +155,7 @@ def parse(lines: list[str]) -> list[Stmt]:
             i += 1
             continue
         # アクティビティ（複数行もある）
-        body = LEGACY_COLOR.sub(r"\1", line)
+        body = LEGACY_ACT.sub(r"\1", line)
         if body.lstrip().startswith(":"):
             j = i
             while j < len(lines) and not ACTIVITY_END.search(re.sub(r"\s*<<[^>]*>>\s*$", "", lines[j])):
@@ -271,47 +272,54 @@ def git_show(rev: str, path: str) -> str | None:
         return None
 
 
-def renames(base: str) -> dict[str, str]:
-    out = subprocess.run(
-        ["git", "diff", "-M", "--name-status", "--diff-filter=R", base],
-        check=True, capture_output=True, text=True,
-    ).stdout
-    result: dict[str, str] = {}
-    for row in out.splitlines():
-        parts = row.split("\t")
-        if len(parts) == 3:
-            result[parts[2]] = parts[1]
-    return result
-
-
 def deleted_files(base: str) -> list[str]:
+    # リネーム検出はしない。消した図と新しい図が似ていても、別々に扱う
     out = subprocess.run(
-        ["git", "diff", "--name-only", "--diff-filter=D", base, "--", "*.puml", "*.plantuml"],
+        ["git", "diff", "--no-renames", "--name-only", "--diff-filter=D", base, "--", "*.puml", "*.plantuml"],
         check=True, capture_output=True, text=True,
     ).stdout
     return [p for p in out.splitlines() if p.strip()]
 
 
+def norm(line: str) -> str:
+    """空白をそろえた行。比較と相殺に使う"""
+    return " ".join(line.split())
+
+
 def highlight(base_text: str, head_text: str, res: FileResult) -> str:
     base = base_text.splitlines()
     head = head_text.splitlines()
-    sm = difflib.SequenceMatcher(None, [l.strip() for l in base], [l.strip() for l in head], autojunk=False)
+    base_n = [norm(l) for l in base]
+    head_n = [norm(l) for l in head]
+    # 同じ文が両方に残る行は、場所が動いただけ。足した・消した・変えたにしない。
+    # 文ごとの数の差（多重集合の差）だけを、本当に足した・消した行として扱う。
+    base_count = Counter(t for t, l in zip(base_n, base) if not is_blank_or_comment(l))
+    head_count = Counter(t for t, l in zip(head_n, head) if not is_blank_or_comment(l))
+    add_left = head_count - base_count
+    rm_left = base_count - head_count
+    sm = difflib.SequenceMatcher(None, base_n, head_n, autojunk=False)
     touched: list[int] = []
     for tag, i1, i2, j1, j2 in sm.get_opcodes():
         if tag == "equal":
             continue
-        new_idx = list(range(j1, j2))
+        new_idx: list[int] = []
+        for j in range(j1, j2):
+            if is_blank_or_comment(head[j]) or add_left[head_n[j]] <= 0:
+                continue
+            add_left[head_n[j]] -= 1
+            new_idx.append(j)
         touched.extend(new_idx)
         used: set[int] = set()
         for i in range(i1, i2):
             old = base[i]
-            if is_blank_or_comment(old):
+            if is_blank_or_comment(old) or rm_left[base_n[i]] <= 0:
                 continue
+            rm_left[base_n[i]] -= 1
             best, best_ratio = None, 0.0
             for j in new_idx:
-                if j in used or is_blank_or_comment(head[j]):
+                if j in used:
                     continue
-                r = difflib.SequenceMatcher(None, old.strip(), head[j].strip()).ratio()
+                r = difflib.SequenceMatcher(None, base_n[i], head_n[j]).ratio()
                 if r > best_ratio:
                     best, best_ratio = j, r
             if best is not None and best_ratio >= 0.5:
@@ -344,6 +352,9 @@ def highlight(base_text: str, head_text: str, res: FileResult) -> str:
             res.uncolored.append(head[j].strip())
             continue
         out[target] = new
+        if cst.kind == "activity":
+            # 古い書き方の色（#pink :処理;）は外す。残すと後ろの色と二重になり、警告が図に出る
+            out[cst.start] = LEGACY_ACT.sub(r"\1", out[cst.start])
         done.add(target)
         res.colored.append(head[j].strip())
     text = "\n".join(out)
@@ -357,21 +368,19 @@ def main() -> int:
     ap.add_argument("--base", required=True, help="比較元のコミット")
     ap.add_argument("--summary", help="結果の JSON を書く先")
     ap.add_argument("--out-dir", help="ここへ書く。無いときは作業ツリーを書き換える")
-    ap.add_argument("files", nargs="+")
+    ap.add_argument("files", nargs="*")
     args = ap.parse_args()
 
-    rename_map = renames(args.base)
     results: dict[str, dict] = {}
     for path in args.files:
         with open(path, encoding="utf-8") as f:
             head_text = f.read()
-        base_path = rename_map.get(path, path)
-        base_text = git_show(args.base, base_path)
+        base_text = git_show(args.base, path)
         if base_text is None:
             res = FileResult(path, "new")
             text = head_text
         else:
-            res = FileResult(path, "changed", base_path if base_path != path else None)
+            res = FileResult(path, "changed")
             text = highlight(base_text, head_text, res)
             if not (res.colored or res.uncolored or res.changed or res.removed):
                 res.status = "same"
