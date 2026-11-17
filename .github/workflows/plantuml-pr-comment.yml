@@ -59,6 +59,9 @@ jobs:
           # 図を消しただけのPRにも、「消した図」のコメントを付ける
           git -c core.quotepath=false diff --no-renames --name-only --diff-filter=D "origin/${BASE_REF}...HEAD" -- '*.puml' '*.plantuml' \
             > "$RUNNER_TEMP/deleted-puml.txt" || true
+          # 「追記した図」と「修正した図」を分けるため、足した図だけの一覧も作る
+          git -c core.quotepath=false diff --no-renames --name-only --diff-filter=A "origin/${BASE_REF}...HEAD" -- '*.puml' '*.plantuml' \
+            > "$RUNNER_TEMP/added-puml.txt" || true
           if [[ ! -s "$RUNNER_TEMP/changed-puml.txt" && ! -s "$RUNNER_TEMP/deleted-puml.txt" ]]; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "図の変更はありません"
@@ -158,6 +161,8 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           DIFF_SUMMARY: ${{ runner.temp }}/plantuml-diff.json
           HIGHLIGHT_FAILED: ${{ runner.temp }}/highlight-failed.txt
+          ADDED_LIST: ${{ runner.temp }}/added-puml.txt
+          DELETED_LIST: ${{ runner.temp }}/deleted-puml.txt
           # 画像の添付には個人トークン（PREVIEW_TOKEN）が要る。
           # 無い・期限切れ・権限不足のときは、自動トークンでリンク形式のコメントを書く。
           PREVIEW_TOKEN: ${{ secrets.PREVIEW_TOKEN }}
