@@ -20,6 +20,7 @@ from __future__ import annotations
 import os
 import subprocess
 import sys
+import re
 from pathlib import Path
 from urllib.parse import quote
 
@@ -29,6 +30,15 @@ DOC_SUFFIXES = (".md", ".puml", ".plantuml")
 PUBLISHED_FILES = ("README.md", "用語集.md")
 PUBLISHED_DIRS = ("docs/", "apis/", "decisions/")
 MARKER = "<!-- changed-docs -->"
+
+
+def code(text: str) -> str:
+    """インラインコードにする。中のバッククォートより長い区切りで囲む"""
+    if "`" not in text:
+        return f"`{text}`"
+    longest = max(len(run) for run in re.findall(r"`+", text))
+    fence = "`" * (longest + 1)
+    return f"{fence} {text} {fence}"
 
 
 def name_status(base: str, head: str) -> list[tuple[str, str]]:
@@ -89,7 +99,7 @@ def diagram_page(path: str) -> str | None:
 
 
 def link(path: str, site: str) -> str:
-    label = f"`{path}`"
+    label = code(path)
     if not is_published(path):
         return f"{label}（公開ページなし）"
     page = md_page(path) if path.endswith(".md") else diagram_page(path)
@@ -123,7 +133,7 @@ def main() -> None:
         elif status in ("M", "T"):
             modified.append(link(path, site))
         elif status == "D":
-            deleted.append(f"`{path}`")
+            deleted.append(code(path))
 
     lines: list[str] = []
     if os.environ.get("COMMENT_MARKER", "").strip() == "1":
