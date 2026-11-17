@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 """変換した SVG を、PRコメント用の Markdown にする。
 
+変わった図は、changed-docs とそろえて「追記した図」「修正した図」「削除した図」に分ける。
+ADDED_LIST に、PRで足した .puml の一覧ファイルを渡す（git diff の A）。ここに無い図は修正とする。
+DELETED_LIST に、PRで消した .puml の一覧ファイルを渡す（git diff の D）。
+リネームは、元の図の削除と、新しい図の追記として出す。
+
 DIFF_SUMMARY に scripts/highlight-puml-diff.py の JSON があれば、
 図ごとに「赤い部分の説明」「変えたもの」「消したもの」を足す。
 HIGHLIGHT_FAILED に、色付きで変換できなかった .puml の一覧ファイルを渡せる。
@@ -70,7 +75,7 @@ def diff_lines(info: dict, attach: bool, failed: bool) -> list[str]:
     if status == "same":
         return ["足した・変えた・消した行はありません（並べ替えや空白の変更だけ）。", ""]
     if attach and not failed:
-        lines.append("**赤い部分が、このPRで足した・変えたところです。** リポジトリの SVG は、ふだんの色のままです。")
+        lines.append("**赤い部分が、このPRで足した・変えたところです**。リポジトリの SVG は、ふだんの色のままです。")
     elif attach and failed:
         lines.append("色を付けると変換できなかったため、ふだんの色で載せました。変更は下の一覧を見てください。")
     else:
@@ -102,6 +107,47 @@ def diff_lines(info: dict, attach: bool, failed: bool) -> list[str]:
     return lines
 
 
+def stem(path: str) -> str:
+    return path.rsplit(".", 1)[0]
+
+
+def category(title: str, items: list[str]) -> list[str]:
+    """changed-docs と同じ形。見出しの行の下に「・」で並べ、無いときは「・なし」"""
+    rows = [title] + ([f"・{item}" for item in items] if items else ["・なし"])
+    return [row + "\\" for row in rows[:-1]] + [rows[-1], ""]
+
+
+def open_label(puml: str) -> str:
+    """閉じた details の見出し。図の場所が分かる名前にする。
+    例: apis/register-passkey/flow.puml → 「register-passkey のフローを開く」"""
+    parts = puml.split("/")
+    folder = parts[-2] if len(parts) >= 2 else ""
+    name = parts[-1].rsplit(".", 1)[0]
+    kind = {"flow": "フロー"}.get(name, name)
+    return f"{folder} の{kind}を開く" if folder else f"{kind}を開く"
+
+
+def figure(path: str, name: str, url: str, attach: bool, info: dict | None, failed: bool, title: str) -> list[str]:
+    # 図は大きいので、1枚ごとに閉じた details に入れる。見出しは閉じていても見える
+    lines = [
+        f"### {title}：{code(name)}",
+        "",
+        "<details>",
+        f"<summary>{html.escape(open_label(name))}</summary>",
+        "",
+        f"[SVGを開く]({url})",
+        "",
+    ]
+    if attach:
+        lines.extend([f"![{alt_text(path)}](./{path})", ""])
+    else:
+        lines.extend([f'<img alt="{html.escape(path)}" src="{html.escape(url)}?sanitize=true" />', ""])
+    if info:
+        lines.extend(diff_lines(info, attach, failed))
+    lines.extend(["</details>", ""])
+    return lines
+
+
 def main() -> None:
     server = os.environ.get("GITHUB_SERVER_URL", "https://github.com").rstrip("/")
     repository = os.environ["GITHUB_REPOSITORY"]
@@ -110,7 +156,21 @@ def main() -> None:
     summary = load_json(os.environ.get("DIFF_SUMMARY", ""))
     files = summary.get("files") or {}
     failed = load_lines(os.environ.get("HIGHLIGHT_FAILED", ""))
+    added_list = load_lines(os.environ.get("ADDED_LIST", ""))
+    added_puml = {stem(p) for p in added_list}
+    known_puml = {stem(p): p for p in list(files) + sorted(added_list)}
+    deleted = sorted(load_lines(os.environ.get("DELETED_LIST", "")) or set(summary.get("deleted_files") or []))
     paths = [line.strip() for line in sys.stdin if line.strip()]
+    added = [p for p in paths if stem(p) in added_puml]
+    modified = [p for p in paths if stem(p) not in added_puml]
+
+    def url_of(path: str) -> str:
+        return f"{server}/{repository}/blob/{sha}/{path}"
+
+    def label(svg: str) -> str:
+        """一覧と見出しには、元の .puml のパスを出す（changed-docs と同じ）"""
+        return known_puml.get(stem(svg), stem(svg) + ".puml")
+
     lines = [
         "<!-- plantuml-preview -->",
         "## 変換した図",
@@ -120,31 +180,13 @@ def main() -> None:
         "コメントに画像が出ないときは、リンクを開いてください。",
         "",
     ]
-    deleted = summary.get("deleted_files") or []
-    if not paths and not deleted:
-        lines.append("対象の図はありません。")
-        lines.append("")
-    for path in paths:
-        url = f"{server}/{repository}/blob/{sha}/{path}"
-        lines.extend(
-            [
-                f"### {code(path)}",
-                "",
-                f"[SVGを開く]({url})",
-                "",
-            ]
-        )
-        if attach:
-            lines.extend([f"![{alt_text(path)}](./{path})", ""])
-        else:
-            lines.extend([f'<img alt="{html.escape(path)}" src="{html.escape(url)}?sanitize=true" />', ""])
-        puml, info = find_summary(files, path)
-        if info:
-            lines.extend(diff_lines(info, attach, puml in failed))
-    if deleted:
-        lines.extend(["### 消した図", ""])
-        lines.extend(bullets([code(d) for d in deleted]))
-        lines.append("")
+    lines += category("追記した図", [f"[{code(label(p))}]({url_of(p)})" for p in added])
+    lines += category("修正した図", [f"[{code(label(p))}]({url_of(p)})" for p in modified])
+    lines += category("削除した図", [code(d) for d in deleted])
+    for title, group in (("追記した図", added), ("修正した図", modified)):
+        for path in group:
+            puml, info = find_summary(files, path)
+            lines.extend(figure(path, label(path), url_of(path), attach, info, puml in failed, title))
     run_url = os.environ.get("RUN_URL", "").strip()
     if run_url:
         lines.extend(

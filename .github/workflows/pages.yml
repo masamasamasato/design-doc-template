@@ -30,9 +30,13 @@ jobs:
         continue-on-error: true
         uses: actions/configure-pages@v5
 
-      - name: Pagesが使えないときは公開を飛ばす
+      - name: Pagesが使えないときはジョブを失敗にする
+        # 公開できていないことに気づけるよう、飛ばしたまま成功にはしない。
+        # Pages の設定は docs/setup.md の手順で、リポジトリの持ち主が変える。
         if: steps.pages.outcome != 'success'
-        run: echo "::notice::Pagesが使えないため公開を飛ばしました"
+        run: |
+          echo "::error::Pagesが使えないため公開できませんでした。Settings → Pages → Source を GitHub Actions にしてください（docs/setup.md）"
+          exit 1
 
       - name: リポジトリを取得する
         if: steps.pages.outcome == 'success'

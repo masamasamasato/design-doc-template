@@ -15,12 +15,26 @@ jobs:
     permissions:
       contents: write
       actions: write
+      pages: read
     steps:
       - name: mainを取得する
         uses: actions/checkout@v4
         with:
           ref: main
           fetch-depth: 0
+
+      - name: 変更したドキュメントを Job Summary に出す
+        # 表示だけなので、失敗しても変更履歴の追記は続ける
+        continue-on-error: true
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          GH_TOKEN: ${{ github.token }}
+          DOCS_SITE_URL: ${{ vars.DOCS_SITE_URL }}
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin "${BASE_SHA}" "${HEAD_SHA}"
+          SITE_URL="$(./scripts/docs-site-url.sh)" python3 scripts/list-changed-docs.py "${BASE_SHA}" "${HEAD_SHA}" >> "$GITHUB_STEP_SUMMARY"
 
       - name: 変更履歴へ1行足す
         env:
