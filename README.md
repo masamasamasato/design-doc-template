@@ -108,6 +108,11 @@ README.md                         使い方、深さ、図の使い分け
 docs/business/                    業務フロー（.puml と、変換した .svg）
 apis/_template/                   新しいAPIを作るときにコピーする型
 apis/publish-profile/             記入例。プロフィールを公開するAPI
+apis/login/                       記入例。ログインするAPI
+apis/logout/                      記入例。ログアウトするAPI
+apis/get-product/                 記入例。商品詳細を取得するAPI
+apis/list-products/               記入例。商品一覧を取得するAPI
+apis/search-products/             記入例。商品を検索するAPI
 decisions/                        決めたことと、捨てた案
 mkdocs.yml                        読み物サイトの設定
 mkdocs/docs/                      サイトが読む原稿へのリンク
@@ -140,6 +145,8 @@ cp -a apis/_template apis/予約を確定する
 コピーした `変更履歴.md` は空の説明に戻します。型に付いている例の行は残しません。
 
 記入例は [プロフィールを公開する](apis/publish-profile/README.md) です。本人確認が済んでいる人だけ、プロフィールを公開中にします。コードのパスは架空で、`src/services/profile.ts` です。
+
+ほかの記入例は、[ログインする](apis/login/README.md)、[ログアウトする](apis/logout/README.md)、[商品詳細を取得する](apis/get-product/README.md)、[商品一覧を取得する](apis/list-products/README.md)、[商品を検索する](apis/search-products/README.md) です。認証は `src/services/auth.ts`、商品は `src/services/product.ts` です。
 
 ## ローカルプレビュー
 
