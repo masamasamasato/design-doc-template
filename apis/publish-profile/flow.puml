@@ -8,14 +8,15 @@ skinparam ActivityFontName "Noto Sans CJK JP"
 title プロフィールを公開する
 
 start
-note right: 公開の前に本人確認が必要
-:本人確認が済んでいるか確認する処理\ncheckOwner();
+:本人確認が済んでいるか確かめる処理\ncheckOwner();
 if (本人で、確認済み?) then (はい)
   :公開中にする処理\npublish();
+  :公開した日時を記録する処理\nrecordPublishedAt();
   :公開中を返す;
 else (いいえ)
   :失敗を返す\nNOT_VERIFIED など;
   note right: 失敗理由の一覧は処理詳細.mdを見る
+  -> 失敗;
 endif
 stop
 @enduml
