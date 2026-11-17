@@ -1,0 +1,64 @@
+name: 変更したドキュメントを表示する
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+permissions:
+  contents: read
+  pull-requests: write
+  pages: read
+
+jobs:
+  list:
+    runs-on: ubuntu-latest
+    steps:
+      - name: PRの先端を取得する
+        uses: actions/checkout@v4
+        with:
+          ref: refs/pull/${{ github.event.pull_request.number }}/head
+          fetch-depth: 0
+
+      - name: 比較元を取得する
+        run: git fetch origin "${{ github.base_ref }}"
+
+      - name: 公開サイトのURLを決める
+        id: site
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DOCS_SITE_URL: ${{ vars.DOCS_SITE_URL }}
+        run: echo "url=$(./scripts/docs-site-url.sh)" >> "$GITHUB_OUTPUT"
+
+      - name: 変更したドキュメントを一覧にする
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          SITE_URL: ${{ steps.site.outputs.url }}
+        run: |
+          set -euo pipefail
+          python3 scripts/list-changed-docs.py "origin/${BASE_REF}" HEAD > "$RUNNER_TEMP/changed-docs.md"
+          cat "$RUNNER_TEMP/changed-docs.md" >> "$GITHUB_STEP_SUMMARY"
+          COMMENT_MARKER=1 python3 scripts/list-changed-docs.py "origin/${BASE_REF}" HEAD > "$RUNNER_TEMP/changed-docs-comment.md"
+
+      - name: PRにコメントする
+        # フォークからのPRは、自動トークンでコメントを書けない。Job Summary だけにする。
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          payload="$(jq -n --rawfile body "$RUNNER_TEMP/changed-docs-comment.md" '{body: $body}')"
+          # Actions 自身が書いた、印つきのコメントだけを書き換える
+          existing="$(gh api --paginate "repos/${REPO}/issues/${PR_NUMBER}/comments" \
+            --jq '.[] | select(.user.login == "github-actions[bot]") | select((.body // "") | contains("<!-- changed-docs -->")) | .id' | tail -n1)"
+          if [[ -n "$existing" ]]; then
+            printf '%s' "$payload" | gh api -X PATCH "repos/${REPO}/issues/comments/${existing}" --input - >/dev/null
+            echo "コメント ${existing} を更新しました"
+          else
+            printf '%s' "$payload" | gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" --input - >/dev/null
+            echo "コメントしました"
+          fi

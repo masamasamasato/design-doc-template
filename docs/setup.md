@@ -3,7 +3,7 @@
 テンプレートからリポジトリを作ったあと、次を設定します。図の変換、変更履歴、サイト公開に必要です。
 
 1. Settings → Actions → General → Workflow permissions を **Read and write permissions** にする。SVGと変更履歴のコミットに必要です。
-2. Settings → Pages → Build and deployment → Source を **GitHub Actions** にする。
+2. Settings → Pages → Build and deployment → Source を **GitHub Actions** にする。変更したドキュメントの一覧は、この公開サイトへリンクします。独自ドメインなどで URL が違うときは、Settings → Secrets and variables → Actions → Variables に `DOCS_SITE_URL` を登録します。
 3. Settings → General → **Template repository** にチェックを入れる。
 4. Settings → General → Pull Requests → Allow squash merging の既定メッセージを **Pull request title and description** にする。全コミット文が本文に入ると、bot のコミット文が混ざり、変更履歴の追記など、main の自動処理が止まることがあります。
 5. 一人で使うリポジトリだけ、Settings → Secrets and variables → Actions に `PREVIEW_TOKEN` を登録する。中身は、このリポジトリだけを選んだ fine-grained の個人トークンで、権限は Contents と Pull requests の Read and write です。期限を付けます。
