@@ -112,7 +112,7 @@ scripts/                          ローカル変換と、履歴の追記
 | --- | --- | --- |
 | 業務フロー | PlantUML のスイムレーン | [プロフィールを公開する](docs/business/プロフィールを公開する/README.md) |
 | インフラ構成 | PlantUML（awslib のアイコン） | [AWSのインフラ構成](docs/infra/index.md) |
-| 処理の順番 | PlantUML のシーケンス図 | [プロフィール公開API](apis/publish-profile/README.md) |
+| 処理の順番 | PlantUML のシーケンス図 | [プロフィール公開APIの入口](apis/publish-profile/README.md) |
 | 分かれ道 | PlantUML のアクティビティ図 | この下の図 |
 | データ | PlantUML の ER 図 | この下の図 |
 | 状態 | PlantUML の状態図 | この下の図 |
