@@ -14,10 +14,17 @@
 !include <awslib/NetworkingContentDelivery/CloudFront>
 !include <awslib/Storage/SimpleStorageService>
 !include <awslib/NetworkingContentDelivery/ElasticLoadBalancingApplicationLoadBalancer>
+!include <awslib/NetworkingContentDelivery/VPCNATGateway>
 !include <awslib/Containers/ElasticContainerService>
+!include <awslib/Containers/ElasticContainerRegistry>
 !include <awslib/Database/RDS>
 !include <awslib/Database/ElastiCache>
 !include <awslib/ManagementGovernance/CloudWatchLogs>
+!include <awslib/ManagementGovernance/CloudWatchAlarm>
+!include <awslib/SecurityIdentityCompliance/CertificateManager>
+!include <awslib/SecurityIdentityCompliance/WAF>
+!include <awslib/SecurityIdentityCompliance/SecretsManager>
+!include <awslib/BusinessApplications/SimpleEmailService>
 
 skinparam shadowing false
 skinparam defaultFontName "Noto Sans CJK JP"
@@ -28,49 +35,77 @@ hide stereotype
 title AWSインフラ構成（ログインと商品API）
 
 Users(user, "利用者", "ブラウザ")
+rectangle "GitHub Actions\nECRにイメージを置き\nECSへデプロイ" as gha
 
 AWSCloudGroup(aws, "AWS クラウド") {
-  SimpleStorageService(s3, "静的画面", "S3")
-  Route53(dns, "Route 53", "名前解決")
-  CloudFront(cf, "CloudFront", "配信")
-  CloudWatchLogs(logs, "CloudWatch Logs\nパスワードは出さない", "両APIのログ")
+  Route53(dns, "Route 53\n例: www.example.com", "名前解決")
+  WAF(waf, "AWS WAF\n不正な要求を落とす", "Web ACL")
+  CertificateManager(acm, "ACM\nCloudFrontとALBの証明書", "HTTPS")
+  CloudFront(cf, "CloudFront\nHTTPSで配信\nOACでS3だけに繋ぐ", "CDN")
+  SimpleStorageService(s3, "静的画面（S3）\nOAC経由のみ\n例: login.html", "S3")
+  ElasticContainerRegistry(ecr, "ECR\nAPIのコンテナイメージ", "レジストリ")
 
   VPCGroup(vpc, "VPC") {
     PublicSubnetGroup(pub, "パブリックサブネット（2つのAZ）") {
-      ElasticLoadBalancingApplicationLoadBalancer(alb, "ALB", "負荷分散")
+      VPCNATGateway(nat1, "NAT Gateway（1a）\nこのAZのAPIが外へ出る", "NAT")
+      ElasticLoadBalancingApplicationLoadBalancer(alb, "ALB\n2つのAZのAPIへ振り分ける", "負荷分散")
+      VPCNATGateway(nat2, "NAT Gateway（1c）\nこのAZのAPIが外へ出る", "NAT")
     }
 
     AvailabilityZoneGroup(az1, "AZ ap-northeast-1a") {
       PrivateSubnetGroup(pri1, "プライベートサブネット") {
-        ElasticContainerService(ecs1, "APIサービス", "ECS Fargate")
+        ElasticContainerService(ecs1, "APIサービス\n例: POST /sessions", "ECS Fargate")
       }
     }
     AvailabilityZoneGroup(az2, "AZ ap-northeast-1c") {
       PrivateSubnetGroup(pri2, "プライベートサブネット") {
-        ElasticContainerService(ecs2, "APIサービス", "ECS Fargate")
+        ElasticContainerService(ecs2, "APIサービス\n例: GET /products/search", "ECS Fargate")
       }
     }
 
     rectangle "両APIから" as j
 
-    GenericGroup(data, "データ（プライベート）") {
-      ElastiCache(cache, "ElastiCache", "セッション。レプリカあり")
-      RDS(rds, "RDS", "商品・利用者。マルチAZ")
+    GenericGroup(data, "データ（マルチAZ）") {
+      ElastiCache(cachep, "ElastiCache プライマリ\nセッションを置く\nどのAPIでもログインが続く", "Redis")
+      RDS(rdsp, "RDS プライマリ\n例: hana@example.com", "商品・利用者")
+      ElastiCache(cacher, "ElastiCache レプリカ\n障害時の読み取り先", "Redis")
+      RDS(rdss, "RDS スタンバイ\nプライマリ故障時に昇格", "マルチAZ")
     }
+    SecretsManager(sm, "Secrets Manager\nDBパスワード\nログには出さない", "機密")
   }
+
+  CloudWatchLogs(logs, "CloudWatch Logs\n両APIのログ\nパスワードは出さない", "ログ")
+  CloudWatchAlarm(alarm, "CloudWatch Alarm\n例: 5xxが増えたら通知", "アラーム")
+  SimpleEmailService(ses, "SES\n例: ログイン通知メール", "メール")
 }
 
 user -down-> dns
 dns -down-> cf
+waf -down-> cf
 cf -left-> s3
+acm -left-> cf
 cf -down-> alb
+nat1 -[hidden]right- alb
+alb -[hidden]right- nat2
 alb -down-> ecs1
 alb -down-> ecs2
 ecs1 -down-> j
 ecs2 -down-> j
-j -down-> cache
-j -down-> rds
-s3 -[hidden]up- dns
-logs -[hidden]right- vpc
+j -down-> cachep
+j -down-> rdsp
+cachep -down-> cacher
+rdsp -down-> rdss
+cachep -[hidden]right- rdsp
+cacher -[hidden]right- rdss
+j -right-> sm
+data -[hidden]right- sm
+
+gha -[hidden]right- user
+gha -down-> ecr
+ecr -[hidden]right- vpc
+vpc -[hidden]right- logs
+logs -down-> alarm
+alarm -down-> ses
+az1 -[hidden]right- az2
 
 @enduml
