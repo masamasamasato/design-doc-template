@@ -1,0 +1,65 @@
+' 深さ1。業務のスイムレーン。レーンは |名前| と書く。
+' 変換はローカルの plantuml.jar と Graphviz。図の中身は外部へ送らない。
+@startuml
+skinparam shadowing false
+skinparam defaultFontName "Noto Sans CJK JP"
+skinparam ActivityFontName "Noto Sans CJK JP"
+
+title パスキーの端末をなくす
+
+|利用者|
+start
+:確認メールを依頼する;
+
+|復旧画面|
+:復旧APIを呼ぶ;
+
+|認証API|
+:確認リンクを登録メールへ送る;
+
+|利用者|
+:メールのリンクを開く;
+
+|復旧画面|
+:確認APIを呼ぶ;
+
+|認証API|
+if (リンクは有効か?) then (有効)
+  :セッションを作る;
+else (無効)
+  :復旧しない;
+endif
+
+|復旧画面|
+:結果を表示する;
+
+|利用者|
+if (復旧できたか?) then (できた)
+  :新しい端末でパスキーを登録する;
+else (できなかった)
+  :結果を確認する;
+  stop
+endif
+
+|復旧画面|
+:パスキー登録APIを呼ぶ;
+
+|認証API|
+:新しい端末のパスキーを保存する;
+
+|利用者|
+:なくした端末のパスキーを削除する;
+
+|復旧画面|
+:パスキー削除APIを呼ぶ;
+
+|認証API|
+:なくした端末のパスキーを削除する;
+
+|復旧画面|
+:結果を表示する;
+
+|利用者|
+:結果を確認する;
+stop
+@enduml

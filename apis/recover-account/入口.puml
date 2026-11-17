@@ -1,0 +1,29 @@
+@startuml
+skinparam shadowing false
+skinparam defaultFontName "Noto Sans CJK JP"
+skinparam SequenceFontName "Noto Sans CJK JP"
+hide footbox
+
+title アカウントを復旧する
+
+actor "利用者" as User
+participant "復旧画面" as Screen
+participant "認証API" as API
+
+User -> Screen : 確認メールを依頼する
+Screen -> API : POST /account-recovery
+API -> API : requestRecovery()
+API --> Screen : 200
+Screen --> User : メールを確認する
+User -> Screen : 確認リンクを開く
+Screen -> API : POST /account-recovery/confirm
+API -> API : confirmRecovery()
+alt トークンが有効
+  API -> API : createSession()
+  API --> Screen : 200 Cookie でセッションを返す
+  Screen --> User : 復旧できた
+else トークンが使えない
+  API --> Screen : 400 INVALID_TOKEN
+  Screen --> User : 復旧できない
+end
+@enduml

@@ -1,0 +1,20 @@
+@startuml
+skinparam shadowing false
+skinparam defaultFontName "Noto Sans CJK JP"
+skinparam SequenceFontName "Noto Sans CJK JP"
+hide footbox
+
+title 決済の結果を受け取る
+
+actor "決済サービス" as PSP
+participant "決済API" as API
+
+PSP -> API : POST /webhooks/payment
+API -> API : verifyWebhookSignature()
+alt 署名が合わない、またはタイムスタンプが古い
+  API --> PSP : 400 INVALID_SIGNATURE
+else 署名が合う
+  API -> API : applyPaymentEvent()
+  API --> PSP : 200
+end
+@enduml

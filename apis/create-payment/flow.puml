@@ -1,0 +1,32 @@
+' 深さ3。支払う処理のイメージ。
+' スイムレーンは業務フロー側に書く。ここはメソッドの順番だけを書く。
+@startuml
+skinparam shadowing false
+skinparam defaultFontName "Noto Sans CJK JP"
+skinparam ActivityFontName "Noto Sans CJK JP"
+
+title 支払う
+
+start
+note right: 支払い済みにするのは、決済サービスからの通知
+:ログインしているか確認する処理\nrequireSession();
+if (ログインしている?) then (はい)
+  :支払いを始める処理\nstartPayment();
+  if (同じ Idempotency-Key がある?) then (はい)
+    :前の結果をそのまま返す;
+    note right: 二重に請求しない
+  else (いいえ)
+    if (未払いで、キーがある?) then (はい)
+      :注文を処理中にする;
+      :決済サービスへ同じキーで依頼する;
+      :処理中を返す;
+    else (いいえ)
+      :失敗を返す\nMISSING_IDEMPOTENCY_KEY など;
+      note right: 失敗の理由は処理詳細.md を見る
+    endif
+  endif
+else (いいえ)
+  :失敗を返す\nUNAUTHORIZED;
+endif
+stop
+@enduml

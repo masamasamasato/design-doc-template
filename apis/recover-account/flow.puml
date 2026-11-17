@@ -1,0 +1,22 @@
+' 深さ3。アカウントを復旧する処理のイメージ。
+' スイムレーンは業務フロー側に書く。ここはメソッドの順番だけを書く。
+@startuml
+skinparam shadowing false
+skinparam defaultFontName "Noto Sans CJK JP"
+skinparam ActivityFontName "Noto Sans CJK JP"
+
+title アカウントを復旧する
+
+start
+:確認リンクを送る処理\nrequestRecovery();
+note right: 1回限り。期限は15分。登録したメールアドレスへ送る
+:確認リンクを確かめる処理\nconfirmRecovery();
+if (トークンは有効?) then (はい)
+  :セッションを作る処理\ncreateSession();
+  :Cookie でセッションを返す;
+  note right: このあと、新しい端末でパスキーを登録し、なくした端末のパスキーを削除できる
+else (いいえ)
+  :失敗を返す\nINVALID_TOKEN;
+endif
+stop
+@enduml

@@ -1,0 +1,29 @@
+@startuml
+skinparam shadowing false
+skinparam defaultFontName "Noto Sans CJK JP"
+skinparam SequenceFontName "Noto Sans CJK JP"
+hide footbox
+
+title 支払う
+
+actor "利用者" as User
+participant "支払い画面" as Screen
+participant "決済API" as API
+participant "決済サービス" as PSP
+
+User -> Screen : 支払う
+Screen -> API : POST /payments\nIdempotency-Key
+API -> API : requireSession()
+alt ログインしていない
+  API --> Screen : 401 UNAUTHORIZED
+  Screen --> User : ログインが必要
+else 同じキーがある
+  API --> Screen : 200 前の結果
+  Screen --> User : 結果が見えた
+else ログインしていて、新しいキー
+  API -> API : startPayment()
+  API -> PSP : 同じキーで支払いを依頼する
+  API --> Screen : 200 処理中
+  Screen --> User : 処理中
+end
+@enduml

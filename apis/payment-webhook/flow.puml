@@ -1,0 +1,27 @@
+' 深さ3。決済の結果を受け取る処理のイメージ。
+' スイムレーンは業務フロー側に書く。ここはメソッドの順番だけを書く。
+@startuml
+skinparam shadowing false
+skinparam defaultFontName "Noto Sans CJK JP"
+skinparam ActivityFontName "Noto Sans CJK JP"
+
+title 決済の結果を受け取る
+
+start
+note right: 確かめないと、誰でも偽の通知で支払い済みにできる
+:署名を確かめる処理\nverifyWebhookSignature();
+if (署名が合うか?) then (いいえ)
+  :400 を返す\nINVALID_SIGNATURE;
+  note right: タイムスタンプが古いときも同じ。注文は変えない
+else (はい)
+  :決済の結果を反映する処理\napplyPaymentEvent();
+  if (同じイベントIDを処理済み?) then (はい)
+    :200 を返す;
+    note right: 状態は変えない
+  else (いいえ)
+    :支払い済みまたは失敗にする;
+    :200 を返す;
+  endif
+endif
+stop
+@enduml

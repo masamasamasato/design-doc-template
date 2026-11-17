@@ -1,0 +1,29 @@
+@startuml
+skinparam shadowing false
+skinparam defaultFontName "Noto Sans CJK JP"
+skinparam SequenceFontName "Noto Sans CJK JP"
+hide footbox
+
+title パスキーでログインする
+
+actor "利用者" as User
+participant "ログイン画面" as Screen
+participant "認証API" as API
+
+User -> Screen : パスキーでログインする
+Screen -> API : POST /sessions/passkey/options
+API -> API : issueLoginOptions()
+API --> Screen : 200 チャレンジ
+Screen --> User : 端末で署名する
+User -> Screen : assertion を返す
+Screen -> API : POST /sessions/passkey
+API -> API : verifyAssertion()
+alt 署名と署名カウンタが正しい
+  API -> API : createSession()
+  API --> Screen : 200 Cookie でセッションを返す
+  Screen --> User : ログインできた
+else 検証できない
+  API --> Screen : 401 INVALID_CREDENTIALS
+  Screen --> User : ログインできない
+end
+@enduml

@@ -1,0 +1,44 @@
+@startuml
+skinparam shadowing false
+skinparam defaultFontName "Noto Sans CJK JP"
+skinparam SequenceFontName "Noto Sans CJK JP"
+hide footbox
+
+title カードを登録する
+
+actor "利用者" as User
+participant "カード画面" as Screen
+participant "決済API" as API
+participant "決済サービス" as PSP
+
+User -> Screen : カードを登録する
+Screen -> API : POST /cards/setup
+API -> API : requireSession()
+alt ログインしていない
+  API --> Screen : 401 UNAUTHORIZED
+  Screen --> User : ログインが必要
+else ログインしている
+  API -> API : createCardSetup()
+  API -> PSP : 登録の準備を作る
+  PSP --> API : 準備
+  API --> Screen : 200 準備
+  Screen -> PSP : カード番号・有効期限・CVC を送る
+  note right: 自社サーバーは通さない
+  alt 3Dセキュアが必要
+    PSP --> Screen : 本人認証を求める
+    Screen --> User : 本人認証する
+    User -> Screen : 認証する
+    Screen -> PSP : 本人認証の結果を送る
+  end
+  alt 決済サービスが受け付ける
+    PSP --> Screen : 預かり番号
+    Screen -> API : POST /cards
+    API -> API : savePaymentMethod()
+    API --> Screen : 200 ブランドと下4桁
+    Screen --> User : 登録できた
+  else 認証が済んでいない、または受け付けない
+    PSP --> Screen : 失敗
+    Screen --> User : 登録できない
+  end
+end
+@enduml

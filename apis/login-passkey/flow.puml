@@ -1,0 +1,22 @@
+' 深さ3。パスキーでログインする処理のイメージ。
+' スイムレーンは業務フロー側に書く。ここはメソッドの順番だけを書く。
+@startuml
+skinparam shadowing false
+skinparam defaultFontName "Noto Sans CJK JP"
+skinparam ActivityFontName "Noto Sans CJK JP"
+
+title パスキーでログインする
+
+start
+note right: セッションを作る前に、署名と署名カウンタの確認が必要
+:ログイン用のチャレンジを発行する処理\nissueLoginOptions();
+:assertion を検証する処理\nverifyAssertion();
+if (署名とカウンタは正しい?) then (はい)
+  :セッションを作る処理\ncreateSession();
+  :Cookie でセッションを返す;
+else (いいえ)
+  :失敗を返す\nINVALID_CREDENTIALS;
+  note right: どこが違うかは返さない
+endif
+stop
+@enduml
