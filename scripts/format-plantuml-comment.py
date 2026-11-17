@@ -75,7 +75,7 @@ def diff_lines(info: dict, attach: bool, failed: bool) -> list[str]:
     if status == "same":
         return ["足した・変えた・消した行はありません（並べ替えや空白の変更だけ）。", ""]
     if attach and not failed:
-        lines.append("**赤い部分が、このPRで足した・変えたところです。** リポジトリの SVG は、ふだんの色のままです。")
+        lines.append("**赤い部分が、このPRで足した・変えたところです**。リポジトリの SVG は、ふだんの色のままです。")
     elif attach and failed:
         lines.append("色を付けると変換できなかったため、ふだんの色で載せました。変更は下の一覧を見てください。")
     else:
