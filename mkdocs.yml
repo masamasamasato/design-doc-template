@@ -59,8 +59,12 @@ nav:
   - はじめに: README.md
   - 用語集: 用語集.md
   - 業務フロー:
-      - プロフィールを公開する: docs/business/index.md
-      - ログインして商品を探す: docs/business/ログインして商品を探す.md
+      - プロフィールを公開する:
+          - 概要: docs/business/プロフィールを公開する/README.md
+          - 変更履歴: docs/business/プロフィールを公開する/変更履歴.md
+      - ログインして商品を探す:
+          - 概要: docs/business/ログインして商品を探す/README.md
+          - 変更履歴: docs/business/ログインして商品を探す/変更履歴.md
   - インフラ構成: docs/infra/index.md
   - API:
       - 新しいAPIの型:

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""変わった apis/<名前>/変更履歴.md に、マージ日とPRを1行足す。"""
+"""変わった apis/<名前>/ と docs/business/<業務>/ の変更履歴.md に、マージ日とPRを1行足す。"""
 
 from __future__ import annotations
 
@@ -11,7 +11,10 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parents[1]
-API_RE = re.compile(r"^apis/([^/]+)/")
+TARGETS = (
+    (re.compile(r"^apis/([^/]+)/"), ROOT / "apis"),
+    (re.compile(r"^docs/business/([^/]+)/"), ROOT / "docs" / "business"),
+)
 
 
 def changed_files(base: str, head: str) -> list[str]:
@@ -47,23 +50,26 @@ def main() -> None:
     today = datetime.now(ZoneInfo("Asia/Tokyo")).strftime("%Y-%m-%d")
     line = f"{today} #{number} {title}"
 
-    seen: set[str] = set()
+    seen: set[tuple[str, str]] = set()
     for name in changed_files(base, head):
-        match = API_RE.match(name)
-        if not match:
-            continue
-        api = match.group(1)
-        if api in seen:
-            continue
-        seen.add(api)
-        directory = ROOT / "apis" / api
-        if not directory.is_dir():
-            print(f"削除済みのため飛ばします: apis/{api}")
-            continue
-        append(directory / "変更履歴.md", line)
+        for regex, parent in TARGETS:
+            match = regex.match(name)
+            if not match:
+                continue
+            item = match.group(1)
+            key = (str(parent), item)
+            if key in seen:
+                continue
+            seen.add(key)
+            directory = parent / item
+            rel = directory.relative_to(ROOT)
+            if not directory.is_dir():
+                print(f"削除済みのため飛ばします: {rel}")
+                continue
+            append(directory / "変更履歴.md", line)
 
     if not seen:
-        print("apis/ の変更はありません")
+        print("apis/ と docs/business/ の変更はありません")
 
 
 if __name__ == "__main__":
