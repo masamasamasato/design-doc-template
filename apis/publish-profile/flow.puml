@@ -15,9 +15,14 @@ if (セッションの Cookie が有効な場合) then (有効な場合)
   if (プロフィールがある場合) then (ある場合)
     if (セッションの利用者IDが、\nプロフィールの持ち主と同じ場合) then (持ち主の場合)
       if (本人確認が済んでいる場合) then (済んでいる場合)
-        :公開中にする処理\npublish();
-        note right: 保存：状態を公開中に。publishedAt に現在日時
-        :200 公開中を返す;
+        if (既に公開中の場合) then (公開中の場合)
+          :200 公開中を返す;
+          note right: 保存しない。publishedAt は変えない
+        else (公開中でない場合)
+          :公開中にする処理\npublish();
+          note right: 保存：状態を公開中に。publishedAt に現在日時
+          :200 公開中を返す;
+        endif
       else (本人確認が済んでいない場合)
         :失敗を返す\n403 NOT_VERIFIED;
         note right: 保存しない。公開中にはしない

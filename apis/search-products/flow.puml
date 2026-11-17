@@ -13,12 +13,12 @@ note right: 読むだけ。どの枝でも、保存も削除もしない
 :セッション検証\nリクエストの Cookie を、保存済みの有効なセッションと照合\nrequireSession();
 if (セッションの Cookie が有効な場合) then (有効な場合)
   :検索語と指定の検証\nq の文字数と、page・limit・sort・order を、決まりと照合\nsearchProducts();
-  if (q が1〜100文字で、page・limit・sort・order が\n用語集の決まりどおりの場合) then (決まりどおりの場合)
+  if (q が1〜100文字で、page が1以上の整数、limit が1〜100の整数、\nsort が created_at か price、order が asc か descの場合) then (決まりどおりの場合)
     :200 商品名に検索語を含む、\n公開中の商品を返す;
     note right: 保存も削除もしない。\n0件でも成功。空の結果を返す
-  else (q が無い・空・100文字超、または\npage・limit・sort・order のどれかが決まりどおりでない場合)
+  else (q が無い・空・100文字超、page が1以上の整数でない、limit が1〜100の整数でない、\nsort が created_at・price 以外、または order が asc・desc 以外の場合)
     :失敗を返す\n400 INVALID_QUERY;
-    note right: 保存も削除もしない。\n例: 検索語が空、101文字、limit=200
+    note right: 保存も削除もしない。\n例：検索語が空、101文字、limit=200
   endif
 else (セッションの Cookie が無い、\nまたは無効な場合)
   :失敗を返す\n401 UNAUTHORIZED;

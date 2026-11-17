@@ -19,7 +19,7 @@ alt セッションの Cookie が無い、または無効な場合
   API --> Screen : 401 UNAUTHORIZED\n何も保存しない
   Screen --> User : ログインが必要
 else セッションの Cookie が有効な場合
-  API -> API : createCardSetup()
+  API -> API : カード登録の準備を作る\ncreateCardSetup()
   API -> PSP : 利用者IDを付けて、登録の準備を作る
   PSP --> API : 準備
   API --> Screen : 200 準備\n自社には保存しない
@@ -40,7 +40,7 @@ else セッションの Cookie が有効な場合
   else 預かり番号が返る場合
     PSP --> Screen : 預かり番号
     Screen -> API : POST /cards
-    API -> API : セッション検証とカード所有者検証\nrequireSession()、verifyCardOwner()
+    API -> API : セッション検証、カード所有者検証、\n3Dセキュア・預かり番号の検証\nrequireSession()、verifyCardOwner()、savePaymentMethod()
     alt セッションの Cookie が無い、または無効な場合
       API --> Screen : 401 UNAUTHORIZED\n何も保存しない
       Screen --> User : ログインが必要
@@ -57,7 +57,7 @@ else セッションの Cookie が有効な場合
       API --> Screen : 200 既に保存した預かり番号\n新しく保存しない
       Screen --> User : 登録済みと表示する
     else 本人の番号で使え、まだ保存していないカードの場合
-      API -> API : savePaymentMethod()
+      API -> API : 預かり番号を保存する\nsavePaymentMethod()
       API --> Screen : 200 ブランドと下4桁\n預かり番号と表示用の情報を保存する
       Screen --> User : 登録できた
     end

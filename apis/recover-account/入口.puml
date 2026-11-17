@@ -14,7 +14,7 @@ participant "認証API" as API
 User -> Screen : 確認メールを依頼する
 Screen -> API : POST /account-recovery
 API -> API : 依頼回数の上限検証のあと、確認リンクを送る\nrequestRecovery()
-alt 過去1時間で、同じメールアドレス宛が3回、または同じIPが10回を超えた場合
+alt 過去1時間で、同じメールアドレス宛が3回を超えた、または同じIPが10回を超えた場合
   API --> Screen : 429 TOO_MANY_REQUESTS\nRetry-After（最長1時間）。何も保存しない
   Screen --> User : Retry-After の秒数がたってから依頼する
 else 上限内の場合

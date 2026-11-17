@@ -28,8 +28,11 @@ else セッションの Cookie が有効な場合
   else 持ち主だが、本人確認が済んでいない場合
     API --> Screen : 403 NOT_VERIFIED\n何も保存しない
     Screen --> User : 先に本人確認が必要
-  else 持ち主で、本人確認が済んでいる場合
-    API -> API : publish()
+  else 持ち主で、本人確認が済んでいて、既に公開中の場合
+    API --> Screen : 200 公開中\n何も保存しない。publishedAt は変えない
+    Screen --> User : 公開できた
+  else 持ち主で、本人確認が済んでいて、まだ公開中でない場合
+    API -> API : 公開中にする\npublish()
     API --> Screen : 200 公開中\n状態と publishedAt を保存する
     Screen --> User : 公開できた
   end

@@ -33,7 +33,7 @@ if (メールアドレス・パスワードが異なり、\n連続失敗(5回未
   |ログイン画面|
   :ログインできないと表示する\n401 INVALID_CREDENTIALS;
   stop
-else (それ以外の場合)
+else (5回未満でない場合)
 endif
 |認証API|
 if (メールアドレス・パスワードが異なり、\n連続失敗(5回以上)の場合) then (5回以上の場合)
@@ -69,11 +69,11 @@ else (有効な場合)
 endif
 |商品API|
 :検索語と指定の検証\nq の文字数と、page・limit・sort・order を\n決まりと照合;
-if (q が無い・空・100文字超、または\npage・limit・sort・order が決まりどおりでない場合) then (決まりどおりでない場合)
+if (q が無い・空・100文字超、\npage が1以上の整数でない、\nlimit が1〜100の整数でない、\nsort が created_at・price 以外、\nまたは order が asc・desc 以外の場合) then (決まりどおりでない場合)
   |商品画面|
   :検索語や指定を直すよう表示する\n400 INVALID_QUERY;
   stop
-else (q が1〜100文字で、決まりどおりの場合)
+else (q が1〜100文字で、\npage が1以上の整数、\nlimit が1〜100の整数、\nsort が created_at か price、\norder が asc か desc の場合)
 endif
 |商品API|
 :商品名に検索語を含む、\n公開中の商品を返す;
