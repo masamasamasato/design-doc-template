@@ -14,9 +14,10 @@ API -> API : もとの本文で署名を確かめる\nverifyWebhookSignature()
 alt 署名が合わない、またはタイムスタンプが古い
   API --> PSP : 400 INVALID_SIGNATURE
 else 署名が合う
-  API -> API : 通知を保存する\nenqueuePaymentEvent()
+  API -> API : 通知をイベントIDと一緒に保存する\nenqueuePaymentEvent()
   API --> PSP : 200（すぐ返す）
-  note right of API : ここから先は、返事のあとで行う
+  note right of API : ここから先は、返事のあとで行う。\n同じイベントIDの反映は1回だけ
+  API -> API : 保存した通知を反映に回す\nprocessSavedPaymentEvents()
   API -> API : matchOrder()
   alt 注文ID・金額・通貨のどれかが合わない
     API -> API : 注文は変えず、運用者へ警告する

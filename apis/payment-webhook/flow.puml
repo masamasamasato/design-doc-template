@@ -17,7 +17,9 @@ if (署名が合い、タイムスタンプが5分以内?) then (いいえ)
 else (はい)
   :通知を保存してすぐ返す処理\nenqueuePaymentEvent();
   :200 を返す;
-  note right: ここから先は、返事のあとで行う
+  note right: 同じイベントIDは重ねて保存しない
+  :保存した通知を反映に回す処理\nprocessSavedPaymentEvents();
+  note right: 返事のあとで行う。失敗したら同じ保存からやり直す。反映は1回
   :注文と合うか確かめる処理\nmatchOrder();
   if (注文ID・金額・通貨が注文と合う?) then (いいえ)
     :運用者へ警告する;
