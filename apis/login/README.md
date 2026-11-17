@@ -2,27 +2,9 @@
 
 メールとパスワードが合う利用者に、セッションを作ります。成功したときは、ログイン通知メールも送ります。
 
-```mermaid
-sequenceDiagram
-  actor User as ユーザー
-  participant Screen as ログイン画面
-  participant API as 認証API
-  User->>Screen: ログインする
-  Screen->>API: POST /sessions
-  API->>API: authenticate()
-  alt アカウントがロックされている
-    API-->>Screen: 403 ACCOUNT_LOCKED
-    Screen-->>User: ロックされている
-  else メールとパスワードが合う
-    API->>API: createSession()
-    API->>API: notifyLogin()
-    API-->>Screen: 200 Cookie でセッションを返す
-    Screen-->>User: ログインできた
-  else メールまたはパスワードが違う
-    API-->>Screen: 401 INVALID_CREDENTIALS
-    Screen-->>User: ログインできない
-  end
-```
+![ログインする](入口.svg)
+
+ソースは [入口.puml](入口.puml) です。
 
 ## 入力と結果
 
@@ -44,6 +26,7 @@ sequenceDiagram
 
 - [用語](用語.md)
 - [処理詳細](処理詳細.md)
+- [入口の図](入口.puml)
 - [処理のイメージ](flow.puml)
 - [変更履歴](変更履歴.md)
 - [ログインして商品を探す](../../docs/business/ログインして商品を探す/README.md)

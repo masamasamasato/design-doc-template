@@ -1,0 +1,28 @@
+@startuml
+skinparam shadowing false
+skinparam defaultFontName "Noto Sans CJK JP"
+skinparam SequenceFontName "Noto Sans CJK JP"
+hide footbox
+
+title ログインする
+
+actor "ユーザー" as User
+participant "ログイン画面" as Screen
+participant "認証API" as API
+
+User -> Screen : ログインする
+Screen -> API : POST /sessions
+API -> API : authenticate()
+alt アカウントがロックされている
+  API --> Screen : 403 ACCOUNT_LOCKED
+  Screen --> User : ロックされている
+else メールとパスワードが合う
+  API -> API : createSession()
+  API -> API : notifyLogin()
+  API --> Screen : 200 Cookie でセッションを返す
+  Screen --> User : ログインできた
+else メールまたはパスワードが違う
+  API --> Screen : 401 INVALID_CREDENTIALS
+  Screen --> User : ログインできない
+end
+@enduml

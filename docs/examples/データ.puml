@@ -1,0 +1,20 @@
+@startuml
+skinparam shadowing false
+skinparam defaultFontName "Noto Sans CJK JP"
+
+title データの例
+
+hide circle
+
+entity "利用者" as USER {
+  * id : string
+  --
+  verificationStatus : string
+}
+entity "プロフィール" as PROFILE {
+  * id : string
+  --
+  visibility : string
+}
+USER ||--o{ PROFILE : 持つ
+@enduml

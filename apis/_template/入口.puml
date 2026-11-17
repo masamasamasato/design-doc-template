@@ -1,0 +1,16 @@
+@startuml
+skinparam shadowing false
+skinparam defaultFontName "Noto Sans CJK JP"
+skinparam SequenceFontName "Noto Sans CJK JP"
+hide footbox
+
+title （APIの名前）
+
+actor "ユーザー" as User
+participant "（画面の名前）" as Screen
+participant "（APIの名前）" as API
+
+User -> Screen : （操作）
+Screen -> API : （メソッドとパス）
+API --> Screen : （成功または失敗）
+@enduml

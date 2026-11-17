@@ -6,7 +6,7 @@
 
 1. このリポジトリをテンプレートにして、新しいリポジトリを作ります。
 2. 業務フローは `docs/business/<業務>/` に、APIは `apis/_template` をコピーして書きます。
-3. 図は基本 Mermaid です。スイムレーンとインフラ構成は PlantUML にし、`./scripts/render-puml.sh` で SVG にします。
+3. 図は PlantUML だけです。Mermaid は使いません。`./scripts/render-puml.sh` で SVG にします。
 4. 読み物サイトは `NO_MKDOCS_2_WARNING=1 mkdocs serve -a 127.0.0.1:8765` で見ます。
 5. PRタイトルは、何をどう変えたかを日本語で書きます。`fix` などの接頭辞は使いません。
 
@@ -20,6 +20,7 @@
 README.md              使い方
 用語集.md              APIをまたいで使う言葉
 docs/setup.md          GitHub の設定
+docs/examples/         図の書き方の例
 docs/business/<業務>/  業務フロー
 docs/infra/            インフラ構成図
 apis/_template/        新しいAPIの型
@@ -37,7 +38,7 @@ README は、人が読む最低限だけを開いてすぐ見えるところに�
 | 深さ | 何を書くか | 図 | 例 |
 | --- | --- | --- | --- |
 | 1 業務 | 誰が何を渡し、仕事がどこまで進むか | PlantUML のスイムレーン | 利用者が公開を依頼し、APIが公開中にする |
-| 2 機能 | 画面とAPIのつながり | Mermaid のシーケンス図 | 画面が `POST /profiles/{id}/publish` を呼ぶ |
+| 2 機能 | 画面とAPIのつながり | PlantUML のシーケンス図 | 画面が `POST /profiles/{id}/publish` を呼ぶ |
 | 3 サービスメソッド | 1つの目的を持つ処理と、メソッド名 | `flow.puml` のアクティビティ図 | `checkOwner()` で本人確認を見る |
 
 深さ3の文は、次の形にします。
@@ -66,6 +67,7 @@ APIの入口は `apis/<名前>/README.md` です。開いてすぐ見える部�
 README.md                         使い方。詳細はAI向けの details
 用語集.md                         APIをまたいで使う言葉
 docs/setup.md                     GitHub の設定（権限、Pages、PREVIEW_TOKEN）
+docs/examples/                    図の書き方の例（.puml と SVG）
 docs/business/<業務>/             業務フロー（README、flow.puml、変更履歴.md）
 docs/infra/                       記入例。AWSのインフラ構成図
 apis/_template/                   新しいAPIを作るときにコピーする型
@@ -88,6 +90,7 @@ scripts/                          ローカル変換と、履歴の追記
 
 - 深さ3より細かいロジックを、設計書に写さない。
 - 図の中身を、PlantUML.com や Kroki に送らない。
+- 図に Mermaid を使わない。PlantUML で書き、SVG を Markdown から参照する。
 - PlantUML で URL を `!include` しない。アイコンは jar 同梱の `<awslib/...>` を使う。
 - PRタイトルを `fix` や `feat:` にしない。何をどう変えたかを日本語で書きます。例: `公開時に本人確認を追加`。
 - draw.io を変えたのに、変更前と変更後のスクリーンショットを貼らない。
@@ -97,67 +100,40 @@ scripts/                          ローカル変換と、履歴の追記
 <details markdown>
 <summary>AI向け：図の書き方</summary>
 
-基本は Mermaid です。スイムレーンと、インフラ構成のアイコンは PlantUML にします。
+図は PlantUML だけです。Mermaid は使いません。`.puml` を書いて SVG に変換し、Markdown から画像で参照します。
 
 | 見せたいもの | 図 | 記入例 |
 | --- | --- | --- |
 | 業務フロー | PlantUML のスイムレーン | [プロフィールを公開する](docs/business/プロフィールを公開する/README.md) |
 | インフラ構成 | PlantUML（awslib のアイコン） | [AWSのインフラ構成](docs/infra/index.md) |
-| 処理の順番 | Mermaid のシーケンス図 | [公開APIの入口](apis/publish-profile/README.md) |
-| 分かれ道 | Mermaid のフローチャート | この下の図 |
-| データ | Mermaid の ER 図 | この下の図 |
-| 状態 | Mermaid の状態遷移図 | この下の図 |
+| 処理の順番 | PlantUML のシーケンス図 | [公開APIの入口](apis/publish-profile/README.md) |
+| 分かれ道 | PlantUML のアクティビティ図 | この下の図 |
+| データ | PlantUML の ER 図 | この下の図 |
+| 状態 | PlantUML の状態図 | この下の図 |
 
 処理の順番の例です。画面がAPIを呼び、本人確認のあとで公開します。
 
-```mermaid
-sequenceDiagram
-  actor User as ユーザー
-  participant Screen as プロフィール画面
-  participant API as プロフィールAPI
-  User->>Screen: 公開する
-  Screen->>API: POST /profiles/{id}/publish
-  API->>API: checkOwner()
-  alt 本人確認が済んでいる
-    API->>API: publish()
-    API-->>Screen: 200 公開中
-  else 本人確認が済んでいない
-    API-->>Screen: 403 NOT_VERIFIED
-  end
-```
+![処理の順番の例](docs/examples/処理の順番.svg)
+
+ソースは [処理の順番.puml](docs/examples/処理の順番.puml) です。
 
 分かれ道の例です。確認済みの人だけ公開中にします。
 
-```mermaid
-flowchart TD
-  A[公開する] --> B{本人確認は済みか}
-  B -->|済み| C[公開中にする]
-  B -->|まだ| D[NOT_VERIFIED を返す]
-```
+![分かれ道の例](docs/examples/分かれ道.svg)
+
+ソースは [分かれ道.puml](docs/examples/分かれ道.puml) です。
 
 データの例です。利用者はプロフィールを複数持てます。
 
-```mermaid
-erDiagram
-  USER ||--o{ PROFILE : 持つ
-  USER {
-    string id
-    string verificationStatus
-  }
-  PROFILE {
-    string id
-    string visibility
-  }
-```
+![データの例](docs/examples/データ.svg)
+
+ソースは [データ.puml](docs/examples/データ.puml) です。
 
 状態の例です。下書きから、確認済みの公開で公開中になります。
 
-```mermaid
-stateDiagram-v2
-  [*] --> 下書き
-  下書き --> 公開中: 本人確認済みで公開する
-  公開中 --> 下書き: 非公開に戻す
-```
+![状態の例](docs/examples/状態.svg)
+
+ソースは [状態.puml](docs/examples/状態.puml) です。
 
 スイムレーンの書き方は次のとおりです。全文は [業務フロー](docs/business/プロフィールを公開する/flow.puml) にあります。
 
@@ -184,7 +160,7 @@ draw.io の差分は、レビューで追いにくいです。使う場合は次
 - `.drawio` ファイルもリポジトリに入れる。
 - PRに、変更前と変更後のスクリーンショットを貼る。
 
-PlantUML と Mermaid で足りる図は、draw.io にしません。
+PlantUML で足りる図は、draw.io にしません。
 
 </details>
 
@@ -261,11 +237,9 @@ SVGにするときは、次を実行します。
 - jar が見つからないときは、`markdown-preview-enhanced.plantumlJarPath` を `tools/plantuml.jar` の絶対パスに変えます。`scripts/install-plantuml.sh` が絶対パスを表示します。
 - Kroki と WebSequenceDiagrams の送信先は `127.0.0.1:9` にしてあります。この2つの記法は使わないでください。
 
-Mermaid は、Markdown Preview Enhanced のプレビューにそのまま出ます。
-
 **3. mkdocs serve で見る**
 
-読み物サイトは MkDocs Material です。Mermaid と、PlantUML から作った SVG を表示します。検索は日本語です。
+読み物サイトは MkDocs Material です。PlantUML から作った SVG を表示します。検索は日本語です。
 
 ```bash
 python3 -m venv .venv
