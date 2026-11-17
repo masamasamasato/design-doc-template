@@ -51,9 +51,11 @@ AWSCloudGroup(aws, "AWS クラウド") {
       }
     }
 
+    rectangle "両APIから" as j
+
     GenericGroup(data, "データ（プライベート）") {
-      ElastiCache(cache, "ElastiCache", "セッション")
-      RDS(rds, "RDS", "商品・利用者")
+      ElastiCache(cache, "ElastiCache", "セッション。レプリカあり")
+      RDS(rds, "RDS", "商品・利用者。マルチAZ")
     }
   }
 }
@@ -64,8 +66,10 @@ cf -left-> s3
 cf -down-> alb
 alb -down-> ecs1
 alb -down-> ecs2
-ecs1 -down-> cache
-ecs2 -down-> rds
+ecs1 -down-> j
+ecs2 -down-> j
+j -down-> cache
+j -down-> rds
 s3 -[hidden]up- dns
 logs -[hidden]right- vpc
 note right of logs: 両APIのログを集める\nパスワードは出さない
