@@ -17,8 +17,12 @@ if (セッションの Cookie が有効な場合) then (有効な場合)
   note right: 端末で PIN か生体認証をする。ここはサーバーの外
   :attestation 検証と保存\nチャレンジ・origin・rpId・user verification を照合し、公開鍵を保存\nverifyAndSavePasskey();
   if (attestation が、保存したチャレンジ・origin・rpId と合い、\nuser verification 済みの場合) then (検証が通る場合)
-    :公開鍵、credential ID、署名カウンタ、\n端末名を保存する;
-    note right: 秘密鍵は受け取らない。1人で複数の端末を登録できる
+    if (端末名が30文字を超える場合) then (超える場合)
+      :失敗を返す\nINVALID_DEVICE_NAME;
+    else (30文字以内の場合)
+      :公開鍵、credential ID、署名カウンタ、\n端末名を保存する;
+      note right: 秘密鍵は受け取らない。1人で複数の端末を登録できる
+    endif
   else (チャレンジが期限切れ・使用済み、\nまたは照合できない場合)
     :失敗を返す\nINVALID_CHALLENGE;
   endif

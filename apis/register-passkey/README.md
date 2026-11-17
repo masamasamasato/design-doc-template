@@ -11,7 +11,7 @@
 | 名前 | 必須 | 説明 |
 | --- | --- | --- |
 | セッションの Cookie | はい | ログイン時に付いた Cookie。例: `session_789` |
-| 端末名 | いいえ | 利用者が見る名前。例: `雅人のスマホ`。例：30文字まで |
+| 端末名 | いいえ | 利用者が見る名前。例: `雅人のスマホ`。例：30文字まで（Unicode のコードポイントで数える） |
 | attestation | はい | 端末が作った登録の証明。2回目の `POST /passkeys` で送ります |
 
 流れは2段階です。`POST /passkeys/options` でチャレンジを発行します。チャレンジは1回限りで、期限は5分です。画面はそれを端末に渡し、端末はパスキーを作って attestation を返します。`POST /passkeys` で attestation を検証し、公開鍵を保存します。検証では、発行したチャレンジ、origin、rpId、user verification を照合します。保存するのは公開鍵、credential ID、署名カウンタ、端末名だけです。
@@ -22,7 +22,7 @@
 | --- | --- | --- |
 | UNAUTHORIZED | セッションの Cookie が無い、または無効な場合 | `401`。登録しない |
 | INVALID_CHALLENGE | チャレンジが無い、発行から5分を超えた、既に使った、または attestation がチャレンジ・origin・rpId・user verification と合わない場合 | `400`。登録しない |
-| INVALID_DEVICE_NAME | 端末名が30文字（例：）を超える場合 | `400`。登録しない |
+| INVALID_DEVICE_NAME | 端末名が30文字を超える場合 | `400`。登録しない |
 
 削除（`DELETE /passkeys/{credentialId}`）の失敗です。削除の図はまだ載せていません。
 

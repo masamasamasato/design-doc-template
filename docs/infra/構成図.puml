@@ -52,7 +52,7 @@ AWSCloudGroup(aws, "AWS クラウド") {
   }
 
   SimpleStorageService(s3, "静的画面\n画面ファイルを置く", "S3")
-  rectangle "CloudFrontだけが読める（OAC）。\n例: login.html" as n_s3 #FFFFCC
+  rectangle "（OAC）\n例: login.html" as n_s3 #FFFFCC
   CloudFront(cf, "CloudFront\nHTTPSで配信する", "CDN")
   rectangle "画面はS3から（OAC）、\nAPIはALBへ回す" as n_cf #FFFFCC
   together {
@@ -115,8 +115,8 @@ AWSCloudGroup(aws, "AWS クラウド") {
 
     GenericGroup(data, "データ（マルチAZ）") {
       together {
-        rectangle "どのAPIでもログインが続く\n例：セッションは24時間" as n_cache #FFFFCC
-        ElastiCache(cachep, "ElastiCache プライマリ（1a）\nセッションを置く", "Redis")
+        rectangle "どのAPIでもログインが続く\n例：セッションは24時間\n例：失敗回数とロックは\n15分で消える" as n_cache #FFFFCC
+        ElastiCache(cachep, "ElastiCache プライマリ（1a）\nセッションと失敗回数・ロックを置く", "Redis")
       }
       together {
         RDS(rdsp, "RDS プライマリ（1a）\n商品・利用者を置く", "DB")
