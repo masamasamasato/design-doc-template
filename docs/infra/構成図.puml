@@ -8,6 +8,7 @@
 !include <awslib/Groups/AvailabilityZone>
 !include <awslib/Groups/PublicSubnet>
 !include <awslib/Groups/PrivateSubnet>
+!include <awslib/Groups/Generic>
 !include <awslib/General/Users>
 !include <awslib/NetworkingContentDelivery/Route53>
 !include <awslib/NetworkingContentDelivery/CloudFront>
@@ -29,10 +30,10 @@ title AWSインフラ構成（ログインと商品API）
 Users(user, "利用者", "ブラウザ")
 
 AWSCloudGroup(aws, "AWS クラウド") {
+  SimpleStorageService(s3, "静的画面", "S3")
   Route53(dns, "Route 53", "名前解決")
   CloudFront(cf, "CloudFront", "配信")
-  SimpleStorageService(s3, "静的画面", "S3")
-  CloudWatchLogs(logs, "CloudWatch Logs", "APIのログ")
+  CloudWatchLogs(logs, "CloudWatch Logs", "両APIのログ")
 
   VPCGroup(vpc, "VPC") {
     PublicSubnetGroup(pub, "パブリックサブネット（2つのAZ）") {
@@ -42,31 +43,31 @@ AWSCloudGroup(aws, "AWS クラウド") {
     AvailabilityZoneGroup(az1, "AZ ap-northeast-1a") {
       PrivateSubnetGroup(pri1, "プライベートサブネット") {
         ElasticContainerService(ecs1, "APIサービス", "ECS Fargate")
-        ElastiCache(cache, "ElastiCache", "セッション")
       }
     }
-
     AvailabilityZoneGroup(az2, "AZ ap-northeast-1c") {
       PrivateSubnetGroup(pri2, "プライベートサブネット") {
         ElasticContainerService(ecs2, "APIサービス", "ECS Fargate")
-        RDS(rds, "RDS", "商品・利用者")
       }
+    }
+
+    GenericGroup(data, "データ（プライベート）") {
+      ElastiCache(cache, "ElastiCache", "セッション")
+      RDS(rds, "RDS", "商品・利用者")
     }
   }
 }
 
-user --> dns
-dns --> cf
-cf --> s3
-cf --> alb
-alb --> ecs1
-alb --> ecs2
-ecs1 --> cache
-ecs2 --> cache
-ecs1 --> rds
-ecs2 --> rds
-ecs1 --> logs
-ecs2 --> logs
-cf -[hidden]- logs
+user -down-> dns
+dns -down-> cf
+cf -left-> s3
+cf -down-> alb
+alb -down-> ecs1
+alb -down-> ecs2
+ecs1 -down-> cache
+ecs2 -down-> rds
+s3 -[hidden]up- dns
+logs -[hidden]right- vpc
+note right of logs: 両APIのログを集める\nパスワードは出さない
 
 @enduml
