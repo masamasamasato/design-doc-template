@@ -2,26 +2,9 @@
 
 ログインしている利用者に、公開中の商品の一覧を、ページに分けて返します。
 
-```mermaid
-sequenceDiagram
-  actor User as ユーザー
-  participant Screen as 商品画面
-  participant API as 商品API
-  User->>Screen: 一覧を見る
-  Screen->>API: GET /products?page=1&limit=20
-  API->>API: requireSession()
-  alt ログインしていて、ページ分けが正しい
-    API->>API: listProducts()
-    API-->>Screen: 200 一覧
-    Screen-->>User: 一覧を見られた
-  else ログインしていない
-    API-->>Screen: 401 UNAUTHORIZED
-    Screen-->>User: ログインが必要
-  else ページ分けまたは並び順が正しくない
-    API-->>Screen: 400 INVALID_QUERY
-    Screen-->>User: 指定を直す
-  end
-```
+![商品一覧を取得する](入口.svg)
+
+ソースは [入口.puml](入口.puml) です。
 
 ## 入力と結果
 
@@ -46,6 +29,7 @@ sequenceDiagram
 
 - [用語](用語.md)
 - [処理詳細](処理詳細.md)
+- [入口の図](入口.puml)
 - [処理のイメージ](flow.puml)
 - [変更履歴](変更履歴.md)
 - [ログインして商品を探す](../../docs/business/ログインして商品を探す/README.md)

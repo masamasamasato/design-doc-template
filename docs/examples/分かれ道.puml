@@ -1,0 +1,16 @@
+@startuml
+skinparam shadowing false
+skinparam defaultFontName "Noto Sans CJK JP"
+skinparam ActivityFontName "Noto Sans CJK JP"
+
+title 分かれ道の例
+
+start
+:公開する;
+if (本人確認は済みか?) then (済み)
+  :公開中にする;
+else (まだ)
+  :NOT_VERIFIED を返す;
+endif
+stop
+@enduml

@@ -2,23 +2,9 @@
 
 本人確認が済んでいる利用者だけ、自分のプロフィールを公開中にします。
 
-```mermaid
-sequenceDiagram
-  actor User as ユーザー
-  participant Screen as プロフィール画面
-  participant API as プロフィールAPI
-  User->>Screen: 公開する
-  Screen->>API: POST /profiles/{id}/publish
-  API->>API: checkOwner()
-  alt 本人確認が済んでいる
-    API->>API: publish()
-    API-->>Screen: 200 公開中
-    Screen-->>User: 公開できた
-  else 本人確認が済んでいない
-    API-->>Screen: 403 NOT_VERIFIED
-    Screen-->>User: 先に本人確認が必要
-  end
-```
+![プロフィールを公開する](入口.svg)
+
+ソースは [入口.puml](入口.puml) です。
 
 ## 入力と結果
 
@@ -41,6 +27,7 @@ sequenceDiagram
 
 - [用語](用語.md)
 - [処理詳細](処理詳細.md)
+- [入口の図](入口.puml)
 - [処理のイメージ](flow.puml)
 - [変更履歴](変更履歴.md)
 - [プロフィールを公開する（業務）](../../docs/business/プロフィールを公開する/README.md)

@@ -50,15 +50,11 @@ markdown_extensions:
   - toc:
       permalink: true
   - pymdownx.details
-  - pymdownx.superfences:
-      custom_fences:
-        - name: mermaid
-          class: mermaid
-          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.superfences
 
 nav:
   - はじめに: README.md
-  - 使い始める設定: docs/setup.md
+  - GitHub の設定: docs/setup.md
   - 用語集: 用語集.md
   - 業務フロー:
       - プロフィールを公開する:

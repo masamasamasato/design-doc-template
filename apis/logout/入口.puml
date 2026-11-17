@@ -1,0 +1,18 @@
+@startuml
+skinparam shadowing false
+skinparam defaultFontName "Noto Sans CJK JP"
+skinparam SequenceFontName "Noto Sans CJK JP"
+hide footbox
+
+title ログアウトする
+
+actor "ユーザー" as User
+participant "設定画面" as Screen
+participant "認証API" as API
+
+User -> Screen : ログアウトする
+Screen -> API : DELETE /sessions/current
+API -> API : invalidateSession()
+API --> Screen : 200 Cookie を消した
+Screen --> User : ログアウトできた
+@enduml

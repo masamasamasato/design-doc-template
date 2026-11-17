@@ -2,17 +2,9 @@
 
 今のセッションを無効にし、ログインしていない状態に戻します。
 
-```mermaid
-sequenceDiagram
-  actor User as ユーザー
-  participant Screen as 設定画面
-  participant API as 認証API
-  User->>Screen: ログアウトする
-  Screen->>API: DELETE /sessions/current
-  API->>API: invalidateSession()
-  API-->>Screen: 200 Cookie を消した
-  Screen-->>User: ログアウトできた
-```
+![ログアウトする](入口.svg)
+
+ソースは [入口.puml](入口.puml) です。
 
 ## 入力と結果
 
@@ -30,6 +22,7 @@ sequenceDiagram
 
 - [用語](用語.md)
 - [処理詳細](処理詳細.md)
+- [入口の図](入口.puml)
 - [処理のイメージ](flow.puml)
 - [変更履歴](変更履歴.md)
 - 共通の言葉は [用語集](../../用語集.md)

@@ -2,15 +2,9 @@
 
 （このAPIが何を達成するかを、1文書く。例: 本人確認が済んでいる人のプロフィールを、公開中にします。）
 
-```mermaid
-sequenceDiagram
-  actor User as ユーザー
-  participant Screen as （画面の名前）
-  participant API as （APIの名前）
-  User->>Screen: （操作）
-  Screen->>API: （メソッドとパス）
-  API-->>Screen: （成功または失敗）
-```
+![（APIの名前）](入口.svg)
+
+ソースは [入口.puml](入口.puml) です。
 
 ## 入力と結果
 
@@ -30,6 +24,7 @@ sequenceDiagram
 
 - [用語](用語.md)
 - [処理詳細](処理詳細.md)
+- [入口の図](入口.puml)
 - [処理のイメージ](flow.puml)
 - [変更履歴](変更履歴.md)
 - 共通の言葉は [用語集](../../用語集.md)

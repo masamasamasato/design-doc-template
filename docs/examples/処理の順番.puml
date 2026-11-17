@@ -1,0 +1,22 @@
+@startuml
+skinparam shadowing false
+skinparam defaultFontName "Noto Sans CJK JP"
+skinparam SequenceFontName "Noto Sans CJK JP"
+hide footbox
+
+title 処理の順番の例
+
+actor "ユーザー" as User
+participant "プロフィール画面" as Screen
+participant "プロフィールAPI" as API
+
+User -> Screen : 公開する
+Screen -> API : POST /profiles/{id}/publish
+API -> API : checkOwner()
+alt 本人確認が済んでいる
+  API -> API : publish()
+  API --> Screen : 200 公開中
+else 本人確認が済んでいない
+  API --> Screen : 403 NOT_VERIFIED
+end
+@enduml

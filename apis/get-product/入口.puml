@@ -1,0 +1,27 @@
+@startuml
+skinparam shadowing false
+skinparam defaultFontName "Noto Sans CJK JP"
+skinparam SequenceFontName "Noto Sans CJK JP"
+hide footbox
+
+title 商品詳細を取得する
+
+actor "ユーザー" as User
+participant "商品画面" as Screen
+participant "商品API" as API
+
+User -> Screen : 商品を見る
+Screen -> API : GET /products/{id}
+API -> API : requireSession()
+alt ログインしていて、公開中の商品がある
+  API -> API : getProduct()
+  API --> Screen : 200 詳細
+  Screen --> User : 詳細を見られた
+else ログインしていない
+  API --> Screen : 401 UNAUTHORIZED
+  Screen --> User : ログインが必要
+else 商品が無い、または公開中でない
+  API --> Screen : 404 NOT_FOUND
+  Screen --> User : 商品が無い
+end
+@enduml
