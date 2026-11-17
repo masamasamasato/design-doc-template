@@ -6,7 +6,10 @@ set -euo pipefail
 repo="${GITHUB_REPOSITORY:?}"
 url="${DOCS_SITE_URL:-}"
 if [[ -z "$url" ]]; then
-  url="$(gh api "repos/${repo}/pages" --jq .html_url 2>/dev/null || true)"
+  # Pages が無いと gh は 404 の本文を出すので、URL の形のときだけ使う
+  if out="$(gh api "repos/${repo}/pages" --jq .html_url 2>/dev/null)" && [[ "$out" =~ ^https?:// ]]; then
+    url="$out"
+  fi
 fi
 if [[ -z "$url" ]]; then
   owner="$(printf '%s' "${repo%%/*}" | tr '[:upper:]' '[:lower:]')"
