@@ -43,12 +43,12 @@ jobs:
           if [ ! -f scripts/check-pr-body.py ]; then
             # スクリプトが無いと本文を確かめられないため、失敗にする
             {
-              echo "## PR本文を確かめられませんでした"
+              echo "## PR本文を確かめられません"
               echo ""
               echo "ベースブランチ（${GITHUB_BASE_REF}）に scripts/check-pr-body.py がありません。"
-              echo "ベースブランチにスクリプトを戻すか、スクリプトがあるブランチに向けてPRを出し直してください。"
+              echo "直し方: ベースブランチにスクリプトを戻すか、スクリプトがあるブランチに向けてPRを出し直してください。"
             } >> "$GITHUB_STEP_SUMMARY"
-            echo "::error title=PR本文を確かめられません::ベースブランチ（${GITHUB_BASE_REF}）に scripts/check-pr-body.py がありません。ベースブランチにスクリプトを戻してください。"
+            echo "::error title=PR本文を確かめられません::ベースブランチ（${GITHUB_BASE_REF}）に scripts/check-pr-body.py がありません。直し方: ベースブランチにスクリプトを戻すか、スクリプトがあるブランチに向けてPRを出し直してください。"
             exit 1
           fi
           python3 scripts/check-pr-body.py

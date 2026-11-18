@@ -112,20 +112,6 @@ def block(title: str, items: list[str]) -> list[str]:
     return [f"### {title}", ""] + [f"- {item}" for item in (items or ["なし"])] + [""]
 
 
-# 一覧の見方は、差分を見るときのじゃまにならないよう、閉じた details に入れる
-GUIDE = [
-    "<details>",
-    "<summary>この一覧の見方</summary>",
-    "",
-    "- リンク先は公開サイト（main を公開したページ）です。マージして公開されるまでは、追記したページは開けず、修正したページは前の内容です。",
-    "- SVG（.puml から自動で作る）と 変更履歴.md（マージ後に自動で足す）は、一覧に出しません。",
-    "- リネームは、元のパスの削除と新しいパスの追記として出します。",
-    "",
-    "</details>",
-    "",
-]
-
-
 def main() -> None:
     if len(sys.argv) != 3:
         sys.exit("使い方: list-changed-docs.py <比較元> <比較先>")
@@ -154,7 +140,6 @@ def main() -> None:
     lines += block("追記ドキュメント", added)
     lines += block("修正ドキュメント", modified)
     lines += block("削除ドキュメント", deleted)
-    lines += GUIDE
     sys.stdout.write("\n".join(lines))
 
 
