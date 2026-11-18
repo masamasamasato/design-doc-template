@@ -1,0 +1,54 @@
+name: PRタイトルと本文を確認する
+
+on:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - reopened
+      - synchronize
+
+permissions:
+  contents: read
+
+jobs:
+  title:
+    runs-on: ubuntu-latest
+    steps:
+      - name: リポジトリを取得する
+        uses: actions/checkout@v4
+
+      - name: タイトルを確認する
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: python3 scripts/check-pr-title.py
+
+  body:
+    runs-on: ubuntu-latest
+    steps:
+      # PRの中で書き換えたスクリプトではなく、ベースブランチのスクリプトで確かめる（フォークPR対策）
+      - name: ベースブランチを取得する
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          persist-credentials: false
+
+      - name: 本文を確認する
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          # bot の見分け方は user.type だけにそろえ、判定はスクリプトに任せる
+          PR_AUTHOR_TYPE: ${{ github.event.pull_request.user.type }}
+        run: |
+          if [ ! -f scripts/check-pr-body.py ]; then
+            # このチェックを足すPRなど、ベースにまだスクリプトが無いときだけ通す
+            {
+              echo "## PR本文のチェックを飛ばしました"
+              echo ""
+              echo "ベースブランチ（${GITHUB_BASE_REF}）に scripts/check-pr-body.py がまだ無いため、本文は確かめていません。"
+              echo "マージ後のPRから確かめます。"
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "ベースブランチに scripts/check-pr-body.py が無いため、本文は確かめません。"
+            exit 0
+          fi
+          python3 scripts/check-pr-body.py
