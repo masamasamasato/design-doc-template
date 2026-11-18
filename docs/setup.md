@@ -12,3 +12,16 @@
    - 無い・期限切れのときは、警告を出して、図をリンクで載せます。
 
 ブランチ保護で bot の push が拒否されるときは、`github-actions[bot]` の更新を許可します。
+
+PR本文の形を必須にするときは、ブランチ保護の必須チェックに `body` を入れます。
+
+<details markdown>
+<summary>PR本文のチェックの詳細</summary>
+
+- ワークフローは「PRタイトルと本文を確認する」（`.github/workflows/pr-checks.yml`）の `body` ジョブです。PRを開いた・本文を変えた・push した・開き直したときに動きます。
+- 中身は `scripts/check-pr-body.py` です。本文の形は `.github/pull_request_template.md` に合わせます。
+- スクリプトは、PRのものではなく、ベースブランチのものを動かします。フォークのPRがスクリプトを書き換えても、チェックを外せません。ベースにスクリプトがまだ無いときだけ通し、理由を Job Summary に書きます。
+- 失敗したときは、ジョブのログに、直し方の例が日本語で出ます。
+- bot が作ったPRは確かめません。見分け方は、GitHub の `user.type` が `Bot` かどうかだけです。ワークフローが `PR_AUTHOR_TYPE` として渡し、スクリプトが判定します。
+
+</details>
