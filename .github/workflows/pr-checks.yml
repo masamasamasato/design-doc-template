@@ -41,14 +41,14 @@ jobs:
           PR_AUTHOR_TYPE: ${{ github.event.pull_request.user.type }}
         run: |
           if [ ! -f scripts/check-pr-body.py ]; then
-            # このチェックを足すPRなど、ベースにまだスクリプトが無いときだけ通す
+            # スクリプトが無いと本文を確かめられないため、失敗にする
             {
-              echo "## PR本文のチェックを飛ばしました"
+              echo "## PR本文を確かめられませんでした"
               echo ""
-              echo "ベースブランチ（${GITHUB_BASE_REF}）に scripts/check-pr-body.py がまだ無いため、本文は確かめていません。"
-              echo "マージ後のPRから確かめます。"
+              echo "ベースブランチ（${GITHUB_BASE_REF}）に scripts/check-pr-body.py がありません。"
+              echo "ベースブランチにスクリプトを戻すか、スクリプトがあるブランチに向けてPRを出し直してください。"
             } >> "$GITHUB_STEP_SUMMARY"
-            echo "ベースブランチに scripts/check-pr-body.py が無いため、本文は確かめません。"
-            exit 0
+            echo "::error title=PR本文を確かめられません::ベースブランチ（${GITHUB_BASE_REF}）に scripts/check-pr-body.py がありません。ベースブランチにスクリプトを戻してください。"
+            exit 1
           fi
           python3 scripts/check-pr-body.py
