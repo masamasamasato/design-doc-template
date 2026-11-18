@@ -1,4 +1,4 @@
-name: PRタイトルを確認する
+name: PRタイトルと本文を確認する
 
 on:
   pull_request:
@@ -22,3 +22,17 @@ jobs:
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
         run: python3 scripts/check-pr-title.py
+
+  body:
+    # bot が作るPRは対象外
+    if: github.event.pull_request.user.type != 'Bot'
+    runs-on: ubuntu-latest
+    steps:
+      - name: リポジトリを取得する
+        uses: actions/checkout@v4
+
+      - name: 本文を確認する
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+        run: python3 scripts/check-pr-body.py

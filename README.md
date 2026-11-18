@@ -8,7 +8,7 @@
 2. 業務フローは `docs/business/<業務>/` に、APIは `apis/_template` をコピーして書きます。
 3. 図は PlantUML だけです。Mermaid は使いません。先に Java と Graphviz を入れ、`./scripts/install-plantuml.sh` を実行します。そのあと `./scripts/render-puml.sh` で SVG にします。
 4. サイトは `NO_MKDOCS_2_WARNING=1 mkdocs serve -a 127.0.0.1:8765` で見ます。mkdocs の入れ方は、下の「図の変換とローカルプレビュー」にあります。
-5. PRタイトルは、何をどう変えたかを日本語で書きます。`fix` などの接頭辞は使いません。
+5. PRタイトルは、何をどう変えたかを日本語で書きます。`fix` などの接頭辞は使いません。本文は、テンプレートの「概要」（2行まで）と「判断してほしい点」を書き、ほかは閉じた details に入れます。
 
 [GitHub の設定](docs/setup.md)
 
@@ -109,6 +109,7 @@ scripts/                          ローカル変換と、履歴の追記
 - PlantUML で URL を `!include` しない。アイコンは jar 同梱の `<awslib/...>` を使う。
 - PRタイトルを `fix` や `feat:` にしない。何をどう変えたかを日本語で書きます。例: `公開時に本人確認を追加`。
 - draw.io を変えたのに、変更前と変更後のスクリーンショットを貼らない。
+- PR本文の「概要」を3行以上にしない。補足や具体例は、閉じた details に入れる。
 
 </details>
 
@@ -282,6 +283,7 @@ Material for MkDocs は 2027-05-05 まで保守されます。起動時の案内
 | `main` へマージしたとき | 変わった `apis/<名前>/変更履歴.md` と `docs/business/<業務>/変更履歴.md` に1行足す。追記したときだけ、サイト公開のワークフローを起動する。同じ3つの分類の一覧を Job Summary に出す |
 | `main` へ push したとき、または手動で実行したとき | MkDocs Material を GitHub Pages へ公開する。Pages が使えないときは、公開を飛ばさずジョブを失敗にする |
 | PRを開いた・タイトルを変えたとき | タイトルが日本語で、`fix` などの接頭辞でないことを確認する |
+| PRを開いた・本文を変えた・push したとき | `scripts/check-pr-body.py` で本文の形を確かめる。「## 概要」がコメントと空行を除いて1〜2行、「## 判断してほしい点」が番号付きの行か「なし」、それより後は閉じた details の中だけ（外は見出し・空行・コメントのみ）、details に `open` が無いこと。テンプレートのままは失敗。bot が作るPRは対象外 |
 
 PRコメントの赤い図は、`scripts/highlight-puml-diff.py` が作ります。比較元のブランチと PR の `.puml` を行ごとに比べ、足した・変えた行に色の指定を付けた一時コピーを、Actions の中で SVG にします。リポジトリにコミットする SVG は、ふだんの色のままです。
 
