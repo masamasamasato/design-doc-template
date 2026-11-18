@@ -116,20 +116,6 @@ def category(title: str, items: list[str]) -> list[str]:
     return [f"### {title}", ""] + [f"- {item}" for item in (items or ["なし"])] + [""]
 
 
-def guide(run_url: str) -> list[str]:
-    """図の見方。差分を見るときのじゃまにならないよう、閉じた details に入れる"""
-    lines = [
-        "<details>",
-        "<summary>この図の見方</summary>",
-        "",
-        "- PlantUML は GitHub Actions の中だけで SVG にしました。図の中身は外部のサーバーへ送っていません。",
-        "- コメントに画像が出ないときは、リンクを開いてください。",
-    ]
-    if run_url:
-        lines.append(f"- PNG が必要なときは、[この実行]({run_url})のアーティファクト `plantuml-png` を開いてください。")
-    return lines + ["", "</details>", ""]
-
-
 def open_label(puml: str) -> str:
     """閉じた details の見出し。図の場所が分かる名前にする。
     例: apis/register-passkey/flow.puml → 「register-passkey のフローを開く」"""
@@ -192,7 +178,6 @@ def main() -> None:
     lines += category("追記した図", [f"[{code(label(p))}]({url_of(p)})" for p in added])
     lines += category("修正した図", [f"[{code(label(p))}]({url_of(p)})" for p in modified])
     lines += category("削除した図", [code(d) for d in deleted])
-    lines += guide(os.environ.get("RUN_URL", "").strip())
     for title, group in (("追記した図", added), ("修正した図", modified)):
         for path in group:
             puml, info = find_summary(files, path)

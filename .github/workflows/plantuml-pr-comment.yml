@@ -157,7 +157,6 @@ jobs:
         env:
           COMMENT_SHA: ${{ steps.list.outputs.sha || github.event.pull_request.head.sha }}
           FILE_LIST: ${{ runner.temp }}/plantuml-svgs.txt
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           DIFF_SUMMARY: ${{ runner.temp }}/plantuml-diff.json
           HIGHLIGHT_FAILED: ${{ runner.temp }}/highlight-failed.txt
