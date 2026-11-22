@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """変換した SVG を、PRコメント用の Markdown にする。
 
-変わった図は、changed-docs とそろえて「追記した図」「修正した図」「削除した図」に分ける。
+変わった図は「追記した図」「修正した図」の見出しの下に、閉じずにそのまま載せる。赤い差分がすぐ見えるようにするため。
+消した図は、最後の「削除した図」に並べる。
 ADDED_LIST に、PRで足した .puml の一覧ファイルを渡す（git diff の A）。ここに無い図は修正とする。
 DELETED_LIST に、PRで消した .puml の一覧ファイルを渡す（git diff の D）。
 リネームは、元の図の削除と、新しい図の追記として出す。
@@ -111,28 +112,10 @@ def stem(path: str) -> str:
     return path.rsplit(".", 1)[0]
 
 
-def category(title: str, items: list[str]) -> list[str]:
-    """changed-docs と同じ形。### の見出しの下に箇条書きで並べ、無いときは「なし」"""
-    return [f"### {title}", ""] + [f"- {item}" for item in (items or ["なし"])] + [""]
-
-
-def open_label(puml: str) -> str:
-    """閉じた details の見出し。図の場所が分かる名前にする。
-    例: apis/register-passkey/flow.puml → 「register-passkey のフローを開く」"""
-    parts = puml.split("/")
-    folder = parts[-2] if len(parts) >= 2 else ""
-    name = parts[-1].rsplit(".", 1)[0]
-    kind = {"flow": "フロー"}.get(name, name)
-    return f"{folder} の{kind}を開く" if folder else f"{kind}を開く"
-
-
 def figure(path: str, name: str, url: str, attach: bool, info: dict | None, failed: bool, title: str) -> list[str]:
-    # 図は大きいので、1枚ごとに閉じた details に入れる。見出しは閉じていても見える
+    # 赤い差分がすぐ見えるよう、図は閉じずに載せる
     lines = [
         f"### {title}：{code(name)}",
-        "",
-        "<details>",
-        f"<summary>{html.escape(open_label(name))}</summary>",
         "",
         f"[SVGを開く]({url})",
         "",
@@ -143,7 +126,6 @@ def figure(path: str, name: str, url: str, attach: bool, info: dict | None, fail
         lines.extend([f'<img alt="{html.escape(path)}" src="{html.escape(url)}?sanitize=true" />', ""])
     if info:
         lines.extend(diff_lines(info, attach, failed))
-    lines.extend(["</details>", ""])
     return lines
 
 
@@ -175,13 +157,13 @@ def main() -> None:
         "## 変換した図",
         "",
     ]
-    lines += category("追記した図", [f"[{code(label(p))}]({url_of(p)})" for p in added])
-    lines += category("修正した図", [f"[{code(label(p))}]({url_of(p)})" for p in modified])
-    lines += category("削除した図", [code(d) for d in deleted])
+    # 図は見出しの下にそのまま載せる（PR #22 より前の形）。一覧は図の見出しと重なるので出さない
     for title, group in (("追記した図", added), ("修正した図", modified)):
         for path in group:
             puml, info = find_summary(files, path)
             lines.extend(figure(path, label(path), url_of(path), attach, info, puml in failed, title))
+    if deleted:
+        lines += ["### 削除した図", ""] + bullets([code(d) for d in deleted]) + [""]
     sys.stdout.write("\n".join(lines))
 
 
