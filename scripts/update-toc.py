@@ -108,7 +108,7 @@ def build(text: str) -> tuple[str, list[str]]:
         anchors[i] = base if n == 0 else f"{base}-{n}"
     items = []
     for i, lv, t in body:
-        indent = "" if lv == 2 else "  "
+        indent = "" if lv == 2 else "    "
         items.append(f"{indent}- [{plain(t).strip()}](#{anchors[i]})")
     first = next(i for i, lv, _ in body if lv == 2)
     block = [f"## {TOC_TITLE}", ""] + items + [""]
