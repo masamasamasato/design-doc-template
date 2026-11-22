@@ -33,6 +33,10 @@ theme:
         icon: material/weather-sunny
         name: ライトモードへ
 
+# 同じ見出しのアンカーを GitHub と同じ「-1」にする
+hooks:
+  - scripts/mkdocs_hooks.py
+
 extra_css:
   - stylesheets/extra.css
 
@@ -49,6 +53,10 @@ markdown_extensions:
   - tables
   - toc:
       permalink: true
+      # 目次のアンカーを GitHub と同じにする（日本語を残し、小文字にして、記号を消す）
+      slugify: !!python/object/apply:pymdownx.slugs.slugify
+        kwds:
+          case: lower
   - pymdownx.details
   - pymdownx.superfences
 

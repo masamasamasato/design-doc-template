@@ -62,3 +62,15 @@ jobs:
             printf '%s' "$payload" | gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" --input - >/dev/null
             echo "コメントしました"
           fi
+
+  toc:
+    # 目次が見出しとずれていないかを検証する
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: リポジトリを取得する
+        uses: actions/checkout@v4
+
+      - name: 目次を検証する
+        run: python3 scripts/update-toc.py --check
