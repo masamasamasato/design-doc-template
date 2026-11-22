@@ -55,6 +55,7 @@ markdown_extensions:
 nav:
   - はじめに: README.md
   - GitHub の設定: docs/setup.md
+  - 書き方と自動化（AI向け）: docs/guide.md
   - 用語集: 用語集.md
   - 図の書き方の例: docs/examples/index.md
   - 業務フロー:
