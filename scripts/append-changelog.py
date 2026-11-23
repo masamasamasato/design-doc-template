@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 """変わった apis/<名前>/ と docs/business/<業務>/ の変更履歴.md に、マージ日とPRを足す。
 
-形は、日付の見出しの下に箇条書きを並べる形。
+形は、日付の見出しの下に、PRへのリンクの箇条書きを並べる形。
 
     ## 2026-11-23
 
-    - \\#40 PRタイトル
+    - [#40](https://github.com/<owner>/<repo>/pull/40) PRタイトル
 
-- 同じ日付の見出しがあれば、その下の最後に `- \\#PR番号 PRタイトル` を1行足す。
-  `#` の前の `\\` は、MkDocs で行が見出しにならないためのもの（サイトでは `#` だけが出る）。
+- 同じ日付の見出しがあれば、その下の最後に1行足す。
 - 無ければ、見出しを作ってから足す。見出しの順番（古い順か新しい順か）は、ファイルの今の順番に合わせる。
-- 同じ行がファイルにあれば、二重に足さない。
-- 古い形の行（`YYYY-MM-DD #PR番号 PRタイトル`）が残っていれば、先にこの形へ直す。
+- 同じPR番号とタイトルの行がファイルにあれば、二重に足さない。
+- 古い形の行（`YYYY-MM-DD #40 タイトル`、`- \\#40 タイトル`、`- #40 タイトル`）が残っていれば、先にこの形へ直す。
+- PRのURLは、GITHUB_SERVER_URL と GITHUB_REPOSITORY から作る。無いときは git remote（origin）から作る。
 フォルダ名が _ で始まるもの（apis/_template など）は対象外。"""
 
 from __future__ import annotations
@@ -42,17 +42,51 @@ def changed_files(base: str, head: str) -> list[str]:
 
 
 HEADING = re.compile(r"^## (\d{4}-\d{2}-\d{2})\s*$")
-OLD_LINE = re.compile(r"^(\d{4}-\d{2}-\d{2}) #(\d+ .*)$")
-UNESCAPED_ITEM = re.compile(r"^- #(\d+ )")
+OLD_LINE = re.compile(r"^(\d{4}-\d{2}-\d{2}) #(\d+) (.*)$")
+ITEM = re.compile(r"^- (?:\\?#(\d+)|\[#(\d+)\]\([^)]*\)) (.*)$")
 NEW_FILE_INTRO = (
     "# 変更履歴\n\n"
     "`main` へマージすると、マージした日の見出しの下に1行足されます。\n\n"
-    "形式は、見出し `## YYYY-MM-DD` の下に `- \\#PR番号 PRタイトル` です。\n"
+    "形式は、見出し `## YYYY-MM-DD` の下に `- [#PR番号](PRのURL) PRタイトル` です。\n"
 )
 
 
-def split(text: str) -> tuple[list[str], list[tuple[str, list[str]]]]:
-    """前置き（見出しより前の行）と、日付ごとの箇条書きに分ける。古い形の行も読む。"""
+def repo_url() -> str:
+    """PRのURLのもとになる `https://<ホスト>/<owner>/<repo>` を返す。"""
+    server = os.environ.get("GITHUB_SERVER_URL", "").rstrip("/")
+    repository = os.environ.get("GITHUB_REPOSITORY", "").strip("/")
+    if server and repository:
+        return f"{server}/{repository}"
+    result = subprocess.run(
+        ["git", "remote", "get-url", "origin"],
+        cwd=ROOT,
+        check=True,
+        text=True,
+        capture_output=True,
+    )
+    remote = result.stdout.strip()
+    match = re.match(r"^(?:https?://)(?:[^@/]+@)?([^/]+)/(.+?)(?:\.git)?/?$", remote) or re.match(
+        r"^(?:ssh://)?[^@/]+@([^:/]+)[:/](.+?)(?:\.git)?/?$", remote
+    )
+    if not match:
+        raise SystemExit("git remote origin から GitHub のURLを作れませんでした")
+    host, path = match.groups()
+    return f"https://{host}/{path}"
+
+
+def make_item(url: str, number: str, title: str) -> str:
+    return f"- [#{number}]({url}/pull/{number}) {title}"
+
+
+def item_key(line: str) -> tuple[str, str] | None:
+    match = ITEM.match(line)
+    if not match:
+        return None
+    return (match.group(1) or match.group(2), match.group(3))
+
+
+def split(text: str, url: str) -> tuple[list[str], list[tuple[str, list[str]]]]:
+    """前置き（見出しより前の行）と、日付ごとの箇条書きに分ける。古い形の行は、リンクの形に直す。"""
     intro: list[str] = []
     sections: list[tuple[str, list[str]]] = []
     for raw in text.splitlines():
@@ -61,13 +95,14 @@ def split(text: str) -> tuple[list[str], list[tuple[str, list[str]]]]:
         if heading:
             sections.append((heading.group(1), []))
         elif old:
-            date, rest = old.groups()
+            date, number, title = old.groups()
             if not sections or sections[-1][0] != date:
                 sections.append((date, []))
-            sections[-1][1].append(f"- \\#{rest}")
+            sections[-1][1].append(make_item(url, number, title))
         elif sections:
             if raw.strip():
-                sections[-1][1].append(UNESCAPED_ITEM.sub(r"- \\#\1", raw))
+                key = item_key(raw)
+                sections[-1][1].append(make_item(url, *key) if key else raw)
         else:
             intro.append(raw)
     while intro and not intro[-1].strip():
@@ -82,11 +117,12 @@ def join(intro: list[str], sections: list[tuple[str, list[str]]]) -> str:
     return "\n\n".join(parts) + "\n"
 
 
-def add_entry(text: str, date: str, item: str) -> tuple[str, bool]:
-    """date の見出しの下に item を足した全文と、足したかどうかを返す。"""
-    intro, sections = split(text)
-    if any(item in items for _, items in sections):
+def add_entry(text: str, date: str, number: str, title: str, url: str) -> tuple[str, bool]:
+    """date の見出しの下にPRの行を足した全文と、足したかどうかを返す。"""
+    intro, sections = split(text, url)
+    if any(item_key(line) == (number, title) for _, items in sections for line in items):
         return join(intro, sections), False
+    item = make_item(url, number, title)
     for section_date, items in sections:
         if section_date == date:
             items.append(item)
@@ -101,9 +137,9 @@ def add_entry(text: str, date: str, item: str) -> tuple[str, bool]:
     return join(intro, sections), True
 
 
-def append(path: Path, date: str, item: str) -> None:
+def append(path: Path, date: str, number: str, title: str, url: str) -> None:
     text = path.read_text(encoding="utf-8") if path.exists() else NEW_FILE_INTRO
-    new_text, added = add_entry(text, date, item)
+    new_text, added = add_entry(text, date, number, title, url)
     if not added:
         if new_text != text:
             path.write_text(new_text, encoding="utf-8")
@@ -119,7 +155,7 @@ def main() -> None:
     number = os.environ["PR_NUMBER"].strip()
     title = " ".join(os.environ["PR_TITLE"].split())
     today = datetime.now(ZoneInfo("Asia/Tokyo")).strftime("%Y-%m-%d")
-    entry = f"- \\#{number} {title}"
+    url = repo_url()
 
     seen: set[tuple[str, str]] = set()
     for name in changed_files(base, head):
@@ -140,7 +176,7 @@ def main() -> None:
             if not directory.is_dir():
                 print(f"削除済みのため飛ばします: {rel}")
                 continue
-            append(directory / "変更履歴.md", today, entry)
+            append(directory / "変更履歴.md", today, number, title, url)
 
     if not seen:
         print("apis/ と docs/business/ の変更はありません")
