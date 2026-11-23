@@ -436,8 +436,8 @@ WIDE_TABLES_JS = """
 # 図を、文字が読める大きさにする JS。
 # - 画像だけの段落を div.pdf-figure で包み、すぐ後の「ソース:」の段落も中に入れる（同じページに置くため）。
 # - 図は、A4 縦の幅と高さに収まる大きさにする。その倍率が BODY_MIN_SCALE より小さい図と、
-#   直前の見出し・導入を足すと A4 に収まらない図は等倍にし、data-own を付ける。
-#   あとで PAGES_JS が、図の大きさに合わせた用紙のページにする。前の節の本文の残りには詰めない。
+#   インフラ構成の図は等倍にし、data-own を付ける。あとで PAGES_JS が、図の大きさに合わせた用紙の
+#   ページにする。前の節の本文の残りには詰めない。
 #   図の直前の見出しと導入文（合わせて H の半分まで）も、div.pdf-lead にして図のページの上に載せる。
 #   前のページに見出しと数行だけが残って、ほぼ空になるのを防ぎ、図のページで何の図か分かるようにする。
 # - SVG の文字の上下の位置を data-texts に残す。あとで図を分けるとき、文字の無い行で切るのに使う。
@@ -486,8 +486,9 @@ async ([W, H, BODY_MIN]) => {
       if (/^H[1-6]$/.test(el.tagName)) break;
       el = el.previousElementSibling;
     }
-    // 見出しと導入を足すと A4 に収まらない図も、図の大きさに合わせた1ページに等倍で載せる
-    if (scale < BODY_MIN || nh * scale + height > H - 80) {
+    // インフラ構成の図も、大きさに関わらず、図の大きさに合わせた1ページに等倍で載せる
+    const isInfra = new URL(img.src).pathname.includes('/docs/infra/');
+    if (scale < BODY_MIN || isInfra) {
       scale = 1;
       fig.dataset.own = '1';
       const box = document.createElement('div');

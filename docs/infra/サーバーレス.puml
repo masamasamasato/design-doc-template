@@ -23,7 +23,7 @@ Users(user, "利用者\nブラウザから操作する", "ブラウザ")
 
 AWSCloudGroup(aws, "AWS クラウド") {
   Route53(dns, "Route 53\n名前を解決する", "DNS")
-  CertificateManager(acm, "ACM\nHTTPSの証明書を発行する", "独自ドメイン")
+  CertificateManager(acm, "ACM\nHTTPSの証明書を発行する", "HTTPS")
   APIGateway(apigw, "API Gateway\nHTTPSでAPIを受け付ける", "HTTP API")
   together {
     rectangle "アクセスに合わせて増減する" as n_fn #FFFFCC
