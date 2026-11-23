@@ -13,16 +13,16 @@ participant "商品API" as API
 
 User -> Screen : 商品を見る
 Screen -> API : GET /products/{id}
-API -> API : セッション検証と公開状態の検証\nrequireSession()、getProduct()
-alt セッションが有効で、商品があり、公開中の場合
-  API --> Screen : 200 名前・価格・在庫\n何も保存しない
-  Screen --> User : 詳細が見えた
-else セッションの Cookie が無い、または無効な場合
+API -> API : 1. セッション検証\n2. 公開状態の検証
+alt Cookie が無い または Cookie のセッションIDが保存済みの有効なセッションと合わない場合
   API --> Screen : 401 UNAUTHORIZED\n何も保存しない
   Screen --> User : ログインが必要
-else セッションが有効で、商品が無い、または公開中でない場合
+else セッションが合う かつ パスの商品IDの商品が公開中でない場合（無い商品も含む）
   API --> Screen : 404 NOT_FOUND\n何も保存しない
   Screen --> User : 商品を表示できない
   note right of Screen : 公開中でない商品も同じ表示
+else セッションが合う かつ その商品の状態が公開中の場合
+  API --> Screen : 3. 200 名前・価格・在庫\n何も保存しない
+  Screen --> User : 詳細が見えた
 end
 @enduml
