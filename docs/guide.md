@@ -24,6 +24,8 @@
 
 ```text
 README.md                         使い方（人が読む最低限）
+AGENTS.md                         コーディングエージェントへの案内（決まりは docs/guide.md）
+CLAUDE.md                         Claude Code 向け。AGENTS.md を読む
 用語集.md                         APIで使う言葉（1か所にまとめる）
 docs/guide.md                     書き方と自動化（AI向け）
 docs/setup.md                     GitHub の設定（権限、Pages、PREVIEW_TOKEN）
@@ -48,6 +50,7 @@ mkdocs.yml                        サイトの設定
 mkdocs/docs/                      サイトが読む原稿へのリンク
 stylesheets/                      サイトの追加 CSS
 javascripts/                      サイトの追加 JS（図の拡大）
+.github/copilot-instructions.md   GitHub Copilot 向け。AGENTS.md を読む
 .github/workflows/                図の変換、公開、変更履歴
 .github/pull_request_template.md  PRの書き方
 .vscode/                          ローカルプレビューの設定
