@@ -6,7 +6,7 @@ skinparam defaultFontName "Noto Sans CJK JP"
 skinparam ActivityFontName "Noto Sans CJK JP"
 skinparam NoteBackgroundColor #FFFFCC
 
-title 商品を検索する
+title 商品検索API
 
 start
 note right: 読むだけ。どの枝でも、保存も削除もしない

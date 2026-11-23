@@ -6,7 +6,7 @@ skinparam defaultFontName "Noto Sans CJK JP"
 skinparam ActivityFontName "Noto Sans CJK JP"
 skinparam NoteBackgroundColor #FFFFCC
 
-title ログアウトする
+title ログアウトAPI
 
 start
 note right: 失敗は返さない。どの場合も 200

@@ -6,7 +6,7 @@ skinparam defaultFontName "Noto Sans CJK JP"
 skinparam ActivityFontName "Noto Sans CJK JP"
 skinparam NoteBackgroundColor #FFFFCC
 
-title 決済の結果を受け取る
+title 決済通知受信API
 
 start
 :1. 通知署名検証\nもとの本文とタイムスタンプから計算した署名を、ヘッダーの署名と照合;

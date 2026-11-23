@@ -6,7 +6,7 @@ skinparam defaultFontName "Noto Sans CJK JP"
 skinparam ActivityFontName "Noto Sans CJK JP"
 skinparam NoteBackgroundColor #FFFFCC
 
-title パスキーを登録する
+title パスキー登録API
 
 start
 :1. セッション検証\nCookie のセッションIDを、保存済みの有効なセッションと照合;

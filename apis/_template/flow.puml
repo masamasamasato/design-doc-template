@@ -5,7 +5,7 @@ skinparam shadowing false
 skinparam NoteBackgroundColor #FFFFCC
 skinparam defaultFontName "Noto Sans CJK JP"
 
-title （APIの名前）
+title （〇〇）API
 
 start
 :1. リクエストバリデーション\n項目を条件と照合;

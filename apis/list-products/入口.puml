@@ -5,7 +5,7 @@ skinparam SequenceFontName "Noto Sans CJK JP"
 skinparam NoteBackgroundColor #FFFFCC
 hide footbox
 
-title 商品一覧を取得する
+title 商品一覧取得API
 
 actor "利用者" as User
 participant "商品画面" as Screen

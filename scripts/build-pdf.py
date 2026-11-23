@@ -316,8 +316,8 @@ SHORT_IDS_JS = f"""
 """
 
 # 表で、短いセル（「メールアドレス」など10文字以下）は折り返さない。列の幅は、長い説明の列が詰めて受け持つ。
-# リンク1つだけのセル（業務フローの表の API 名、例:「パスキーでログインする」）は、15文字以下まで折り返さない。
-# 11文字の名前が「パスキーでログインす／る」のように1字だけ次の行に落ちるのを防ぐ。
+# リンク1つだけのセル（業務フローの表の API 名、例:「パスキーログインAPI」）は、15文字以下まで折り返さない。
+# 11文字の名前が「パスキーログインAP／I」のように1字だけ次の行に落ちるのを防ぐ。
 SHORT_CELLS_JS = """
 () => document.querySelectorAll('article table th, article table td').forEach(cell => {
   const text = cell.textContent.trim();
@@ -938,15 +938,15 @@ def build_combined(browser: Browser, base: str, site: Path, entries, out: Path, 
         entry["title"] = data["title"] or entry["nav_title"]
         sections.append((entry, data["html"]))
 
-    # 同じ見出しが並ぶと、しおりで見分けられないため、nav の場所を添える
+    # 同じ見出しが並ぶと、しおりと目次で見分けられないため、nav の名前を「の」でつなぐ
+    # （例: 入口と設計書がどちらも「支払いAPI」なら、「支払いAPIの入口」「支払いAPIの設計書」）
     counts: dict[str, int] = {}
     for entry, _ in sections:
         counts[entry["title"]] = counts.get(entry["title"], 0) + 1
     for entry, _ in sections:
         title = entry["title"]
-        if counts[title] > 1:
-            where = [part for part in (*entry["trail"], entry["nav_title"]) if part and part != title]
-            title = f"{title}（{'・'.join(where)}）"
+        if counts[title] > 1 and entry["nav_title"] and entry["nav_title"] != title:
+            title = f"{title}の{entry['nav_title']}"
         entry["display"] = title
 
     # 目次。ページの無いグループは出さない。グループ名が最初のページの名前と同じ（「記入例 」などを除いて）ときは、

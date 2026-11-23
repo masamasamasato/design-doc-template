@@ -5,7 +5,7 @@ skinparam SequenceFontName "Noto Sans CJK JP"
 skinparam NoteBackgroundColor #FFFFCC
 hide footbox
 
-title プロフィールを公開する
+title プロフィール公開API
 
 actor "利用者" as User
 participant "プロフィール画面" as Screen

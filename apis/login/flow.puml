@@ -7,7 +7,7 @@ skinparam defaultFontName "Noto Sans CJK JP"
 skinparam ActivityFontName "Noto Sans CJK JP"
 skinparam NoteBackgroundColor #FFFFCC
 
-title ログインする
+title ログインAPI
 
 start
 :1. リクエストバリデーション\n本文の email と password を条件と照合;

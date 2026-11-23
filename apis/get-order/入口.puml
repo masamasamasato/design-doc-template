@@ -5,14 +5,14 @@ skinparam SequenceFontName "Noto Sans CJK JP"
 skinparam NoteBackgroundColor #FFFFCC
 hide footbox
 
-title 注文の状態を見る
+title 注文状態取得API
 
 actor "利用者" as User
 participant "支払い画面" as Screen
 participant "決済API" as API
 
 User -> Screen : 支払いの結果を待つ
-note right of Screen : 支払うAPIが処理中か 502 を返した直後から呼ぶ
+note right of Screen : 支払いAPIが処理中か 502 を返した直後から呼ぶ
 loop 200 で処理中のあいだ、例：2秒おき。最長で例：60秒。401・404 ならやめる
   Screen -> API : GET /orders/{orderId}
   API -> API : 1. セッション検証\n2. 注文の持ち主検証
