@@ -83,12 +83,15 @@ button[title] {{ display: none !important; }}
 .pdf-figure[data-own] {{ break-before: page; break-after: page; }}
 .pdf-lead {{ max-width: {CONTENT_W_PX}px; }}
 /* Chromium は、1ページ目の用紙の幅で全体を組む。1ページ目が大きい図のページだと、表や文が A4 の幅を
-   はみ出して切れるため、1本の PDF では、図だけのページ以外の本文を A4 の幅に収める（まとめた PDF の
-   1ページ目は目次で A4 なので、何もしない） */
-.md-typeset:not(:has(> .pdf-page)) > :not(.pdf-mark, .pdf-figure[data-own]) {{ max-width: {PAGE_W_MM - MARGIN_MM["left"] - MARGIN_MM["right"]}mm; }}
+   はみ出して切れるため、その PDF だけ（FIGURES_JS が pdf-fig-first を付ける）、図だけのページ以外の本文を
+   A4 の幅に収める。1ページ目が A4 の PDF とまとめた PDF（1ページ目は目次）には付けない。付けると、
+   はみ出す前提で組んでいた表の幅が変わり、字の大きさやページ数が変わる */
+.md-typeset.pdf-fig-first:not(:has(> .pdf-page)) > :not(.pdf-mark, .pdf-figure[data-own]) {{ max-width: {PAGE_W_MM - MARGIN_MM["left"] - MARGIN_MM["right"]}mm; }}
 .pdf-fig-title {{ font-weight: 700; }}
 .md-typeset table:not([class]) {{ display: table; width: 100%; font-size: 9pt; }}
 .md-typeset table:not([class]) tr {{ break-inside: avoid; }}
+/* 表のセルの最後の行に1字だけ残らないよう、行の折り返しを整える（例:「…15分ロックす／る」） */
+.md-typeset table:not([class]) td {{ text-wrap: pretty; }}
 .md-typeset table:not([class]) th, .md-typeset table:not([class]) td {{ padding: 0.6em 0.8em; }}
 /* 表の中のコード（application/json など）は、途中で折り返さない */
 .md-typeset table:not([class]) .pdf-nowrap {{ white-space: nowrap; }}
@@ -306,9 +309,13 @@ SHORT_IDS_JS = f"""
 """
 
 # 表で、短いセル（「メールアドレス」など10文字以下）は折り返さない。列の幅は、長い説明の列が詰めて受け持つ。
+# リンク1つだけのセル（業務フローの表の API 名、例:「パスキーでログインする」）は、15文字以下まで折り返さない。
+# 11文字の名前が「パスキーでログインす／る」のように1字だけ次の行に落ちるのを防ぐ。
 SHORT_CELLS_JS = """
 () => document.querySelectorAll('article table th, article table td').forEach(cell => {
-  if (cell.textContent.trim().length <= 10) cell.classList.add('pdf-nowrap');
+  const text = cell.textContent.trim();
+  const onlyLink = cell.children.length === 1 && cell.children[0].tagName === 'A' && cell.children[0].textContent.trim() === text;
+  if (text.length <= (onlyLink ? 15 : 10)) cell.classList.add('pdf-nowrap');
 })
 """
 
@@ -389,6 +396,7 @@ async ([W, H, BODY_MIN]) => {
       while (before && empty(before)) before = before.previousElementSibling;
       if (!before) {
         fig.style.breakBefore = 'auto';
+        root.classList.add('pdf-fig-first');
         for (let e = fig; e && e !== document.body; e = e.parentElement) {
           for (let s = e.previousElementSibling; s; s = s.previousElementSibling) if (empty(s)) s.style.display = 'none';
         }
