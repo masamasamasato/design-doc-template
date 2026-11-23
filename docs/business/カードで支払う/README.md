@@ -25,7 +25,6 @@
 
 ## 関連リンク
 
-- [処理のイメージ](flow.puml)
 - [変更履歴](変更履歴.md)
 
 <details markdown>
