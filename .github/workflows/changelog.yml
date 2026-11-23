@@ -17,23 +17,41 @@ concurrency:
 jobs:
   append:
     runs-on: ubuntu-latest
+    env:
+      # 追記コミットの作者とコミッター。「マージしたPRを探す」は、この値で自分の追記の push を見分ける
+      CHANGELOG_NAME: github-actions[bot]
+      CHANGELOG_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
     permissions:
       contents: read
       pull-requests: read
       pages: read
     steps:
       - name: マージしたPRを探す
-        # 自分の追記の push は PR に結び付かないので、ここで止まる。
+        # PR が無い push は2通りある。このジョブ自身の追記の push と、それ以外（直接の push など）。
+        # 追記の push は、作者とコミッターがジョブの CHANGELOG_NAME と CHANGELOG_EMAIL で、変えたファイルが
+        # 変更履歴.md だけ、親が1つのコミットで見分ける。探し直さずに、成功で止まる。
         # コミットのメッセージでは判定しない（squash では PR 本文も入るため）
         # マージの直後は、GitHub がコミットと PR をまだ結び付けておらず、空が返ることがある（#63 の fc8bff4）。
         # 空のときは 5 秒おきに最大 6 回探し直す（最初の1回と合わせて7回、待つのは最長30秒）。
-        # それでも空なら、PR 経由ではない push として止まる。自分の追記の push も、30秒待ってからここで止まる
+        # それでも空なら、変更履歴をとばしたことに気づけるよう、失敗にする
         id: pr
         env:
           GH_TOKEN: ${{ github.token }}
           SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
+          commit="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${SHA}")"
+          author="$(jq -r '.commit.author.name + " <" + .commit.author.email + ">"' <<<"$commit")"
+          committer="$(jq -r '.commit.committer.name + " <" + .commit.committer.email + ">"' <<<"$commit")"
+          parents="$(jq '.parents | length' <<<"$commit")"
+          others="$(jq -r '.files[].filename' <<<"$commit" | grep -Ev '^(apis|docs/business)/[^_/][^/]*/変更履歴\.md$' || true)"
+          files="$(jq '.files | length' <<<"$commit")"
+          bot="${CHANGELOG_NAME} <${CHANGELOG_EMAIL}>"
+          if [ "$author" = "$bot" ] && [ "$committer" = "$bot" ] && [ "$parents" = 1 ] && [ "$files" -gt 0 ] && [ -z "$others" ]; then
+            echo "変更履歴を追記したコミットなので、追記しません"
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           json=""
           for try in 0 1 2 3 4 5 6; do
             if [ "$try" -gt 0 ]; then
@@ -46,9 +64,8 @@ jobs:
             fi
           done
           if [ -z "$json" ]; then
-            echo "PR 経由ではない push なので、追記しません"
-            echo "found=false" >> "$GITHUB_OUTPUT"
-            exit 0
+            echo "::error::${SHA} のマージしたPRが、7回（30秒）探しても見つかりません。変更履歴は追記していません。PR を通さない push なら、変更履歴を手で直してください。PR からのマージなら、このジョブを再実行してください"
+            exit 1
           fi
           {
             echo "found=true"
@@ -102,8 +119,8 @@ jobs:
             echo "追記はありません"
             exit 0
           fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "${CHANGELOG_NAME}"
+          git config user.email "${CHANGELOG_EMAIL}"
           git add -- ':(glob)apis/*/変更履歴.md' ':(exclude,glob)apis/_*/変更履歴.md' ':(glob)docs/business/*/変更履歴.md' ':(exclude,glob)docs/business/_*/変更履歴.md'
           git commit -m "変更履歴を更新 [changelog]"
           for attempt in 1 2 3 4; do
