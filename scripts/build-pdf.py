@@ -47,7 +47,7 @@ PX_PER_MM = 96 / 25.4
 PT_PER_PX = 0.75
 CONTENT_W_PX = int((PAGE_W_MM - MARGIN_MM["left"] - MARGIN_MM["right"]) * PX_PER_MM)
 CONTENT_H_PX = int((PAGE_H_MM - MARGIN_MM["top"] - MARGIN_MM["bottom"]) * PX_PER_MM)
-# 図の縮め方の下限。PlantUML の文字（11〜13px）が、およそ 6pt より小さくならないようにする。
+# 図の縮め方の下限。このとき PlantUML の文字（11〜13px）は、約 4.5〜5.4pt になる。
 READABLE_SCALE = 0.55
 # 拡大して分けたページの用紙。小さい順に試す。本文は A4 縦のまま。
 WIDE_PAPERS = [
