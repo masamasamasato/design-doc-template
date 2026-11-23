@@ -12,7 +12,7 @@
 
 図の左側は、デプロイ（GitHub Actions、ECR）と監視（CloudWatch、SNS）です。
 
-対象のAPI: [ログインする](../../apis/login/README.md)、[ログアウトする](../../apis/logout/README.md)、[商品詳細を取得する](../../apis/get-product/README.md)、[商品一覧を取得する](../../apis/list-products/README.md)、[商品を検索する](../../apis/search-products/README.md)
+対象のAPI: [ログインAPI](../../apis/login/README.md)、[ログアウトAPI](../../apis/logout/README.md)、[商品詳細取得API](../../apis/get-product/README.md)、[商品一覧取得API](../../apis/list-products/README.md)、[商品検索API](../../apis/search-products/README.md)
 
 <details markdown>
 <summary>AI向け：この図の読み方と各要素の細部</summary>

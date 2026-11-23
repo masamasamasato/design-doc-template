@@ -6,7 +6,7 @@ skinparam defaultFontName "Noto Sans CJK JP"
 skinparam ActivityFontName "Noto Sans CJK JP"
 skinparam NoteBackgroundColor #FFFFCC
 
-title 注文の状態を見る
+title 注文状態取得API
 
 start
 note right: 読むだけ。どの枝でも、保存も削除もしない

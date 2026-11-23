@@ -57,7 +57,7 @@ note left: セッションは例：24時間有効
 :検索するボタンを押す;
 
 |商品画面|
-:検索APIを呼ぶ\nGET /products/search;
+:商品検索APIを呼ぶ\nGET /products/search;
 
 |商品API|
 :セッション検証\nリクエストの Cookie を、\n保存済みの有効なセッションと照合;

@@ -90,55 +90,55 @@ nav:
           - 入口: apis/_template/README.md
           - 設計書: apis/_template/処理詳細.md
           - 変更履歴: apis/_template/変更履歴.md
-      - 記入例 プロフィールを公開する:
+      - 記入例 プロフィール公開API:
           - 入口: apis/publish-profile/README.md
           - 設計書: apis/publish-profile/処理詳細.md
           - 変更履歴: apis/publish-profile/変更履歴.md
-      - 記入例 ログインする:
+      - 記入例 ログインAPI:
           - 入口: apis/login/README.md
           - 設計書: apis/login/処理詳細.md
           - 変更履歴: apis/login/変更履歴.md
-      - 記入例 ログアウトする:
+      - 記入例 ログアウトAPI:
           - 入口: apis/logout/README.md
           - 設計書: apis/logout/処理詳細.md
           - 変更履歴: apis/logout/変更履歴.md
-      - 記入例 商品詳細を取得する:
+      - 記入例 商品詳細取得API:
           - 入口: apis/get-product/README.md
           - 設計書: apis/get-product/処理詳細.md
           - 変更履歴: apis/get-product/変更履歴.md
-      - 記入例 商品一覧を取得する:
+      - 記入例 商品一覧取得API:
           - 入口: apis/list-products/README.md
           - 設計書: apis/list-products/処理詳細.md
           - 変更履歴: apis/list-products/変更履歴.md
-      - 記入例 商品を検索する:
+      - 記入例 商品検索API:
           - 入口: apis/search-products/README.md
           - 設計書: apis/search-products/処理詳細.md
           - 変更履歴: apis/search-products/変更履歴.md
-      - 記入例 パスキーを登録する:
+      - 記入例 パスキー登録API:
           - 入口: apis/register-passkey/README.md
           - 設計書: apis/register-passkey/処理詳細.md
           - 変更履歴: apis/register-passkey/変更履歴.md
-      - 記入例 パスキーでログインする:
+      - 記入例 パスキーログインAPI:
           - 入口: apis/login-passkey/README.md
           - 設計書: apis/login-passkey/処理詳細.md
           - 変更履歴: apis/login-passkey/変更履歴.md
-      - 記入例 アカウントを復旧する:
+      - 記入例 アカウント復旧API:
           - 入口: apis/recover-account/README.md
           - 設計書: apis/recover-account/処理詳細.md
           - 変更履歴: apis/recover-account/変更履歴.md
-      - 記入例 カードを登録する:
+      - 記入例 カード登録API:
           - 入口: apis/register-card/README.md
           - 設計書: apis/register-card/処理詳細.md
           - 変更履歴: apis/register-card/変更履歴.md
-      - 記入例 支払う:
+      - 記入例 支払いAPI:
           - 入口: apis/create-payment/README.md
           - 設計書: apis/create-payment/処理詳細.md
           - 変更履歴: apis/create-payment/変更履歴.md
-      - 記入例 注文の状態を見る:
+      - 記入例 注文状態取得API:
           - 入口: apis/get-order/README.md
           - 設計書: apis/get-order/処理詳細.md
           - 変更履歴: apis/get-order/変更履歴.md
-      - 記入例 決済の結果を受け取る:
+      - 記入例 決済通知受信API:
           - 入口: apis/payment-webhook/README.md
           - 設計書: apis/payment-webhook/処理詳細.md
           - 変更履歴: apis/payment-webhook/変更履歴.md

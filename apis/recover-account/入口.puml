@@ -5,7 +5,7 @@ skinparam SequenceFontName "Noto Sans CJK JP"
 skinparam NoteBackgroundColor #FFFFCC
 hide footbox
 
-title アカウントを復旧する
+title アカウント復旧API
 
 actor "利用者" as User
 participant "復旧画面" as Screen

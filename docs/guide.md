@@ -31,19 +31,19 @@ docs/business/<業務>/             業務フロー（README、flow.puml、変�
 docs/infra/                       記入例。AWSのインフラ構成図
 apis/_template/                   新しいAPIを作るときにコピーする型
 apis/<名前>/                      APIの設計書。下は記入例
-apis/publish-profile/             記入例。プロフィールを公開するAPI
-apis/login/                       記入例。ログインするAPI
-apis/logout/                      記入例。ログアウトするAPI
-apis/get-product/                 記入例。商品詳細を取得するAPI
-apis/list-products/               記入例。商品一覧を取得するAPI
-apis/search-products/             記入例。商品を検索するAPI
-apis/register-passkey/            記入例。パスキーを登録するAPI
-apis/login-passkey/               記入例。パスキーでログインするAPI
-apis/recover-account/             記入例。アカウントを復旧するAPI
-apis/register-card/               記入例。カードを登録するAPI
-apis/create-payment/              記入例。支払うAPI
-apis/get-order/                   記入例。注文の状態を見るAPI
-apis/payment-webhook/             記入例。決済の結果を受け取るAPI
+apis/publish-profile/             記入例。プロフィール公開API
+apis/login/                       記入例。ログインAPI
+apis/logout/                      記入例。ログアウトAPI
+apis/get-product/                 記入例。商品詳細取得API
+apis/list-products/               記入例。商品一覧取得API
+apis/search-products/             記入例。商品検索API
+apis/register-passkey/            記入例。パスキー登録API
+apis/login-passkey/               記入例。パスキーログインAPI
+apis/recover-account/             記入例。アカウント復旧API
+apis/register-card/               記入例。カード登録API
+apis/create-payment/              記入例。支払いAPI
+apis/get-order/                   記入例。注文状態取得API
+apis/payment-webhook/             記入例。決済通知受信API
 mkdocs.yml                        サイトの設定
 mkdocs/docs/                      サイトが読む原稿へのリンク
 stylesheets/                      サイトの追加 CSS
@@ -75,6 +75,8 @@ README は、人が読む最低限だけを書きます。ルートの README �
 `if` の中の式や、SQLの1行は書きません。メソッド名やコードのパスも書きません。細かい判定は実装に任せます。
 
 ### APIと処理詳細の書き方
+
+APIの名前は「名詞＋API」にします（例：商品詳細取得API、支払いAPI）。入口と設計書のタイトル（`#`）、`mkdocs.yml` の nav、図の `title`、ほかのページからのリンクの文字を、この名前にそろえます。「（設計書）」のような付け足しはしません。フォルダ名とファイル名（例: `apis/get-product/`）は、この名前とは別で、変えません。
 
 APIの設計書は `apis/<名前>/処理詳細.md` の1本です。入口の `README.md` は、「何をするか」1行と、設計書・変更履歴へのリンク2行だけにします。設計書と重なってよいのは、この1行だけです。設計書は、次の順で書きます。
 
@@ -142,7 +144,7 @@ APIの設計書は `apis/<名前>/処理詳細.md` の1本です。入口の `RE
 
 外部APIを呼ぶ手順には、送る相手、タイムアウト、再試行の回数、失敗時に返すステータスとエラーコード、保存するものの5つを表で書きます。表が正です。外部APIの返事のHTTPステータスごとの分かれ方（例: HTTPステータスが 200 なら次へ、404 なら 404 エラー、それ以外なら 503 エラー）は「N.M …の場合」で書きます。処理フローの図では、外部APIを薄い青の箱（`外部API：名前` と役割1行）にし、横の付箋にはタイムアウト・再試行・失敗時の3つだけを書きます。送る相手と保存するものは、表だけに書きます。1回の呼び出しは、箱1つにします。決まっていない数字には「例：」を付けます。
 
-この形は、[ログインする](../apis/login/処理詳細.md) と `apis/_template` だけです。ほかのAPIは、まだ前の形（処理詳細に「入力と結果」「失敗するとき」の表がある形）です。
+この形は、[ログインAPI](../apis/login/処理詳細.md) と `apis/_template` だけです。ほかのAPIは、まだ前の形（処理詳細に「入力と結果」「失敗するとき」の表がある形）です。
 
 <details markdown>
 <summary>AI向け：段の付け方</summary>
@@ -172,8 +174,8 @@ APIの設計書は `apis/<名前>/処理詳細.md` の1本です。入口の `RE
 | --- | --- | --- |
 | 業務フロー | PlantUML のスイムレーン | [プロフィールを公開する](business/プロフィールを公開する/README.md) |
 | インフラ構成 | PlantUML（awslib のアイコン） | [AWSのインフラ構成](infra/index.md) |
-| 処理の順番 | PlantUML のシーケンス図 | [ログインするの処理フローの図（入口の図）](../apis/login/処理詳細.md#処理フローの図) |
-| 分かれ道 | PlantUML のアクティビティ図 | [ログインするの処理フローの図（処理のイメージ）](../apis/login/処理詳細.md#処理フローの図) |
+| 処理の順番 | PlantUML のシーケンス図 | [ログインAPIの処理フローの図（入口の図）](../apis/login/処理詳細.md#処理フローの図) |
+| 分かれ道 | PlantUML のアクティビティ図 | [ログインAPIの処理フローの図（処理のイメージ）](../apis/login/処理詳細.md#処理フローの図) |
 | データ | PlantUML の ER 図 | 記入例はまだありません |
 | 状態 | PlantUML の状態図 | 記入例はまだありません |
 
@@ -214,9 +216,9 @@ cp -a apis/_template apis/予約を確定する
 
 コピーした `変更履歴.md` は、「# 変更履歴」の1行だけのままにします。
 
-記入例は [プロフィールを公開する](../apis/publish-profile/README.md) です。本人確認が済んでいる人だけ、プロフィールを公開中にします。
+記入例は [プロフィール公開API](../apis/publish-profile/README.md) です。本人確認が済んでいる人だけ、プロフィールを公開中にします。
 
-ほかの記入例は、[ログインする](../apis/login/README.md)、[ログアウトする](../apis/logout/README.md)、[商品詳細を取得する](../apis/get-product/README.md)、[商品一覧を取得する](../apis/list-products/README.md)、[商品を検索する](../apis/search-products/README.md)、[パスキーを登録する](../apis/register-passkey/README.md)、[パスキーでログインする](../apis/login-passkey/README.md)、[アカウントを復旧する](../apis/recover-account/README.md)、[カードを登録する](../apis/register-card/README.md)、[支払う](../apis/create-payment/README.md)、[注文の状態を見る](../apis/get-order/README.md)、[決済の結果を受け取る](../apis/payment-webhook/README.md) です。業務フローの記入例は、[ログインして商品を探す](business/ログインして商品を探す/README.md)、[カードで支払う](business/カードで支払う/README.md)、[パスキーの端末をなくす](business/パスキーの端末をなくす/README.md) です。
+ほかの記入例は、[ログインAPI](../apis/login/README.md)、[ログアウトAPI](../apis/logout/README.md)、[商品詳細取得API](../apis/get-product/README.md)、[商品一覧取得API](../apis/list-products/README.md)、[商品検索API](../apis/search-products/README.md)、[パスキー登録API](../apis/register-passkey/README.md)、[パスキーログインAPI](../apis/login-passkey/README.md)、[アカウント復旧API](../apis/recover-account/README.md)、[カード登録API](../apis/register-card/README.md)、[支払いAPI](../apis/create-payment/README.md)、[注文状態取得API](../apis/get-order/README.md)、[決済通知受信API](../apis/payment-webhook/README.md) です。業務フローの記入例は、[ログインして商品を探す](business/ログインして商品を探す/README.md)、[カードで支払う](business/カードで支払う/README.md)、[パスキーの端末をなくす](business/パスキーの端末をなくす/README.md) です。
 
 新しい業務フローを足すときは、既存のフォルダをコピーして、中身を書き換えます。
 

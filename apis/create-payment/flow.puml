@@ -6,7 +6,7 @@ skinparam defaultFontName "Noto Sans CJK JP"
 skinparam ActivityFontName "Noto Sans CJK JP"
 skinparam NoteBackgroundColor #FFFFCC
 
-title 支払う
+title 支払いAPI
 
 start
 note right: 支払い済みにするのは、決済サービスからの通知

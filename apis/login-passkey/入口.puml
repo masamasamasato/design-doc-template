@@ -5,7 +5,7 @@ skinparam SequenceFontName "Noto Sans CJK JP"
 skinparam NoteBackgroundColor #FFFFCC
 hide footbox
 
-title パスキーでログインする
+title パスキーログインAPI
 
 actor "利用者" as User
 participant "ログイン画面" as Screen
