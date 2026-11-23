@@ -171,7 +171,7 @@ APIの設計書は `apis/<名前>/処理詳細.md` の1本です。入口の `RE
 | --- | --- | --- |
 | 業務フロー | PlantUML のスイムレーン | [プロフィールを公開する](business/プロフィールを公開する/README.md) |
 | インフラ構成 | PlantUML（awslib のアイコン） | [AWSのインフラ構成](infra/index.md) |
-| 処理の順番 | PlantUML のシーケンス図 | [プロフィール公開APIの処理フローの図](../apis/publish-profile/処理詳細.md#処理フローの図) |
+| 処理の順番 | PlantUML のシーケンス図 | [プロフィール公開APIの入口](../apis/publish-profile/README.md) |
 | 分かれ道 | PlantUML のアクティビティ図 | [図の例](examples/index.md) |
 | データ | PlantUML の ER 図 | [図の例](examples/index.md) |
 | 状態 | PlantUML の状態図 | [図の例](examples/index.md) |
