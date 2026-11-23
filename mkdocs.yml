@@ -84,7 +84,7 @@ nav:
       - 新しいAPIの型:
           - 入口: apis/_template/README.md
           - 用語: apis/_template/用語.md
-          - 処理詳細: apis/_template/処理詳細.md
+          - 設計書: apis/_template/処理詳細.md
           - 変更履歴: apis/_template/変更履歴.md
       - 記入例 プロフィールを公開する:
           - 入口: apis/publish-profile/README.md
@@ -94,7 +94,7 @@ nav:
       - 記入例 ログインする:
           - 入口: apis/login/README.md
           - 用語: apis/login/用語.md
-          - 処理詳細: apis/login/処理詳細.md
+          - 設計書: apis/login/処理詳細.md
           - 変更履歴: apis/login/変更履歴.md
       - 記入例 ログアウトする:
           - 入口: apis/logout/README.md

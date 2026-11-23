@@ -1,4 +1,5 @@
 ' 深さ3。ログインする処理のイメージ。
+' 箱の番号は、設計書（処理詳細.md）の「処理詳細」の番号と同じ。
 ' スイムレーンは業務フロー側に書く。ここはメソッドの順番だけを書く。
 @startuml
 skinparam shadowing false
@@ -9,32 +10,42 @@ skinparam NoteBackgroundColor #FFFFCC
 title ログインする
 
 start
-note right: セッションを作る前に、メアド・パスワード検証が必要
-:メアド・パスワード検証\n登録済みメアドのパスワードハッシュと入力パスワードを照合\nauthenticate();
-if (ロック中（連続5回失敗から15分以内）の場合) then (ロック中の場合)
+:1. リクエストバリデーション\n本文の email と password を条件と照合\nvalidateLoginRequest();
+if (本文の項目が条件に合うか) then (1.2 合わない場合)
+  :失敗を返す\n400 INVALID_REQUEST;
+  note right: 何も保存しない。失敗回数も増やさない
+  stop
+else (1.1 合う場合)
+endif
+:2. ロック判定\nメールアドレスを保存済みのロックと照合\nauthenticate();
+if (ロック中（連続5回失敗から15分以内）か) then (2.1 ロック中の場合)
   :失敗を返す\n403 ACCOUNT_LOCKED;
   note right: 保存しない。失敗回数もロックの期限も変えない。\n例：15分たつと自動で解除
-else (ロック中でない場合)
-  switch (メアド・パスワード検証の結果)
-  case (メールアドレス・パスワードが\n正しい場合)
-    :セッションを作る処理\ncreateSession();
-    note right: 保存：セッション（例：24時間有効）。\n削除：そのメールアドレスの失敗回数
-    :ログイン通知メールを送る処理\nnotifyLogin();
-    :外部API：メール送信サービス（例: SES）\n登録したメールアドレスへログイン通知を届ける; <<#E3F2FD>>
-    note right
-      タイムアウト：例：3秒
-      再試行：しない（例：0回）
-      失敗時：200 のまま。エラーコードは返さない
-    end note
-    :200 Cookie でセッションを返す;
-    note right: 以降のAPIは、この Cookie を付けて呼ぶ
-  case (メールアドレス・パスワードが異なり、\n連続失敗(5回以上)の場合)
-    :失敗を返す\n403 ACCOUNT_LOCKED;
-    note right: 保存：ロック（例：15分で自動解除）。\nセッションは作らない
-  case (メールアドレス・パスワードが異なり、\n連続失敗(5回未満)の場合)
-    :失敗を返す\n401 INVALID_CREDENTIALS;
-    note right: 保存：失敗回数を1増やす（例：15分で消える）。\nセッションは作らない
-  endswitch
+  stop
+else (2.2 ロック中でない場合)
 endif
+:3. メールアドレス・パスワード検証\n登録済みのパスワードハッシュと入力パスワードを照合\nauthenticate();
+switch (メールアドレス・パスワード検証の結果)
+case (3.2 合わず、\n連続4回以下の場合)
+  :失敗を返す\n401 INVALID_CREDENTIALS;
+  note right: 保存：失敗回数を1増やす（例：15分で消える）。\nセッションは作らない
+  stop
+case (3.3 合わず、\n連続5回目の場合)
+  :失敗を返す\n403 ACCOUNT_LOCKED;
+  note right: 保存：ロック（例：15分で自動解除）。\nセッションは作らない
+  stop
+case (3.1 合う場合)
+endswitch
+:4. セッション作成\nセッションを保存し、Cookie に入れる\ncreateSession();
+note right: 保存：セッション（例：24時間有効）。\n削除：そのメールアドレスの失敗回数
+:5. ログイン通知メール送信\nnotifyLogin();
+:外部API：メール送信サービス（例: SES）\n登録したメールアドレスへログイン通知を届ける; <<#E3F2FD>>
+note right
+  タイムアウト：例：3秒
+  再試行：しない（例：0回）
+  失敗時：200 のまま。エラーコードは返さない
+end note
+:6. 成功を返す\n200 Cookie でセッションを返す;
+note right: 以降のAPIは、この Cookie を付けて呼ぶ
 stop
 @enduml
