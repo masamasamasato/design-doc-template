@@ -13,7 +13,7 @@
 
 セッションやトランザクションを自前で持ち、コンテナでAPIを動かしたいときに選びます。ログインと商品のAPIを動かす例です。
 
-![ECSとRDS、画面はCloudFront](構成図.svg)
+![ECSとRDS、画面はCloudFront](構成図.svg){: .pdf-own-page }
 
 要求は、図の中央を上から下へ流れます。
 
@@ -56,16 +56,16 @@
 
 アクセスの波が大きく、サーバーを常時起動したくないときに選びます。キーで引くデータが中心のAPIに向きます。
 
-![サーバーレス（API GatewayとLambda、DynamoDB）](サーバーレス.svg)
+![サーバーレス（API GatewayとLambda、DynamoDB）](サーバーレス.svg){: .pdf-own-page }
 
 ## 3. 静的サイト（CloudFrontとS3）
 
 画面だけを配信するときに選びます。APIが無いときや、APIは別の構成に任せるときに使います。
 
-![静的サイト（CloudFrontとS3）](静的サイト.svg)
+![静的サイト（CloudFrontとS3）](静的サイト.svg){: .pdf-own-page }
 
 ## 4. 非同期処理（SQSとEventBridge）
 
 時間がかかる処理を、受け付けのあとで実行したいときに選びます。APIは受け付けだけを返し、後段で処理します。
 
-![非同期処理（SQSとEventBridge）](非同期処理.svg)
+![非同期処理（SQSとEventBridge）](非同期処理.svg){: .pdf-own-page }
