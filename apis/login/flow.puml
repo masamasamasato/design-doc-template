@@ -11,14 +11,14 @@ title ログインする
 
 start
 :1. リクエストバリデーション\n本文の email と password を条件と照合\nvalidateLoginRequest();
-if (本文の項目が条件に合うか) then (1.2 合わない場合)
+if (いずれかの項目が条件に合わない場合) then (1.2 合わない場合)
   :失敗を返す\n400 INVALID_REQUEST;
   note right: 何も保存しない。失敗回数も増やさない
   stop
 else (1.1 合う場合)
 endif
 :2. ロック判定\nメールアドレスを保存済みのロックと照合\nauthenticate();
-if (ロック中（連続5回失敗から15分以内）か) then (2.1 ロック中の場合)
+if (ロック中（連続5回失敗から15分以内）の場合) then (2.1 ロック中の場合)
   :失敗を返す\n403 ACCOUNT_LOCKED;
   note right: 保存しない。失敗回数もロックの期限も変えない。\n例：15分たつと自動で解除
   stop
