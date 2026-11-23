@@ -13,8 +13,6 @@
 
 ![ドキュメントを書く流れ](docs/usage-flow.svg)
 
-APIは `apis/_template` を、業務フローは `docs/business/` のフォルダをコピーします。PRは、テンプレートの「概要」（2行まで）と「判断してほしい点」を書いて出します。
-
 ## リンク
 
 - [GitHub の設定](docs/setup.md)

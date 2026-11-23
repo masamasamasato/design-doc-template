@@ -1,4 +1,5 @@
 ' ドキュメントを書く流れ。README に載せる概要。
+' 箱は名前と役割の2行。レーンは人／自動。チェックとレビューは両方なので役割行に書く。
 @startuml
 skinparam shadowing false
 skinparam defaultFontName "Noto Sans CJK JP"
@@ -6,12 +7,14 @@ skinparam ActivityFontName "Noto Sans CJK JP"
 
 title ドキュメントを書く流れ
 
+|人|
 start
-:型をコピー;
-:書く;
-:PR;
-:チェックとレビュー;
-:マージ;
-:変更履歴と公開;
+:型をコピー\napis/_template や docs/business/ をコピー;
+:書く\n設計書と図を書き、手元で確認する;
+:PR\n概要（2行まで）と判断してほしい点を書いて出す;
+:チェックとレビュー\nCI（自動）と人のレビュー;
+:マージ\nレビュー後に main へ入れる;
+|自動|
+:変更履歴と公開\n履歴の追記とサイト・PDFの公開;
 stop
 @enduml
