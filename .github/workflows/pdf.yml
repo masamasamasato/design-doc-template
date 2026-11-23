@@ -32,6 +32,9 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-pdf.txt
 
       - name: Javaを入れる
         uses: actions/setup-java@v4
@@ -54,6 +57,7 @@ jobs:
         run: python -m playwright install --with-deps chromium
 
       - name: 図をローカルでSVGにする
+        # コミット済みの SVG ではなく、.puml から作り直したものを PDF に使う
         run: ./scripts/render-changed.sh --all >/dev/null
 
       - name: PDFを作る
