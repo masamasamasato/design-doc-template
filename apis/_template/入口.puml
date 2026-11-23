@@ -13,7 +13,7 @@ participant "（APIの名前）" as API
 
 User -> Screen : （操作）。例: 公開する
 Screen -> API : （メソッドとパス）。例: POST /profiles/{id}/publish
-API -> API : （〜検証。何と何を照合するか）\nmethodName()
+API -> API : （N. 〜検証）\n（何と何を照合するかを1行）
 alt （成功する条件。〜の場合）。例: 本人確認が済んでいる場合
   API --> Screen : （200 と返すもの）
   Screen --> User : （画面に出す言葉）。例: 公開できた
