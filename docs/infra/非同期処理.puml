@@ -6,6 +6,7 @@
 !include <awslib/AWSCommon>
 !include <awslib/Groups/AWSCloud>
 !include <awslib/General/Users>
+!include <awslib/ApplicationIntegration/APIGateway>
 !include <awslib/Compute/Lambda>
 !include <awslib/ApplicationIntegration/Eventbridge>
 !include <awslib/ApplicationIntegration/SimpleQueueService>
@@ -19,6 +20,7 @@ title 非同期処理（SQSとEventBridge）
 Users(user, "利用者\nブラウザから操作する", "ブラウザ")
 
 AWSCloudGroup(aws, "AWS クラウド") {
+  APIGateway(apigw, "API Gateway\nHTTPSでAPIを受け付ける", "HTTP API")
   together {
     rectangle "処理の完了を待たずに返す" as n_api #FFFFCC
     Lambda(api, "受け付けAPI\n要求を受けてすぐ返す", "Lambda")
@@ -31,7 +33,8 @@ AWSCloudGroup(aws, "AWS クラウド") {
   Lambda(worker, "ワーカー\n並べた仕事を処理する", "Lambda")
 }
 
-user -down-> api
+user -down-> apigw
+apigw -down-> api
 api -down-> eb
 eb -down-> sqs
 sqs -down-> worker

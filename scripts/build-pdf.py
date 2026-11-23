@@ -435,8 +435,9 @@ WIDE_TABLES_JS = """
 
 # 図を、文字が読める大きさにする JS。
 # - 画像だけの段落を div.pdf-figure で包み、すぐ後の「ソース:」の段落も中に入れる（同じページに置くため）。
-# - 図は、A4 縦の幅と高さに収まる大きさにする。その倍率が BODY_MIN_SCALE より小さい図は等倍にし、
-#   data-own を付ける。あとで PAGES_JS が、図の大きさに合わせた用紙のページにする。
+# - 図は、A4 縦の幅と高さに収まる大きさにする。その倍率が BODY_MIN_SCALE より小さい図と、
+#   直前の見出し・導入を足すと A4 に収まらない図は等倍にし、data-own を付ける。
+#   あとで PAGES_JS が、図の大きさに合わせた用紙のページにする。前の節の本文の残りには詰めない。
 #   図の直前の見出しと導入文（合わせて H の半分まで）も、div.pdf-lead にして図のページの上に載せる。
 #   前のページに見出しと数行だけが残って、ほぼ空になるのを防ぎ、図のページで何の図か分かるようにする。
 # - SVG の文字の上下の位置を data-texts に残す。あとで図を分けるとき、文字の無い行で切るのに使う。
@@ -475,19 +476,20 @@ async ([W, H, BODY_MIN]) => {
     fig.dataset.w = nw;
     fig.dataset.h = nh;
     let scale = Math.min(1, W / nw, (H - 80) / nh);
-    if (scale < BODY_MIN) {
+    const lead = [];
+    let height = 0;
+    let el = fig.previousElementSibling;
+    while (el && !el.classList.contains('pdf-figure') && !el.querySelector('.pdf-figure')) {
+      height += el.getBoundingClientRect().height;
+      if (height > H / 2) break;
+      lead.unshift(el);
+      if (/^H[1-6]$/.test(el.tagName)) break;
+      el = el.previousElementSibling;
+    }
+    // 見出しと導入を足すと A4 に収まらない図も、図の大きさに合わせた1ページに等倍で載せる
+    if (scale < BODY_MIN || nh * scale + height > H - 80) {
       scale = 1;
       fig.dataset.own = '1';
-      const lead = [];
-      let height = 0;
-      let el = fig.previousElementSibling;
-      while (el && !el.classList.contains('pdf-figure') && !el.querySelector('.pdf-figure')) {
-        height += el.getBoundingClientRect().height;
-        if (height > H / 2) break;
-        lead.unshift(el);
-        if (/^H[1-6]$/.test(el.tagName)) break;
-        el = el.previousElementSibling;
-      }
       const box = document.createElement('div');
       box.className = 'pdf-lead';
       if (lead.length) box.append(...lead);

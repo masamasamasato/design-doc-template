@@ -24,7 +24,7 @@ AWSCloudGroup(aws, "AWS クラウド") {
   CertificateManager(acm, "ACM\nHTTPSの証明書を発行する", "HTTPS")
   CloudFront(cf, "CloudFront\nHTTPSで配信する", "CDN")
   together {
-    rectangle "CloudFrontからだけ開ける" as n_s3 #FFFFCC
+    rectangle "CloudFrontからだけ開ける（OAC）" as n_s3 #FFFFCC
     SimpleStorageService(s3, "静的画面\n画面ファイルを置く", "S3")
   }
 }

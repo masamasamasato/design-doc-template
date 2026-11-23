@@ -11,6 +11,7 @@
 !include <awslib/Compute/Lambda>
 !include <awslib/Database/DynamoDB>
 !include <awslib/ManagementGovernance/CloudWatchLogs>
+!include <awslib/SecurityIdentityCompliance/CertificateManager>
 
 skinparam shadowing false
 skinparam defaultFontName "Noto Sans CJK JP"
@@ -22,6 +23,7 @@ Users(user, "利用者\nブラウザから操作する", "ブラウザ")
 
 AWSCloudGroup(aws, "AWS クラウド") {
   Route53(dns, "Route 53\n名前を解決する", "DNS")
+  CertificateManager(acm, "ACM\nHTTPSの証明書を発行する", "独自ドメイン")
   APIGateway(apigw, "API Gateway\nHTTPSでAPIを受け付ける", "HTTP API")
   together {
     rectangle "アクセスに合わせて増減する" as n_fn #FFFFCC
@@ -36,6 +38,7 @@ AWSCloudGroup(aws, "AWS クラウド") {
 
 user -down-> dns
 dns -down-> apigw
+acm -left..> apigw : 証明書
 apigw -down-> fn
 fn -down-> ddb
 n_fn -[dotted]right- fn
