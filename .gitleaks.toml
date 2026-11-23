@@ -1,0 +1,12 @@
+# 秘密情報の検出は gitleaks の既定のルールを使う。
+# 例外は、ドキュメントに書いたダミーの値だけ（値が完全に一致するときだけ通す）。
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "register-card の処理詳細にある、ダミーの setupClientSecret"
+regexes = ['''^seti_123_secret_456$''']
+
+[[allowlists]]
+description = "create-payment の処理詳細にある、ダミーの Idempotency-Key"
+regexes = ['''^5f0c2a9e-7c1b-4f7e-9a3d-2b8e6d1c4a10$''']

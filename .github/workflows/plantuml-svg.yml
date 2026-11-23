@@ -2,6 +2,9 @@ name: PlantUMLをSVGに変換する
 
 on:
   push:
+    # main は直接 push を禁止しているので、SVG は PR のブランチで作る
+    branches-ignore:
+      - main
     paths:
       - "**/*.puml"
       - "**/*.plantuml"

@@ -6,3 +6,12 @@ _site/
 tools/plantuml.jar
 .DS_Store
 pdf/
+# 秘密情報を誤ってコミットしない
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+id_rsa*
+id_ed25519*
