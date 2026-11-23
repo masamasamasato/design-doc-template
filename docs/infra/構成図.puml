@@ -115,7 +115,7 @@ AWSCloudGroup(aws, "AWS クラウド") {
 
     GenericGroup(data, "データ（マルチAZ）") {
       together {
-        rectangle "どのAPIでもログインが続く\n例：セッションは24時間\n例：失敗回数とロックは\n15分で消える" as n_cache #FFFFCC
+        rectangle "どのAPIでもログインが続く\nセッションは例：24時間\n失敗回数とロックは\n例：15分で消える" as n_cache #FFFFCC
         ElastiCache(cachep, "ElastiCache プライマリ（1a）\nセッションと失敗回数・ロックを置く", "Redis")
       }
       together {

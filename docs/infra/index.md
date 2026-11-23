@@ -35,7 +35,7 @@ GitHub Actions から ECR への線はデプロイです。API から NAT、ECR�
 - **ALB**: 2つのAZのAPIサービスへ、要求を振り分けます。2つのAZのパブリックサブネットにまたがります。
 - **NAT Gateway**: AZごとに1つ置き、そのAZのパブリックサブネットに置きます。NAT 1a は AZ `ap-northeast-1a`、NAT 1c は `ap-northeast-1c` です。そのAZのAPIが ECR や SES などへ出るときに使います。
 - **ECS Fargate（APIサービス）**: ログインや商品のAPIを動かします。例: `POST /sessions`、`GET /products/search`。各AZのプライベートサブネットに1つずつ置きます。
-- **ElastiCache**: セッションを置きます。セッションの TTL は、例：ログインから24時間です。切れたら、もう一度ログインします。ログインの失敗回数とロックも置きます。TTL は、例：15分です。プライマリは AZ `ap-northeast-1a`、レプリカは `ap-northeast-1c` です。どのAPIサーバーに当たっても、ログイン状態が続きます。
+- **ElastiCache**: セッションを置きます。セッションの TTL は、ログインから例：24時間です。切れたら、もう一度ログインします。ログインの失敗回数とロックも置きます。TTL は、例：15分です。プライマリは AZ `ap-northeast-1a`、レプリカは `ap-northeast-1c` です。どのAPIサーバーに当たっても、ログイン状態が続きます。
 - **RDS**: 利用者と商品のデータを置きます。例: メールアドレス `masato@example.com`、商品 `product_1001`。プライマリは AZ `ap-northeast-1a`、スタンバイは `ap-northeast-1c` です。どちらのAPIからも使えます。
 - **Secrets Manager**: この図では、DBパスワードを置きます。決済通知の署名の秘密も実際はここに置きますが、決済は図に載せていません。コードやログ、図には出しません。VPC の外（AWSクラウド内）に置き、API からは NAT 経由で取ります。
 - **ECR**: APIのコンテナイメージを置きます。GitHub Actions が push し、API は NAT 経由で取ります。ECR からAPIへの線は交差するため省き、付箋で示します。
