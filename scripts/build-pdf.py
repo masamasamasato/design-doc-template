@@ -2,14 +2,16 @@
 """MkDocs でビルドしたサイトを、ヘッドレスの Chromium（Playwright）で PDF に印刷する。
 
 - API ごとに1本（apis/<名前>/処理詳細.md）、業務フローごとに1本（docs/business/<業務>/README.md）。
-- mkdocs.yml の nav の順に、ページを1本にまとめた PDF。`_template` の型と各変更履歴は入れない。
+- mkdocs.yml の nav の順に、ページを1本にまとめた PDF。`_template` の型、各変更履歴、PDF に入れないページ（SKIP_PAGES）は入れない。
   先頭に目次を置き、目次と本文中のリンクから各ページへ飛べる。PDF のしおり（アウトライン）も付ける。
 - 見た目は公開サイトと同じ（同じ CSS、ライトモード）。ヘッダー、ナビゲーション、検索、フッター、
   コピーボタンは印刷しない。
 - 各ページの下にページ番号を入れる。
-- 図は、文字が読める大きさで載せる。幅に収めると文字が小さすぎる図は、全体図のあとに、
-  拡大して分けたページ（A4 横か A3 横。本文は A4 縦のまま）を付ける。図の前のページが大きく空くときは、
-  図を少し縮めるか、文字の無い行で図を分けて、前のページへ詰める。
+- 図は、文字が読める大きさで載せる。A4 縦に収めると文字が小さすぎる図は、図の大きさに合わせた用紙の
+  1ページに等倍で載せる（本文は A4 縦のまま）。そのページには、図の直前の見出しと導入文も載せる。
+  本文の図の前のページが大きく空くときは、図を少し縮めるか、文字の無い行で図を分けて、前のページへ詰める。
+- 人が読む内容だけを入れる。SKIP_PAGES のページ（AI向けの書き方と GitHub の設定）と、summary が「AI向け：」で始まる
+  details は入れない。
 - 画像が1つでも読み込めなければ、PDF を作らずに失敗する。
 
 ふつうは scripts/build-pdf.sh から呼ぶ。
@@ -47,20 +49,11 @@ PX_PER_MM = 96 / 25.4
 PT_PER_PX = 0.75
 CONTENT_W_PX = int((PAGE_W_MM - MARGIN_MM["left"] - MARGIN_MM["right"]) * PX_PER_MM)
 CONTENT_H_PX = int((PAGE_H_MM - MARGIN_MM["top"] - MARGIN_MM["bottom"]) * PX_PER_MM)
-# 図の縮め方の下限。このとき PlantUML の文字（11〜13px）は、約 4.5〜5.4pt になる。
-READABLE_SCALE = 0.55
-# 拡大して分けたページの用紙。小さい順に試す。本文は A4 縦のまま。
-WIDE_PAPERS = [
-    {"name": "a4", "label": "A4 横", "w_mm": 297, "h_mm": 210},
-    {"name": "a3", "label": "A3 横", "w_mm": 420, "h_mm": 297},
-]
-for _paper in WIDE_PAPERS:
-    _paper["w"] = int((_paper["w_mm"] - MARGIN_MM["left"] - MARGIN_MM["right"]) * PX_PER_MM)
-    _paper["h"] = int((_paper["h_mm"] - MARGIN_MM["top"] - MARGIN_MM["bottom"]) * PX_PER_MM)
-# 拡大の倍率。0.75 から下げ、下限は 0.55（PlantUML の 11〜13px の文字が、およそ 4.5〜5.4pt。太字や見出しは 6pt 以上）。
-MAX_ZOOM, MIN_ZOOM = 0.75, 0.55
-# 1つの図の拡大ページの枚数の目安（3段×4列）。下限の倍率と A3 横でも超えるときは、そのまま最小の枚数にする。
-MAX_TILES = 12
+# 本文に置く図の倍率の下限。A4 縦の幅と高さに収めた倍率がこれより小さい図は、
+# 図の大きさに合わせた用紙の1ページに、等倍で載せる（0.75 で、11px の文字が約 6pt）。
+BODY_MIN_SCALE = 0.75
+# PDF の1ページの最大の寸法（200インチ）。図のページがこれを超えるときだけ、図を縮めて収める。
+MAX_PAGE_MM = 5080
 
 # 印刷のときだけ足す CSS。サイトの CSS は変えない。
 # サイトの CSS の @page の余白（25mm）は、下の MARGIN_MM に置きかえる。
@@ -76,7 +69,7 @@ button[title] {{ display: none !important; }}
 .md-content__inner::before {{ display: none !important; }}
 .md-typeset {{ font-size: 10.5pt; }}
 .md-typeset img {{ max-width: 100%; height: auto; }}
-.md-typeset .pdf-figure img, .md-typeset .pdf-tile img {{ max-width: none !important; }}
+.md-typeset .pdf-figure img {{ max-width: none !important; }}
 /* 図と、そのすぐ後の「ソース:」は同じページに置く */
 .pdf-figure {{ break-inside: avoid; }}
 .pdf-figure.pdf-split {{ break-inside: auto; }}
@@ -84,17 +77,11 @@ button[title] {{ display: none !important; }}
 .pdf-figure > p {{ margin: 0.6em 0; }}
 .pdf-clip {{ position: relative; overflow: hidden; }}
 .pdf-clip > img {{ position: absolute; left: 0; top: 0; }}
-.pdf-note, .pdf-tile-caption {{ font-size: 9pt; color: #555; }}
-.md-typeset .pdf-tile-caption {{ margin: 0 0 4px; line-height: 1.4; }}
-.pdf-tile {{ break-before: page; break-inside: avoid; }}
-.pdf-tile-a4 {{ page: wide-a4; }}
-.pdf-tile-a3 {{ page: wide-a3; }}
-@page wide-a4 {{ size: A4 landscape; }}
-@page wide-a3 {{ size: A3 landscape; }}
-.pdf-map {{ position: relative; display: inline-block; }}
-.pdf-map > img {{ display: block; }}
-.pdf-map-cell {{ position: absolute; box-sizing: border-box; border: 1px dashed #c62828; color: #c62828;
-  font-size: 8pt; line-height: 1; padding: 2px; }}
+.pdf-note {{ font-size: 9pt; color: #555; }}
+/* 大きい図は、その図だけのページに載せる（用紙の大きさは図ごとに @page で決める） */
+.pdf-figure[data-own] {{ break-before: page; break-after: page; }}
+.pdf-lead {{ max-width: {CONTENT_W_PX}px; }}
+.pdf-fig-title {{ font-weight: 700; }}
 .md-typeset table:not([class]) {{ display: table; width: 100%; font-size: 9pt; }}
 .md-typeset table:not([class]) tr {{ break-inside: avoid; }}
 .md-typeset table:not([class]) th, .md-typeset table:not([class]) td {{ padding: 0.6em 0.8em; }}
@@ -127,7 +114,7 @@ PDF_OPTIONS = dict(
     margin={key: f"{value}mm" for key, value in MARGIN_MM.items()},
     outline=True,
     tagged=True,
-    # 拡大した図のページだけ A3 横にするため、CSS の @page の用紙を使う
+    # 大きい図のページだけ図に合わせた用紙にするため、CSS の @page の用紙を使う
     prefer_css_page_size=True,
 )
 
@@ -172,6 +159,39 @@ OUTSIDE_LINK_JS = """
     if (a.getAttribute('href').startsWith('#')) return;
     a.setAttribute('href', base ? outside(url) : url.href);
   });
+}
+"""
+
+
+# PDF に入れないページ（原稿のパス）。人が読む設計書ではないもの（AI向けの書き方、GitHub の設定）。
+# PDF の中のこのページへのリンクも消す。
+SKIP_PAGES = ("docs/guide.md", "docs/setup.md")
+
+# PDF に入れない内容を消す JS。summary が「AI向け：」で始まる details を消し、SKIP_PAGES へのリンクは、
+# 項目がそのリンクだけなら項目ごと消し、文の中なら文字だけにする。消したものを返す。
+SKIP_JS = """
+(skipPaths) => {
+  const removed = [];
+  document.querySelectorAll('article details').forEach(d => {
+    const summary = d.querySelector(':scope > summary');
+    if (summary && summary.textContent.trim().startsWith('AI向け：')) {
+      removed.push('details「' + summary.textContent.trim() + '」');
+      d.remove();
+    }
+  });
+  document.querySelectorAll('article a[href]').forEach(a => {
+    const url = new URL(a.getAttribute('href'), location.href);
+    if (url.origin !== location.origin || !skipPaths.includes(decodeURIComponent(url.pathname))) return;
+    const item = a.closest('li');
+    if (item && item.textContent.trim() === a.textContent.trim()) {
+      removed.push('リンクの項目「' + a.textContent.trim() + '」');
+      item.remove();
+    } else {
+      removed.push('リンク「' + a.textContent.trim() + '」を文字だけに');
+      a.replaceWith(a.textContent);
+    }
+  });
+  return removed;
 }
 """
 
@@ -283,13 +303,13 @@ SHORT_CELLS_JS = """
 
 # 図を、文字が読める大きさにする JS。
 # - 画像だけの段落を div.pdf-figure で包み、すぐ後の「ソース:」の段落も中に入れる（同じページに置くため）。
-# - 図は、幅とページの高さに収まる大きさにする。それでは文字が小さすぎるときは、全体図を小さく載せ、
-#   次のページから、横向きの用紙（A4 横か A3 横）に拡大して分けたものを付ける。全体図には、ピースの枠と番号を重ねる。
-#   ピースは、いちばん大きい文字や吹き出しが丸ごと入るだけ端を重ね、空のピースも飛ばさずに段・列の順に並べる。
-#   倍率は MAX_ZOOM から MIN_ZOOM まで下げ、同じ倍率なら小さい用紙から試し、MAX_TILES 枚以下に収まる最初のものにする。
+# - 図は、A4 縦の幅と高さに収まる大きさにする。その倍率が BODY_MIN_SCALE より小さい図は等倍にし、
+#   data-own を付ける。あとで PAGES_JS が、図の大きさに合わせた用紙のページにする。
+#   図の直前の見出しと導入文（合わせて H の半分まで）も、div.pdf-lead にして図のページの上に載せる。
+#   前のページに見出しと数行だけが残って、ほぼ空になるのを防ぎ、図のページで何の図か分かるようにする。
 # - SVG の文字の上下の位置を data-texts に残す。あとで図を分けるとき、文字の無い行で切るのに使う。
 FIGURES_JS = """
-async ([W, H, READABLE, PAPERS, MAX_ZOOM, MIN_ZOOM, MAX_TILES]) => {
+async ([W, H, BODY_MIN]) => {
   const root = document.querySelector('article.md-content__inner');
   const hidden = document.createElement('div');
   hidden.style.cssText = 'position:absolute;left:-100000px;top:0;visibility:hidden';
@@ -302,12 +322,8 @@ async ([W, H, READABLE, PAPERS, MAX_ZOOM, MIN_ZOOM, MAX_TILES]) => {
     hidden.appendChild(node);
     const box = (e) => { const b = e.getBBox(); return [b.x, b.y, b.x + b.width, b.y + b.height]; };
     const texts = [...node.querySelectorAll('text')].map(box);
-    const shapes = [...node.querySelectorAll('rect, path, line, polygon, polyline, ellipse, circle, image')].map(box);
-    const boxes = [...node.querySelectorAll('rect, path, polygon')]
-      .filter(e => { const fill = e.getAttribute('fill'); return fill && fill !== 'none'; })
-      .map(box).filter(b => b[2] - b[0] > 8 && b[3] - b[1] > 8);
     node.remove();
-    return { texts, shapes, boxes };
+    return { texts };
   };
   const figures = [];
   for (const img of [...root.querySelectorAll('img')]) {
@@ -327,94 +343,45 @@ async ([W, H, READABLE, PAPERS, MAX_ZOOM, MIN_ZOOM, MAX_TILES]) => {
     fig.dataset.w = nw;
     fig.dataset.h = nh;
     let scale = Math.min(1, W / nw, (H - 80) / nh);
-    if (scale < READABLE && boxes) {
-      // 全体図は小さく載せ、拡大して分けたページ（A4 横か A3 横）を後ろに付ける
-      scale = Math.min(1, W / nw, (H * 0.45) / nh);
-      fig.dataset.tiled = '1';
-      // 隣のピースとの重ね。いちばん大きい文字や吹き出しが、どれかのピースに丸ごと入る幅にする
-      // 線や矢印は除き、文字と、塗りのある箱・吹き出しだけを見る
-      const items = boxes.texts.concat(boxes.boxes.filter(b => b[2] - b[0] < nw / 3 && b[3] - b[1] < nh / 3));
-      const widest = Math.max(0, ...items.map(b => b[2] - b[0]));
-      const tallest = Math.max(0, ...items.map(b => b[3] - b[1]));
-      // 枚数は端を重ねたときの最小にし、そのうえで間隔をそろえる（細い切れ端を作らない）
-      const starts = (length, size, overlap) => {
-        if (length <= size) return [0];
-        const count = Math.ceil((length - overlap) / (size - overlap));
-        const step = (length - size) / (count - 1);
-        return [...Array(count).keys()].map(i => Math.round(i * step));
-      };
-      const layout = (paper, zoom) => {
-        const tw = Math.floor(paper.w / zoom), th = Math.floor((paper.h - 36) / zoom);
-        const ox = Math.min(Math.max(40, widest + 20), tw * 0.4);
-        const oy = Math.min(Math.max(40, tallest + 20), th * 0.4);
-        const xs = starts(nw, tw, ox), ys = starts(nh, th, oy);
-        return { paper, zoom, tw, th, xs, ys, count: xs.length * ys.length };
-      };
-      // 倍率を高い方から下げていき、同じ倍率なら小さい用紙から試して、MAX_TILES 枚以下に収まる最初のものにする。
-      // 下限の倍率と最大の用紙でも収まらないときは、そのまま（最小の枚数）にする。
-      let plan = null;
-      for (let zoom = MAX_ZOOM; zoom >= MIN_ZOOM - 1e-9 && !plan; zoom = Math.round((zoom - 0.05) * 100) / 100) {
-        for (const paper of PAPERS) {
-          const candidate = layout(paper, zoom);
-          if (candidate.count <= MAX_TILES) { plan = candidate; break; }
+    if (scale < BODY_MIN) {
+      scale = 1;
+      fig.dataset.own = '1';
+      const lead = [];
+      let height = 0;
+      let el = fig.previousElementSibling;
+      while (el && !el.classList.contains('pdf-figure') && !el.querySelector('.pdf-figure')) {
+        height += el.getBoundingClientRect().height;
+        if (height > H / 2) break;
+        lead.unshift(el);
+        if (/^H[1-6]$/.test(el.tagName)) break;
+        el = el.previousElementSibling;
+      }
+      const box = document.createElement('div');
+      box.className = 'pdf-lead';
+      if (lead.length && height <= H / 2) box.append(...lead);
+      // 見出しを載せられないとき（前が図など）は、どのページの何の節の図か分かるよう、見出しの文字を短く入れる
+      if (!box.querySelector('h1, h2, h3, h4, h5, h6')) {
+        const text = (h) => { const c = h.cloneNode(true); c.querySelectorAll('.headerlink').forEach(e => e.remove()); return c.textContent.trim(); };
+        const heads = [...root.querySelectorAll('h1, h2, h3, h4, h5, h6')]
+          .filter(h => h.compareDocumentPosition(fig) & Node.DOCUMENT_POSITION_FOLLOWING);
+        const names = [heads.find(h => h.tagName === 'H1'), heads[heads.length - 1]].filter(Boolean).map(text);
+        const title = document.createElement('p');
+        title.className = 'pdf-fig-title';
+        title.textContent = [...new Set(names)].join(' ― ') + '（つづき）';
+        box.prepend(title);
+      }
+      fig.prepend(box);
+      // 図が本文の先頭なら、前に改ページしない。図より前にある高さ0の要素も消す。
+      // 残すと、それだけの A4 の空のページが先頭にできる（図のページは用紙が違うため）
+      const empty = (e) => !e.getBoundingClientRect().height;
+      let before = fig.previousElementSibling;
+      while (before && empty(before)) before = before.previousElementSibling;
+      if (!before) {
+        fig.style.breakBefore = 'auto';
+        for (let e = fig; e && e !== document.body; e = e.parentElement) {
+          for (let s = e.previousElementSibling; s; s = s.previousElementSibling) if (empty(s)) s.style.display = 'none';
         }
       }
-      if (!plan) plan = layout(PAPERS[PAPERS.length - 1], MIN_ZOOM);
-      const { paper, zoom, tw, th, xs, ys } = plan;
-      // ピースは、上の段から、左から右へ、空のピースも飛ばさずに並べる
-      const tiles = [];
-      ys.forEach((y, r) => xs.forEach((x, c) => tiles.push([x, y, r, c])));
-      fig.dataset.tiles = tiles.length;
-      // 文字や吹き出しで、どのピースにも丸ごと入らないものの数（0 のはず）
-      fig.dataset.cut = items.filter(b => !tiles.some(([x, y]) =>
-        b[0] >= x && b[2] <= Math.min(x + tw, nw) && b[1] >= y && b[3] <= Math.min(y + th, nh))).length;
-      fig.dataset.zoom = zoom;
-      fig.dataset.paper = paper.name;
-      const alt = img.getAttribute('alt') || '図';
-      // 全体図に、ピースの区切りと番号を重ねる
-      const map = document.createElement('span');
-      map.className = 'pdf-map';
-      map.style.width = nw * scale + 'px';
-      map.style.height = nh * scale + 'px';
-      img.before(map);
-      map.appendChild(img);
-      tiles.forEach(([x, y, r, c], i) => {
-        const cell = document.createElement('span');
-        cell.className = 'pdf-map-cell';
-        cell.style.left = x * scale + 'px';
-        cell.style.top = y * scale + 'px';
-        cell.style.width = Math.min(tw, nw - x) * scale + 'px';
-        cell.style.height = Math.min(th, nh - y) * scale + 'px';
-        cell.textContent = String(i + 1);
-        map.appendChild(cell);
-      });
-      const note = document.createElement('p');
-      note.className = 'pdf-note';
-      note.textContent = `文字が小さいため、次のページから ${paper.label} のページに、図を ${Math.round(zoom * 100)}% に拡大して分けて載せます（${ys.length}段×${xs.length}列、全${tiles.length}ページ。番号は上の図の枠の番号。端は重ねています）。`;
-      p.after(note);
-      let anchor = fig;
-      tiles.forEach(([x, y, r, c], i) => {
-        const tile = document.createElement('div');
-        tile.className = 'pdf-tile pdf-tile-' + paper.name;
-        const caption = document.createElement('p');
-        caption.className = 'pdf-tile-caption';
-        caption.textContent = `${alt}（拡大 ${i + 1}/${tiles.length}：上から${r + 1}段目、左から${c + 1}列目。全体は${ys.length}段×${xs.length}列）`;
-        const clip = document.createElement('div');
-        clip.className = 'pdf-clip';
-        clip.style.width = Math.ceil(Math.min(tw, nw - x) * zoom) + 'px';
-        clip.style.height = Math.ceil(Math.min(th, nh - y) * zoom) + 'px';
-        const part = document.createElement('img');
-        part.src = img.src;
-        part.alt = '';
-        part.style.width = nw * zoom + 'px';
-        part.style.height = nh * zoom + 'px';
-        part.style.left = -x * zoom + 'px';
-        part.style.top = -y * zoom + 'px';
-        clip.appendChild(part);
-        tile.append(caption, clip);
-        anchor.after(tile);
-        anchor = tile;
-      });
     }
     fig.dataset.scale = scale;
     img.style.width = nw * scale + 'px';
@@ -452,7 +419,7 @@ MARK_JS = f"""
     }});
   }});
   // 図そのもの（分けたものは各部分）の位置。ページの本文の下端を読むのに使う
-  document.querySelectorAll('.pdf-figure > p, .pdf-figure .pdf-clip, .pdf-tile').forEach((el, i) => wrap(el, 'b' + i));
+  document.querySelectorAll('.pdf-figure > p, .pdf-figure .pdf-clip').forEach((el, i) => wrap(el, 'b' + i));
 }}
 """
 
@@ -506,6 +473,8 @@ def open_page(browser: Browser, url: str, links: dict | None = None, short_ids: 
     page = browser.new_page(color_scheme="light")
     page.goto(url, wait_until="networkidle")
     check_images(page, url)
+    for item in page.evaluate(SKIP_JS, ["/" + page_url(src) for src in SKIP_PAGES]):
+        print(f"  PDF から外しました: {unquote(url.split('/', 3)[-1]) or 'トップ'} の{item}")
     if links is not None:
         page.evaluate(f"([pages, base]) => ({OUTSIDE_LINK_JS})(document, pages, base)", [links["pages"], links["base"]])
     if short_ids:
@@ -514,20 +483,15 @@ def open_page(browser: Browser, url: str, links: dict | None = None, short_ids: 
     # 閉じた details も中身を印刷する
     page.evaluate("document.querySelectorAll('details').forEach(d => d.open = true)")
     page.evaluate(SHORT_CELLS_JS)
-    page.evaluate(FIGURES_JS, [CONTENT_W_PX, CONTENT_H_PX, READABLE_SCALE, WIDE_PAPERS, MAX_ZOOM, MIN_ZOOM, MAX_TILES])
+    page.evaluate(FIGURES_JS, [CONTENT_W_PX, CONTENT_H_PX, BODY_MIN_SCALE])
     page.evaluate("document.fonts.ready")
-    for alt, cut in page.evaluate(
-        "() => [...document.querySelectorAll('.pdf-figure[data-cut]')].map(f => [f.querySelector('img').alt, +f.dataset.cut])"
-    ):
-        if cut:
-            print(f"注意: 拡大ページの境で切れる文字や吹き出しが {cut} 個あります: {alt}")
     return page
 
 
 HEADINGS_JS = """
 () => [...document.querySelectorAll('article h1, article h2, article h3, article h4, article h5, article h6')]
   .filter(h => h.offsetParent !== null)
-  .map(h => [h.matches('.pdf-page > h1:first-of-type, #pdf-toc'), (c => { c.querySelectorAll('.headerlink').forEach(e => e.remove()); return c.textContent; })(h.cloneNode(true)).replace(/\\s+/g, ' ').trim()])
+  .map(h => [(h.matches('#pdf-toc') || (h.tagName === 'H1' && !!h.closest('.pdf-page') && h.closest('.pdf-page').querySelector('h1') === h)), (c => { c.querySelectorAll('.headerlink').forEach(e => e.remove()); return c.textContent; })(h.cloneNode(true)).replace(/\\s+/g, ' ').trim()])
 """
 
 
@@ -610,17 +574,17 @@ def fit_figures(page: Page, label: str) -> None:
             bottoms, marks, heights = read_layout(probe)
             figures = page.evaluate(
                 "() => [...document.querySelectorAll('.pdf-figure')].map(f => "
-                "[+f.dataset.section, !!f.dataset.tried, !!f.dataset.tiled, +f.dataset.scale, +f.dataset.h])"
+                "[+f.dataset.section, !!f.dataset.tried, !!f.dataset.own, +f.dataset.scale, +f.dataset.h])"
             )
             done_sections = set()
             changed = False
-            for index, (section, tried, tiled, scale, natural_h) in enumerate(figures):
+            for index, (section, tried, own, scale, natural_h) in enumerate(figures):
                 where = marks.get(f"f{index}")
                 start = marks.get(f"s{section}")
                 if tried or section in done_sections or not where or not start:
                     continue
                 number, (low, high) = where[0]
-                # 前のページが A3 横（拡大した図）のときは詰めない
+                # 前のページが図だけのページ（用紙の大きさが違う）のときは詰めない
                 if number == 0 or number <= start[0][0] or heights[number - 1] != heights[number]:
                     continue
                 height = heights[number]
@@ -633,11 +597,11 @@ def fit_figures(page: Page, label: str) -> None:
                 image_h = natural_h * scale * PT_PER_PX
                 room = blank - above - 10
                 new_scale = scale * (room - (figure_h - image_h)) / image_h
-                if tiled:
-                    # 全体図には枠と番号を重ねているので、縮めも分けもしない
+                if own:
+                    # 図だけのページに載せる図は、縮めも分けもしない
                     page.evaluate(FIX_JS, [index, "none", 0])
                     continue
-                if new_scale >= max(READABLE_SCALE, scale * 0.85):
+                if new_scale >= scale * 0.85:
                     page.evaluate(FIX_JS, [index, "shrink", new_scale])
                 elif page.evaluate(FIX_JS, [index, "split", room / PT_PER_PX - 30]):
                     pass
@@ -651,8 +615,50 @@ def fit_figures(page: Page, label: str) -> None:
         print(f"注意: 図の位置の調整が終わりませんでした: {label}")
 
 
+# data-own の図を、図の大きさに合わせた用紙の1ページにする JS。用紙は、図とソースの行の大きさに余白を足したもの。
+# 1辺が MAX_PAGE_MM を超えるときだけ、図を縮めて収める。名前つきの @page を図ごとに作る。
+PAGES_JS = """
+([PX, M, MAX, MIN_W]) => {
+  document.querySelectorAll('style.pdf-pages').forEach(s => s.remove());
+  const rules = [];
+  const sizes = [];
+  document.querySelectorAll('.pdf-figure[data-own]').forEach((fig, i) => {
+    const img = fig.querySelector('p > img');
+    const nw = +fig.dataset.w, nh = +fig.dataset.h;
+    const size = (zoom) => {
+      img.style.width = nw * zoom + 'px';
+      img.style.height = nh * zoom + 'px';
+      const extra = fig.getBoundingClientRect().height - nh * zoom + 40;
+      return [Math.max(nw * zoom, MIN_W) / PX + M.left + M.right, (nh * zoom + extra) / PX + M.top + M.bottom, extra];
+    };
+    let zoom = 1;
+    let [w, h, extra] = size(zoom);
+    if (w > MAX || h > MAX) {
+      zoom = Math.min((MAX - M.left - M.right) * PX / nw, ((MAX - M.top - M.bottom) * PX - extra) / nh);
+      [w, h] = size(zoom);
+    }
+    w = Math.ceil(w);
+    h = Math.ceil(h);
+    const name = 'pdf-fig-' + i;
+    rules.push(`@page ${name} { size: ${w}mm ${h}mm; }`);
+    fig.style.page = name;
+    fig.dataset.scale = zoom;
+    sizes.push([img.getAttribute('alt') || '', w, h, Math.round(zoom * 100)]);
+  });
+  const style = document.createElement('style');
+  style.className = 'pdf-pages';
+  style.textContent = rules.join('\\n');
+  document.head.appendChild(style);
+  return sizes;
+}
+"""
+
+
 def print_pdf(page: Page, out: Path, label: str) -> list[list]:
     """図の位置を整えてから印刷し、しおりの名前を直すための見出しを返す。"""
+    for alt, width, height, zoom in page.evaluate(PAGES_JS, [PX_PER_MM, MARGIN_MM, MAX_PAGE_MM, CONTENT_W_PX]):
+        note = "" if zoom == 100 else f"、{zoom}% に縮小"
+        print(f"  図のページ: {alt}（{width}×{height}mm{note}）")
     fit_figures(page, label)
     check_images(page, label)
     headings = page.evaluate(HEADINGS_JS)
@@ -697,9 +703,13 @@ EXTRACT_JS = f"""
 
 
 def in_combined(src: str) -> bool:
-    """まとめた PDF に入れるページか。`_template` の型と変更履歴は入れない。"""
+    """まとめた PDF に入れるページか。`_template` の型、変更履歴、SKIP_PAGES のページは入れない。"""
     path = Path(src)
-    return not any(part.startswith("_") for part in path.parts) and path.name != "変更履歴.md"
+    return (
+        not any(part.startswith("_") for part in path.parts)
+        and path.name != "変更履歴.md"
+        and src not in SKIP_PAGES
+    )
 
 
 def build_combined(browser: Browser, base: str, site: Path, entries, out: Path, links: dict) -> None:
