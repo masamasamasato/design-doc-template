@@ -14,10 +14,10 @@ participant "認証API" as API
 User -> Screen : ログインする
 Screen -> API : POST /sessions
 API -> API : 1. リクエストバリデーション\nvalidateLoginRequest()
-alt 本文の項目が条件に合わない場合
+alt 本文のいずれかの項目が条件に合わない場合
   API --> Screen : 400 INVALID_REQUEST\n何も保存しない
   Screen --> User : 入力を直すよう表示する
-else 本文の項目が条件に合う場合
+else 本文のすべての項目が条件に合う場合
   API -> API : 2. ロック判定\n3. メアド・パスワード検証\nauthenticate()
   alt ロック中（連続5回失敗から15分以内）の場合
     API --> Screen : 403 ACCOUNT_LOCKED\n何も保存しない
