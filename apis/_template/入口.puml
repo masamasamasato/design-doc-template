@@ -5,7 +5,7 @@ skinparam defaultFontName "Noto Sans CJK JP"
 skinparam SequenceFontName "Noto Sans CJK JP"
 hide footbox
 
-title （APIの名前）
+title （〇〇）API
 
 actor "利用者" as User
 participant "（画面の名前）" as Screen

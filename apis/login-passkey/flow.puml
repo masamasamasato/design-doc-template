@@ -6,7 +6,7 @@ skinparam defaultFontName "Noto Sans CJK JP"
 skinparam ActivityFontName "Noto Sans CJK JP"
 skinparam NoteBackgroundColor #FFFFCC
 
-title パスキーでログインする
+title パスキーログインAPI
 
 start
 :1. チャレンジ発行\nPOST /sessions/passkey/options;

@@ -6,7 +6,7 @@ skinparam defaultFontName "Noto Sans CJK JP"
 skinparam ActivityFontName "Noto Sans CJK JP"
 skinparam NoteBackgroundColor #FFFFCC
 
-title アカウントを復旧する
+title アカウント復旧API
 
 start
 :1. 依頼回数の上限検証\nPOST /account-recovery。過去例：1時間の依頼回数を上限と照合;

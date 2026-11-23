@@ -6,7 +6,7 @@ skinparam defaultFontName "Noto Sans CJK JP"
 skinparam ActivityFontName "Noto Sans CJK JP"
 skinparam NoteBackgroundColor #FFFFCC
 
-title プロフィールを公開する
+title プロフィール公開API
 
 start
 :1. セッション検証\nCookie のセッションIDを、保存済みの有効なセッションと照合;

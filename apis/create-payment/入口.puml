@@ -5,7 +5,7 @@ skinparam SequenceFontName "Noto Sans CJK JP"
 skinparam NoteBackgroundColor #FFFFCC
 hide footbox
 
-title 支払う
+title 支払いAPI
 
 actor "利用者" as User
 participant "支払い画面" as Screen

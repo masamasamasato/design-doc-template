@@ -5,7 +5,7 @@ skinparam SequenceFontName "Noto Sans CJK JP"
 skinparam NoteBackgroundColor #FFFFCC
 hide footbox
 
-title 決済の結果を受け取る
+title 決済通知受信API
 
 actor "決済サービス" as PSP
 participant "決済API" as API
