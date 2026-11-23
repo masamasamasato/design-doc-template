@@ -10,6 +10,7 @@
 - 図は、文字が読める大きさで載せる。A4 縦に収めると文字が小さすぎる図は、図の大きさに合わせた用紙の
   1ページに等倍で載せる（本文は A4 縦のまま）。そのページには、図の直前の見出しと導入文も載せる。
   本文の図の前のページが大きく空くときは、図を少し縮めるか、文字の無い行で図を分けて、前のページへ詰める。
+- 文書の最後（図だけのページの前も）で数行だけがはみ出すときは、その文書だけ字を少し小さくして収める。
 - 人が読む内容だけを入れる。SKIP_PAGES のページ（AI向けの書き方と GitHub の設定）と、summary が「AI向け：」で始まる
   details は入れない。
 - 画像が1つでも読み込めなければ、PDF を作らずに失敗する。
@@ -98,6 +99,12 @@ button[title] {{ display: none !important; }}
 .pdf-toc ul {{ list-style: none; }}
 .pdf-toc a {{ color: inherit; text-decoration: none; }}
 .pdf-toc .pdf-toc-group {{ font-weight: 700; margin-top: 0.6em; }}
+/* 目次は1ページに収める */
+.md-typeset .pdf-toc li {{ margin-bottom: 0.3em; }}
+/* 文書の最後のページ（図だけのページの前のページも）が数行だけになるとき、その文書だけ字を少し小さくして詰める */
+.md-typeset.pdf-tight-1, .md-typeset .pdf-tight-1 {{ font-size: 10pt; }}
+.md-typeset.pdf-tight-2, .md-typeset .pdf-tight-2 {{ font-size: 9.5pt; }}
+.pdf-tight-2 pre {{ margin: 0.6em 0; }}
 """
 
 FOOTER = (
@@ -358,7 +365,7 @@ async ([W, H, BODY_MIN]) => {
       }
       const box = document.createElement('div');
       box.className = 'pdf-lead';
-      if (lead.length && height <= H / 2) box.append(...lead);
+      if (lead.length) box.append(...lead);
       // 見出しを載せられないとき（前が図など）は、どのページの何の節の図か分かるよう、見出しの文字を短く入れる
       if (!box.querySelector('h1, h2, h3, h4, h5, h6')) {
         const text = (h) => { const c = h.cloneNode(true); c.querySelectorAll('.headerlink').forEach(e => e.remove()); return c.textContent.trim(); };
@@ -654,12 +661,88 @@ PAGES_JS = """
 """
 
 
+# 文書（まとめた PDF ではその中の各ページ）に、字を少し小さくする段階（0 は元のまま）を付ける JS。
+TIGHT_JS = """
+([index, level]) => {
+  const sections = [...document.querySelectorAll('section.pdf-page')];
+  const root = sections.length ? sections[index] : document.querySelector('article.md-content__inner');
+  root.classList.remove('pdf-tight-1', 'pdf-tight-2');
+  if (level) root.classList.add('pdf-tight-' + level);
+}
+"""
+
+
+def squeeze_tails(page: Page, label: str) -> None:
+    """文書の最後だけがはみ出したページを、前のページに収める。
+
+    文書（まとめた PDF ではその中の各ページ）の2ページ目以降で、次が別の文書か図だけのページか PDF の終わりの
+    A4 のページに、本文がページの 1/4 未満しかないとき、その文書の字を少し小さくする（10pt、9.5pt の2段階まで）。
+    印刷して、その文書のページが減らなければ、前の段階に戻す。
+    """
+    top_margin = MARGIN_MM["top"] * 72 / 25.4
+    bottom_margin = MARGIN_MM["bottom"] * 72 / 25.4
+    a4_height = round(PAGE_H_MM * 72 / 25.4)
+    levels: dict[int, int] = {}
+    with tempfile.TemporaryDirectory() as work:
+        probe = Path(work) / "probe.pdf"
+
+        def layout() -> tuple[dict[int, int], set[int]]:
+            page.evaluate(MARK_JS, True)
+            page.evaluate(WAIT_IMAGES_JS)
+            page.pdf(path=str(probe), **PDF_OPTIONS)
+            page.evaluate(MARK_JS, False)
+            bottoms, marks, heights = read_layout(probe)
+            # 目印の枠は、前のページの最後にも高さ0で出ることがあるため、高さのある所を使う
+            starts = sorted(
+                (next((number for number, (low, high) in places if high - low > 5), places[-1][0]), int(name[1:]))
+                for name, places in marks.items()
+                if name.startswith("s")
+            )
+            counts, tails = {}, set()
+            for position, (first, section) in enumerate(starts):
+                end = starts[position + 1][0] if position + 1 < len(starts) else len(heights)
+                counts[section] = end - first
+                for number in range(first + 1, end):
+                    if round(heights[number]) != a4_height:
+                        continue
+                    last = number + 1 == end or round(heights[number + 1]) != a4_height
+                    used = (heights[number] - top_margin - bottoms[number]) / (heights[number] - top_margin - bottom_margin)
+                    if last and used < 0.25:
+                        tails.add(section)
+            return counts, tails
+
+        counts, tails = layout()
+        for level in (1, 2):
+            if not tails:
+                break
+            for section in tails:
+                page.evaluate(TIGHT_JS, [section, level])
+            page.evaluate(PAGES_JS, [PX_PER_MM, MARGIN_MM, MAX_PAGE_MM, CONTENT_W_PX])
+            new_counts, new_tails = layout()
+            for section in tails:
+                if new_counts.get(section, 0) < counts.get(section, 0):
+                    levels[section] = level
+                    counts[section] = new_counts[section]
+                else:
+                    page.evaluate(TIGHT_JS, [section, levels.get(section, 0)])
+            # 減らなかった文書と、減ってもまだ最後のページが数行だけの文書は、次の段階を試す
+            tails = {section for section in tails if levels.get(section) != level or section in new_tails}
+        page.evaluate(PAGES_JS, [PX_PER_MM, MARGIN_MM, MAX_PAGE_MM, CONTENT_W_PX])
+    titles = page.evaluate(
+        "() => [...document.querySelectorAll('section.pdf-page')].map(s => (s.querySelector('h1') || s).textContent.replace('¶', '').trim())"
+    )
+    for section, level in sorted(levels.items()):
+        where = f"{label} の「{titles[section]}」" if titles else label
+        print(f"  字を小さくして詰めました: {where}（{['', '10pt', '9.5pt'][level]}）")
+
+
 def print_pdf(page: Page, out: Path, label: str) -> list[list]:
     """図の位置を整えてから印刷し、しおりの名前を直すための見出しを返す。"""
     for alt, width, height, zoom in page.evaluate(PAGES_JS, [PX_PER_MM, MARGIN_MM, MAX_PAGE_MM, CONTENT_W_PX]):
         note = "" if zoom == 100 else f"、{zoom}% に縮小"
         print(f"  図のページ: {alt}（{width}×{height}mm{note}）")
     fit_figures(page, label)
+    squeeze_tails(page, label)
     check_images(page, label)
     headings = page.evaluate(HEADINGS_JS)
     page.pdf(path=str(out), **PDF_OPTIONS)
