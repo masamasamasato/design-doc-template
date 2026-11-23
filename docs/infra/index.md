@@ -1,46 +1,47 @@
 # AWSのインフラ構成
 
-ログイン、ログアウト、商品詳細、商品一覧、商品検索のAPIを、この構成で動かします。**この図は、ログインと商品のAPIの記入例です。パスキー、復旧、カード登録、支払い、決済通知は載せていません**。決済サービス（外部）、通知の受け口、通知の署名の秘密も未掲載です。図は上から下へ、利用者 → Route 53 → CloudFront → ALB → 2つのAZのAPI → データの順です。左がデプロイと監視、VPCの外（AWSクラウド内）に SES と Secrets Manager があります。
+ログインと商品のAPIを動かす、AWSの構成です。記入例なので、決済、パスキー、アカウントの復旧は載せていません。
 
 ![AWSのインフラ構成](構成図.svg)
 
-ソース: [構成図.puml](構成図.puml)。図のアイコンは、plantuml.jar に入っている awslib を使います。外部のURLは読み込みません。APIの設計は [ログインする](../../apis/login/README.md)、[ログアウトする](../../apis/logout/README.md)、[商品詳細を取得する](../../apis/get-product/README.md)、[商品一覧を取得する](../../apis/list-products/README.md)、[商品を検索する](../../apis/search-products/README.md) です。
+ソース: [構成図.puml](構成図.puml)
 
-この図では省いたもの: セキュリティグループ、VPCエンドポイント。
+要求は、図の中央を上から下へ流れます。
 
-## 目次
+1. 利用者の要求は、Route 53 と CloudFront を通ります。画面は S3 から返し、APIの要求は ALB へ回します。
+2. ALB は、2つのAZにあるAPIサービス（ECS Fargate）へ振り分けます。
+3. APIは、セッションを ElastiCache に、利用者と商品を RDS に置きます。ログイン通知メールは SES で送ります。
 
-- [図の読み方](#図の読み方)
-- [各要素の役割](#各要素の役割)
+図の左側は、デプロイ（GitHub Actions、ECR）と監視（CloudWatch、SNS）です。
 
-## 図の読み方
+対象のAPI: [ログインする](../../apis/login/README.md)、[ログアウトする](../../apis/logout/README.md)、[商品詳細を取得する](../../apis/get-product/README.md)、[商品一覧を取得する](../../apis/list-products/README.md)、[商品を検索する](../../apis/search-products/README.md)
 
-利用者が画面とAPIを使う流れは、図の中央を上から下へ辿ります。実線は通信の流れです。AWS WAF から CloudFront、ACM から CloudFront と ALB への点線は、付けている関係と証明書を示します。
+<details markdown>
+<summary>AI向け：図の描き方と各要素の細部</summary>
 
-箱の中には、名前と概要・役割を1行書きます。詳しい補足と具体例は黄色い付箋にあります。付箋は対象の箱の真横または真下に置き、短い点線でつなぎます。付箋は、対象と同じ枠（AWSクラウド、VPC、AZ、サブネット、データ帯）の内側に置きます。枠はまたぎません。矢印は交差させません。
+図の描き方です。
 
-2つのAPIからデータへの線は「両APIからの通信（合流）」で合流し、ElastiCache と RDS の両方、Secrets Manager、SES へ分かれます。片方のAPIだけがDBを使う、とは読みません。SES と Secrets Manager への線は、ECR と同じく、ラベルと付箋に「NAT経由」と書いてあります。どちらも VPC の外（AWSクラウド内）に置きます。
+- 箱には、名前と役割を1行書きます。補足と具体例は黄色い付箋に書きます。付箋は対象の箱の真横か真下に置き、短い点線でつなぎます。付箋は対象と同じ枠（AWSクラウド、VPC、AZ、サブネット、データ帯）の内側に置き、枠はまたぎません。矢印は交差させません。
+- 実線は通信の流れです。AWS WAF から CloudFront、ACM から CloudFront と ALB への点線は、付けている関係と証明書を示します。
+- 2つのAPIからの線は「両APIからの通信（合流）」で合流し、ElastiCache、RDS、Secrets Manager、SES へ分かれます。片方のAPIだけがDBを使う、とは読みません。
+- APIから NAT、ECR、CloudWatch Logs への線は、交差を避けるため省きます。ECR は付箋「NAT経由で取得する」で示します。
+- GitHub Actions から ECR への線はデプロイです。CloudWatch Alarm の通知先は SNS で、SES には繋がりません。
+- 図では、セキュリティグループと VPCエンドポイントを省きます。決済サービス（外部）、決済通知の受け口、通知の署名の秘密も載せていません。
+- アイコンは、plantuml.jar に入っている awslib を使います。外部のURLは読み込みません。
 
-GitHub Actions から ECR への線はデプロイです。API から NAT、ECR、CloudWatch への線は、交差を避けるため省き、付箋で示します。CloudWatch Alarm の通知先は SNS で、SES には繋がりません。
+各要素の細部です。
 
-## 各要素の役割
+- Route 53: 例: `www.example.com`。
+- S3（静的画面）: CloudFront からだけ読めます（OAC）。直接のURLでは開けません。例: `login.html`。
+- ALB: 2つのAZのパブリックサブネットにまたがります。
+- NAT Gateway: AZごとに1つ、そのAZのパブリックサブネットに置きます。そのAZのAPIが ECR、SES、Secrets Manager へ出るときに使います。
+- ECS Fargate（APIサービス）: 各AZのプライベートサブネットに1つずつ置きます。例: `POST /sessions`、`GET /products/search`。
+- ElastiCache: セッションの TTL は、ログインから例：24時間です。切れたら、もう一度ログインします。ログインの失敗回数とロックも置き、TTL は例：15分です。プライマリは `ap-northeast-1a`、レプリカは `ap-northeast-1c` です。
+- RDS: 例: メールアドレス `masato@example.com`、商品 `product_1001`。プライマリは `ap-northeast-1a`、スタンバイは `ap-northeast-1c` です。
+- Secrets Manager: DBパスワードを置きます。決済通知の署名の秘密も実際はここに置きますが、図には載せていません。値はコード、ログ、図に出しません。VPC の外（AWSクラウド内）に置き、APIからは NAT 経由で取ります。
+- CloudWatch Logs: 両APIのログを集めます。パスワードは出しません。
+- SES: VPC の外（AWSクラウド内）に置き、NAT 経由で使います。送信に失敗しても、ログインは成功のままです。
+- Amazon SNS: 例: 5xx が増えたら、開発者にメールや Slack で知らせます。
+- AZ: `ap-northeast-1a` と `ap-northeast-1c` の2つです。
 
-- **利用者**: ブラウザから画面とAPIを使います。例: 雅人がログインして商品を探す。
-- **GitHub Actions**: APIのイメージをECRに置き、ECSへデプロイします。AWSの外にあります。
-- **Route 53**: サービスの名前を CloudFront に繋ぎます。例: `www.example.com`。
-- **AWS WAF**: CloudFront に付け、不正な要求を落とします。図では点線で示します。
-- **ACM**: CloudFront と ALB の HTTPS 証明書を発行します。図では点線で「証明書」と示します。
-- **CloudFront**: HTTPS で配信します。画面のファイルは S3 から取り、APIの要求は ALB へ回します。
-- **S3（静的画面）**: ログイン画面や商品画面のファイルを置きます。例: `login.html`。CloudFront からだけ読めます（OAC）。直接のURLでは開けません。
-- **ALB**: 2つのAZのAPIサービスへ、要求を振り分けます。2つのAZのパブリックサブネットにまたがります。
-- **NAT Gateway**: AZごとに1つ置き、そのAZのパブリックサブネットに置きます。NAT 1a は AZ `ap-northeast-1a`、NAT 1c は `ap-northeast-1c` です。そのAZのAPIが ECR や SES などへ出るときに使います。
-- **ECS Fargate（APIサービス）**: ログインや商品のAPIを動かします。例: `POST /sessions`、`GET /products/search`。各AZのプライベートサブネットに1つずつ置きます。
-- **ElastiCache**: セッションを置きます。セッションの TTL は、ログインから例：24時間です。切れたら、もう一度ログインします。ログインの失敗回数とロックも置きます。TTL は、例：15分です。プライマリは AZ `ap-northeast-1a`、レプリカは `ap-northeast-1c` です。どのAPIサーバーに当たっても、ログイン状態が続きます。
-- **RDS**: 利用者と商品のデータを置きます。例: メールアドレス `masato@example.com`、商品 `product_1001`。プライマリは AZ `ap-northeast-1a`、スタンバイは `ap-northeast-1c` です。どちらのAPIからも使えます。
-- **Secrets Manager**: この図では、DBパスワードを置きます。決済通知の署名の秘密も実際はここに置きますが、決済は図に載せていません。コードやログ、図には出しません。VPC の外（AWSクラウド内）に置き、API からは NAT 経由で取ります。
-- **ECR**: APIのコンテナイメージを置きます。GitHub Actions が push し、API は NAT 経由で取ります。ECR からAPIへの線は交差するため省き、付箋で示します。
-- **CloudWatch Logs**: 両APIのログを集めます。パスワードは出しません。図では線を引かず、付箋で示します。
-- **CloudWatch Alarm**: ログやメトリクスを見て、SNS で知らせます。例: 5xx が増えたら通知する。
-- **Amazon SNS**: アラームの通知先です。例: 開発者にメールや Slack で知らせる。
-- **SES**: ログイン通知メールを送ります。「両APIからの通信（合流）」の線を、NAT 経由で引きます。VPC の外（AWSクラウド内）に置きます。送信に失敗しても、ログインは成功のままです。
-- **VPC とサブネット**: NAT は各AZのパブリックサブネット、ALB は2つのAZのパブリックサブネットにまたがり、API は各AZのプライベートサブネット、RDS と ElastiCache はプライベートのデータ帯に置きます。AZ は `ap-northeast-1a` と `ap-northeast-1c` の2つです。
+</details>
