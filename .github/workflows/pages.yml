@@ -87,12 +87,13 @@ jobs:
           NO_MKDOCS_2_WARNING: "1"
         run: |
           set -euo pipefail
-          url="${SITE_URL}"
-          case "$url" in
+          # mkdocs.yml の site_url: !ENV SITE_URL で読む。末尾は / にそろえる
+          case "$SITE_URL" in
             */) ;;
-            *) url="${url}/" ;;
+            *) SITE_URL="${SITE_URL}/" ;;
           esac
-          mkdocs build --strict --site-url "$url"
+          export SITE_URL
+          mkdocs build --strict
 
       - name: サイトをアップロードする
         if: steps.pages.outcome == 'success'
