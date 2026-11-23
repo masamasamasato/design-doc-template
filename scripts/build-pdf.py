@@ -10,7 +10,7 @@
 - 図は、文字が読める大きさで載せる。A4 縦に収めると文字が小さすぎる図は、図の大きさに合わせた用紙の
   1ページに等倍で載せる（本文は A4 縦のまま）。そのページには、図の直前の見出しと導入文も載せる。
   本文の図の前のページが大きく空くときは、図を少し縮めるか、文字の無い行で図を分けて、前のページへ詰める。
-- 文書の最後（図だけのページの前も）で数行だけがはみ出すときは、その文書だけ字を少し小さくして収める。
+- 文書の最後（図だけのページの前も）で数行だけがはみ出すときは、まず余白を少し詰めて前のページに入れる（字の大きさは 10.5pt のまま）。それでも収まらないときは、その文書だけ字を少し小さくして収める。
 - 人が読む内容だけを入れる。SKIP_PAGES のページ（AI向けの書き方と GitHub の設定）と、summary が「AI向け：」で始まる
   details は入れない。
 - 画像が1つでも読み込めなければ、PDF を作らずに失敗する。
@@ -40,6 +40,22 @@ from pypdf import PdfReader, PdfWriter
 from pypdf.generic import NameObject, TextStringObject
 
 ROOT = Path(__file__).resolve().parents[1]
+
+def _load_check_own_page_marks():
+    """同じフォルダの hyphen つきスクリプトから、印の検査を読む。"""
+    import importlib.util
+
+    path = Path(__file__).with_name("check-own-page-marks.py")
+    spec = importlib.util.spec_from_file_location("check_own_page_marks", path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"読めません: {path}")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod.check_own_page_marks
+
+
+check_own_page_marks = _load_check_own_page_marks()
+
 # Chromium の PDF を読むときの、害の無い警告を出さない
 logging.getLogger("pypdf").setLevel(logging.ERROR)
 
@@ -117,7 +133,26 @@ button[title] {{ display: none !important; }}
 .md-typeset .pdf-toc li {{ margin-bottom: 0.3em; }}
 /* 目次の字は 9pt。本文と同じ 10.5pt だと、目次が2ページになる */
 .md-typeset .pdf-toc {{ font-size: 9pt; }}
-/* 文書の最後のページ（図だけのページの前のページも）が数行だけになるとき、その文書だけ字を少し小さくして詰める */
+/* 文書の最後のページが1〜2行だけになるとき、字の大きさはそのまま、余白だけ少し詰めて前のページに入れる */
+.md-typeset.pdf-pack-1 p, .md-typeset .pdf-pack-1 p,
+.md-typeset.pdf-pack-1 pre, .md-typeset .pdf-pack-1 pre {{ margin: 0.7em 0; }}
+.md-typeset.pdf-pack-1 h2, .md-typeset .pdf-pack-1 h2,
+.md-typeset.pdf-pack-1 h3, .md-typeset .pdf-pack-1 h3 {{ margin-top: 1.15em; margin-bottom: 0.5em; }}
+.md-typeset.pdf-pack-1 .md-typeset__scrollwrap, .md-typeset .pdf-pack-1 .md-typeset__scrollwrap {{ margin: 0.7em 0 !important; }}
+.md-typeset.pdf-pack-2 p, .md-typeset .pdf-pack-2 p,
+.md-typeset.pdf-pack-2 pre, .md-typeset .pdf-pack-2 pre {{ margin: 0.5em 0; }}
+.md-typeset.pdf-pack-2 h2, .md-typeset .pdf-pack-2 h2,
+.md-typeset.pdf-pack-2 h3, .md-typeset .pdf-pack-2 h3 {{ margin-top: 1em; margin-bottom: 0.4em; }}
+.md-typeset.pdf-pack-2 .md-typeset__scrollwrap, .md-typeset .pdf-pack-2 .md-typeset__scrollwrap {{ margin: 0.5em 0 !important; }}
+.md-typeset.pdf-pack-3, .md-typeset .pdf-pack-3 {{ line-height: 1.45; }}
+.md-typeset.pdf-pack-3 p, .md-typeset .pdf-pack-3 p,
+.md-typeset.pdf-pack-3 pre, .md-typeset .pdf-pack-3 pre {{ margin: 0.45em 0; }}
+.md-typeset.pdf-pack-3 h2, .md-typeset .pdf-pack-3 h2,
+.md-typeset.pdf-pack-3 h3, .md-typeset .pdf-pack-3 h3 {{ margin-top: 0.9em; margin-bottom: 0.35em; }}
+.md-typeset.pdf-pack-3 .md-typeset__scrollwrap, .md-typeset .pdf-pack-3 .md-typeset__scrollwrap {{ margin: 0.45em 0 !important; }}
+.md-typeset.pdf-pack-3 table:not([class]) th, .md-typeset .pdf-pack-3 table:not([class]) th,
+.md-typeset.pdf-pack-3 table:not([class]) td, .md-typeset .pdf-pack-3 table:not([class]) td {{ padding: 0.45em 0.8em; }}
+/* 余白を詰めても収まらないとき、その文書だけ字を少し小さくして詰める */
 .md-typeset.pdf-tight-1, .md-typeset .pdf-tight-1 {{ font-size: 10pt; }}
 .md-typeset.pdf-tight-2, .md-typeset .pdf-tight-2 {{ font-size: 9.5pt; }}
 .pdf-tight-2 pre {{ margin: 0.6em 0; }}
@@ -800,13 +835,15 @@ PAGES_JS = """
 """
 
 
-# 文書（まとめた PDF ではその中の各ページ）に、字を少し小さくする段階（0 は元のまま）を付ける JS。
-TIGHT_JS = """
-([index, level]) => {
+# 文書（まとめた PDF ではその中の各ページ）に、余白を詰める段階と字を小さくする段階を付ける JS。
+# pack も tight も 0 は元のまま。
+STYLE_JS = """
+([index, pack, tight]) => {
   const sections = [...document.querySelectorAll('section.pdf-page')];
   const root = sections.length ? sections[index] : document.querySelector('article.md-content__inner');
-  root.classList.remove('pdf-tight-1', 'pdf-tight-2');
-  if (level) root.classList.add('pdf-tight-' + level);
+  root.classList.remove('pdf-pack-1', 'pdf-pack-2', 'pdf-pack-3', 'pdf-tight-1', 'pdf-tight-2');
+  if (pack) root.classList.add('pdf-pack-' + pack);
+  if (tight) root.classList.add('pdf-tight-' + tight);
 }
 """
 
@@ -815,17 +852,19 @@ def squeeze_tails(page: Page, label: str) -> None:
     """文書の最後だけがはみ出したページを、前のページに収める。
 
     文書（まとめた PDF ではその中の各ページ）の2ページ目以降で、次が別の文書か図だけのページか PDF の終わりの
-    A4 のページに、本文がページの 1/4 未満しかないとき、その文書の字を少し小さくする（10pt、9.5pt の2段階まで）。
-    印刷して、その文書のページが減らなければ、前の段階に戻す。
+    A4 のページに、本文がページの 1/4 未満しかないとき、まず余白を少し詰める（字は 10.5pt のまま。2段階）。
+    それでもページが減らなければ、その文書の字を少し小さくする（10pt、9.5pt の2段階まで）。
+    印刷して、その文書のページが減らなければ、前の段階に戻す。図だけのページの大きさは変えない。
     """
     top_margin = MARGIN_MM["top"] * 72 / 25.4
     bottom_margin = MARGIN_MM["bottom"] * 72 / 25.4
     a4_height = round(PAGE_H_MM * 72 / 25.4)
-    levels: dict[int, int] = {}
+    packs: dict[int, int] = {}
+    tights: dict[int, int] = {}
     with tempfile.TemporaryDirectory() as work:
         probe = Path(work) / "probe.pdf"
 
-        def layout() -> tuple[dict[int, int], set[int]]:
+        def layout() -> tuple[dict[int, int], set[int], dict[int, float]]:
             page.evaluate(MARK_JS, True)
             page.evaluate(WAIT_IMAGES_JS)
             page.pdf(path=str(probe), **PDF_OPTIONS)
@@ -837,7 +876,7 @@ def squeeze_tails(page: Page, label: str) -> None:
                 for name, places in marks.items()
                 if name.startswith("s")
             )
-            counts, tails = {}, set()
+            counts, tails, last_used = {}, set(), {}
             for position, (first, section) in enumerate(starts):
                 end = starts[position + 1][0] if position + 1 < len(starts) else len(heights)
                 counts[section] = end - first
@@ -848,29 +887,57 @@ def squeeze_tails(page: Page, label: str) -> None:
                     used = (heights[number] - top_margin - bottoms[number]) / (heights[number] - top_margin - bottom_margin)
                     if last and used < 0.25:
                         tails.add(section)
-            return counts, tails
+                        last_used[section] = min(used, last_used.get(section, 1))
+            return counts, tails, last_used
 
-        counts, tails = layout()
-        for level in (1, 2):
-            if not tails:
-                break
-            for section in tails:
-                page.evaluate(TIGHT_JS, [section, level])
+        counts, tails, last_used = layout()
+
+        def apply_style(section: int) -> None:
+            page.evaluate(STYLE_JS, [section, packs.get(section, 0), tights.get(section, 0)])
+
+        def try_levels(kind: str, values: dict[int, int], label_for: str, levels: tuple[int, ...] = (1, 2)) -> set[int]:
+            leftover = set(tails)
+            for level in levels:
+                if not leftover:
+                    break
+                for section in leftover:
+                    values[section] = level
+                    apply_style(section)
+                page.evaluate(PAGES_JS, [PX_PER_MM, MARGIN_MM, MAX_PAGE_MM, CONTENT_W_PX])
+                new_counts, new_tails, _ = layout()
+                for section in leftover:
+                    if new_counts.get(section, 0) < counts.get(section, 0):
+                        counts[section] = new_counts[section]
+                    else:
+                        values[section] = level - 1
+                        if values[section] == 0:
+                            values.pop(section, None)
+                        apply_style(section)
+                leftover = {section for section in leftover if values.get(section) != level or section in new_tails}
+            return leftover
+
+        tails = try_levels("pack", packs, "余白", (1, 2, 3))
+        # 余白を詰めても文書末尾の短いページが残るときは、その詰めをやめる（短いページを増やさない）
+        for section in [s for s in packs if s in tails]:
+            packs.pop(section, None)
+            apply_style(section)
+        if packs:
             page.evaluate(PAGES_JS, [PX_PER_MM, MARGIN_MM, MAX_PAGE_MM, CONTENT_W_PX])
-            new_counts, new_tails = layout()
-            for section in tails:
-                if new_counts.get(section, 0) < counts.get(section, 0):
-                    levels[section] = level
-                    counts[section] = new_counts[section]
-                else:
-                    page.evaluate(TIGHT_JS, [section, levels.get(section, 0)])
-            # 減らなかった文書と、減ってもまだ最後のページが数行だけの文書は、次の段階を試す
-            tails = {section for section in tails if levels.get(section) != level or section in new_tails}
+            counts, tails, last_used = layout()
+        # 余白を詰めて短いページが消えた文書は、字を小さくしない（本文は 10.5pt のまま）。
+        # 1〜2行程度の孤立行は、字を小さくせず余白の詰めで扱う。
+        tails = {section for section in tails if section not in packs}
+        # 1〜2行程度の孤立行は、文書全体の字を小さくせず、余白の詰めで扱う
+        tails = {section for section in tails if last_used.get(section, 0) >= 0.15}
+        tails = try_levels("tight", tights, "字", (1, 2))
         page.evaluate(PAGES_JS, [PX_PER_MM, MARGIN_MM, MAX_PAGE_MM, CONTENT_W_PX])
     titles = page.evaluate(
         "() => [...document.querySelectorAll('section.pdf-page')].map(s => (s.querySelector('h1') || s).textContent.replace('¶', '').trim())"
     )
-    for section, level in sorted(levels.items()):
+    for section, level in sorted(packs.items()):
+        where = f"{label} の「{titles[section]}」" if titles else label
+        print(f"  余白を詰めて前のページに入れました: {where}（段階{level}、本文は10.5pt）")
+    for section, level in sorted(tights.items()):
         where = f"{label} の「{titles[section]}」" if titles else label
         print(f"  字を小さくして詰めました: {where}（{['', '10pt', '9.5pt'][level]}）")
 
@@ -1020,44 +1087,6 @@ def build_combined(browser: Browser, base: str, site: Path, entries, out: Path, 
     titles = [next(labels) if is_page_top else text for is_page_top, text in headings]
     set_outline_titles(out, titles)
     print(f"作りました: {shown(out)}（{len(pages)}ページ分、{len(PdfReader(str(out)).pages)}枚）")
-
-
-# インフラ構成の図に付ける、等倍の専用ページの印。公開パスでは判定しない（パスが変わっても外れない）。
-OWN_PAGE_CLASS = "pdf-own-page"
-IMAGE_REF = re.compile(
-    r'!\[[^\]]*\]\(\s*([^\s)]+)(?:\s+"[^"]*")?\s*\)\s*(\{:[^}]*\})?',
-)
-
-
-def check_own_page_marks() -> None:
-    """docs/infra の図に、等倍専用ページの印があるかを見る。無いと専用ページから外れる。"""
-    missing: list[str] = []
-    suffixes = {".svg", ".png", ".jpg", ".jpeg", ".gif", ".webp"}
-    for path in ROOT.rglob("*.md"):
-        if any(part.startswith("_") or part in {".venv", "site", "pdf", "node_modules"} for part in path.parts):
-            continue
-        text = path.read_text(encoding="utf-8")
-        for match in IMAGE_REF.finditer(text):
-            target = match.group(1).split()[0]
-            attrs = match.group(2) or ""
-            dest = path.parent / target
-            try:
-                resolved = dest.resolve()
-            except OSError:
-                continue
-            if resolved.suffix.lower() not in suffixes:
-                continue
-            try:
-                resolved.relative_to((ROOT / "docs" / "infra").resolve())
-            except ValueError:
-                continue
-            if OWN_PAGE_CLASS not in attrs:
-                missing.append(f"{path.relative_to(ROOT)}: {match.group(0)}")
-    if missing:
-        raise SystemExit(
-            "インフラ構成の図に、等倍専用ページの印（クラス pdf-own-page）がありません。\n"
-            + "\n".join(missing)
-        )
 
 
 def main() -> None:

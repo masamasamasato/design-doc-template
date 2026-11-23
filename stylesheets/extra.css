@@ -170,6 +170,15 @@ dialog.doc-zoom::backdrop {
   z-index: 0;
 }
 
+/* 観点一覧（3列）。観点が語の途中で折れないようにする */
+.test-views table:not([class]) th:nth-child(1),
+.test-views table:not([class]) td:nth-child(1) {
+  width: 18%;
+  min-width: 9em;
+  word-break: keep-all;
+  overflow-wrap: normal;
+}
+
 /* テストケースの表（列が多い）。No・観点・結果・備考を狭め、手順・期待値・実測値を広くする。
    コードは途中で折らない。min-width:0 で、短い列が内容の最小幅より狭くできるようにする */
 .test-cases,
@@ -204,7 +213,11 @@ dialog.doc-zoom::backdrop {
 }
 .test-cases table:not([class]) th:nth-child(2),
 .test-cases table:not([class]) td:nth-child(2) {
-  width: 10%;
+  /* 「リクエストの形」が1行に収まり、語の途中で折れない幅。長い観点は <wbr> の位置だけ折り返す */
+  width: 16%;
+  min-width: 8em;
+  overflow-wrap: normal;
+  word-break: keep-all;
 }
 .test-cases table:not([class]) th:nth-child(3),
 .test-cases table:not([class]) td:nth-child(3),
@@ -212,9 +225,9 @@ dialog.doc-zoom::backdrop {
 .test-cases table:not([class]) td:nth-child(4),
 .test-cases table:not([class]) th:nth-child(5),
 .test-cases table:not([class]) td:nth-child(5) {
-  width: 23%;
+  width: 22%;
 }
 .test-cases table:not([class]) th:nth-child(7),
 .test-cases table:not([class]) td:nth-child(7) {
-  width: 11%;
+  width: 8%;
 }
