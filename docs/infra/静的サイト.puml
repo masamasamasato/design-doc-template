@@ -1,0 +1,38 @@
+' インフラ構成の記入例。静的サイト（CloudFrontとS3）。
+' 変換はローカルの plantuml.jar と Graphviz。図の中身は外部へ送らない。
+' アイコンは jar 同梱の awslib（AWS Icons for PlantUML）を使う。
+' 箱と付箋の決まりは docs/guide.md の「構成図（PlantUML）の書き方」にある。
+@startuml
+!include <awslib/AWSCommon>
+!include <awslib/Groups/AWSCloud>
+!include <awslib/General/Users>
+!include <awslib/NetworkingContentDelivery/Route53>
+!include <awslib/NetworkingContentDelivery/CloudFront>
+!include <awslib/Storage/SimpleStorageService>
+!include <awslib/SecurityIdentityCompliance/CertificateManager>
+
+skinparam shadowing false
+skinparam defaultFontName "Noto Sans CJK JP"
+hide stereotype
+
+title 静的サイト（CloudFrontとS3）
+
+Users(user, "利用者\nブラウザから操作する", "ブラウザ")
+
+AWSCloudGroup(aws, "AWS クラウド") {
+  Route53(dns, "Route 53\n名前を解決する", "DNS")
+  CertificateManager(acm, "ACM\nHTTPSの証明書を発行する", "HTTPS")
+  CloudFront(cf, "CloudFront\nHTTPSで配信する", "CDN")
+  together {
+    rectangle "CloudFrontからだけ開ける" as n_s3 #FFFFCC
+    SimpleStorageService(s3, "静的画面\n画面ファイルを置く", "S3")
+  }
+}
+
+user -down-> dns
+dns -down-> cf
+acm -left..> cf : 証明書
+cf -down-> s3
+n_s3 -[dotted]right- s3
+
+@enduml

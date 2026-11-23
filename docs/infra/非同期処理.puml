@@ -1,0 +1,41 @@
+' インフラ構成の記入例。非同期処理（SQSとEventBridge）。
+' 変換はローカルの plantuml.jar と Graphviz。図の中身は外部へ送らない。
+' アイコンは jar 同梱の awslib（AWS Icons for PlantUML）を使う。
+' 箱と付箋の決まりは docs/guide.md の「構成図（PlantUML）の書き方」にある。
+@startuml
+!include <awslib/AWSCommon>
+!include <awslib/Groups/AWSCloud>
+!include <awslib/General/Users>
+!include <awslib/Compute/Lambda>
+!include <awslib/ApplicationIntegration/Eventbridge>
+!include <awslib/ApplicationIntegration/SimpleQueueService>
+
+skinparam shadowing false
+skinparam defaultFontName "Noto Sans CJK JP"
+hide stereotype
+
+title 非同期処理（SQSとEventBridge）
+
+Users(user, "利用者\nブラウザから操作する", "ブラウザ")
+
+AWSCloudGroup(aws, "AWS クラウド") {
+  together {
+    rectangle "処理の完了を待たずに返す" as n_api #FFFFCC
+    Lambda(api, "受け付けAPI\n要求を受けてすぐ返す", "Lambda")
+  }
+  EventBridge(eb, "EventBridge\nイベントを届ける", "バス")
+  together {
+    rectangle "失敗したら再実行する" as n_sqs #FFFFCC
+    SimpleQueueService(sqs, "SQS\n仕事を並べておく", "キュー")
+  }
+  Lambda(worker, "ワーカー\n並べた仕事を処理する", "Lambda")
+}
+
+user -down-> api
+api -down-> eb
+eb -down-> sqs
+sqs -down-> worker
+n_api -[dotted]right- api
+n_sqs -[dotted]right- sqs
+
+@enduml

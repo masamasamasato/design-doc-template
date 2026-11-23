@@ -1,8 +1,19 @@
 # AWSのインフラ構成
 
-ログインと商品のAPIを動かす、AWSの構成です。記入例なので、決済、パスキー、アカウントの復旧は載せていません。
+記入例です。用途に合わせて、次のパターンから選びます。決済、パスキー、アカウントの復旧は載せていません。
 
-![AWSのインフラ構成](構成図.svg)
+## 目次
+
+- [1. ECSとRDS、画面はCloudFront](#1-ecsとrds画面はcloudfront)
+- [2. サーバーレス（API GatewayとLambda、DynamoDB）](#2-サーバーレスapi-gatewayとlambdadynamodb)
+- [3. 静的サイト（CloudFrontとS3）](#3-静的サイトcloudfrontとs3)
+- [4. 非同期処理（SQSとEventBridge）](#4-非同期処理sqsとeventbridge)
+
+## 1. ECSとRDS、画面はCloudFront
+
+セッションやトランザクションを自前で持ち、コンテナでAPIを動かしたいときに選びます。ログインと商品のAPIを動かす例です。
+
+![ECSとRDS、画面はCloudFront](構成図.svg)
 
 要求は、図の中央を上から下へ流れます。
 
@@ -40,3 +51,21 @@
 - AZ: `ap-northeast-1a` と `ap-northeast-1c` の2つです。
 
 </details>
+
+## 2. サーバーレス（API GatewayとLambda、DynamoDB）
+
+アクセスの波が大きく、サーバーを常時起動したくないときに選びます。キーで引くデータが中心のAPIに向きます。
+
+![サーバーレス（API GatewayとLambda、DynamoDB）](サーバーレス.svg)
+
+## 3. 静的サイト（CloudFrontとS3）
+
+画面だけを配信するときに選びます。APIが無いときや、APIは別の構成に任せるときに使います。
+
+![静的サイト（CloudFrontとS3）](静的サイト.svg)
+
+## 4. 非同期処理（SQSとEventBridge）
+
+時間がかかる処理を、受け付けのあとで実行したいときに選びます。APIは受け付けだけを返し、後段で処理します。
+
+![非同期処理（SQSとEventBridge）](非同期処理.svg)
