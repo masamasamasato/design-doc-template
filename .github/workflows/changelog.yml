@@ -44,7 +44,7 @@ jobs:
           author="$(jq -r '.commit.author.name + " <" + .commit.author.email + ">"' <<<"$commit")"
           committer="$(jq -r '.commit.committer.name + " <" + .commit.committer.email + ">"' <<<"$commit")"
           parents="$(jq '.parents | length' <<<"$commit")"
-          others="$(jq -r '.files[].filename' <<<"$commit" | grep -Ev '^(apis|docs/business)/[^_/][^/]*/変更履歴\.md$' || true)"
+          others="$(jq -r '.files[].filename' <<<"$commit" | grep -Ev '^(apis|docs/business|tests)/[^_/][^/]*/変更履歴\.md$' || true)"
           files="$(jq '.files | length' <<<"$commit")"
           bot="${CHANGELOG_NAME} <${CHANGELOG_EMAIL}>"
           if [ "$author" = "$bot" ] && [ "$committer" = "$bot" ] && [ "$parents" = 1 ] && [ "$files" -gt 0 ] && [ -z "$others" ]; then
@@ -121,7 +121,7 @@ jobs:
           fi
           git config user.name "${CHANGELOG_NAME}"
           git config user.email "${CHANGELOG_EMAIL}"
-          git add -- ':(glob)apis/*/変更履歴.md' ':(exclude,glob)apis/_*/変更履歴.md' ':(glob)docs/business/*/変更履歴.md' ':(exclude,glob)docs/business/_*/変更履歴.md'
+          git add -- ':(glob)apis/*/変更履歴.md' ':(exclude,glob)apis/_*/変更履歴.md' ':(glob)docs/business/*/変更履歴.md' ':(exclude,glob)docs/business/_*/変更履歴.md' ':(glob)tests/*/変更履歴.md' ':(exclude,glob)tests/_*/変更履歴.md'
           git commit -m "変更履歴を更新 [changelog]"
           for attempt in 1 2 3 4; do
             git pull --rebase origin main

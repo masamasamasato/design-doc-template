@@ -144,3 +144,18 @@ nav:
           - 入口: apis/payment-webhook/README.md
           - 設計書: apis/payment-webhook/処理詳細.md
           - 変更履歴: apis/payment-webhook/変更履歴.md
+  - テスト項目書:
+      - 一覧: tests/index.md
+      - 新しいテスト項目書の型:
+          - 入口: tests/_template/README.md
+          - 単体テスト: tests/_template/単体テスト.md
+          - 結合テスト: tests/_template/結合テスト.md
+          - 変更履歴: tests/_template/変更履歴.md
+      - 記入例 ログインAPIの単体テスト:
+          - 入口: tests/login/README.md
+          - ログインAPIの単体テスト: tests/login/単体テスト.md
+          - 変更履歴: tests/login/変更履歴.md
+      - 記入例 ログインして商品を探すの結合テスト:
+          - 入口: tests/ログインして商品を探す/README.md
+          - ログインして商品を探すの結合テスト: tests/ログインして商品を探す/結合テスト.md
+          - 変更履歴: tests/ログインして商品を探す/変更履歴.md
