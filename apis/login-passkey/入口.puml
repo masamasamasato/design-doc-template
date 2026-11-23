@@ -14,23 +14,22 @@ participant "認証API" as API
 User -> Screen : パスキーでログインする
 note right of User : メールアドレスは入れない
 Screen -> API : POST /sessions/passkey/options
-API -> API : チャレンジを発行する\nissueLoginOptions()
+API -> API : 1. チャレンジ発行
 API --> Screen : 200 チャレンジ\n一時的な印の Cookie を付ける
 note right of Screen : 保存：チャレンジと印の組（例：5分で消える）。\n印はセッションとは別の Cookie
 Screen --> User : 端末で署名する（PIN か生体認証）
 User -> Screen : 端末がチャレンジへの署名\n（assertion）を返す
 Screen -> API : POST /sessions/passkey\n一時的な印の Cookie が付く
-API -> API : 印・チャレンジ検証と assertion 検証\nverifyAssertion()
-alt 印が無い、組が発行時と違う、またはチャレンジが期限切れ・使用済みの場合
+API -> API : 2. 印・チャレンジ検証\n3. assertion 検証
+alt リクエストに印が無い または 印が保存済みの組と合わない\nまたは その組のチャレンジが期限切れ または 使用済みの場合
   API --> Screen : 401 INVALID_CREDENTIALS\n一時的な印とチャレンジを消す
   Screen --> User : ログインできない
-else 組が同じで、パスキーが無い、署名・origin・rpId・user verification のどれかが合わない、\nまたは署名カウンタが保存値以下の場合
+else パスキーが無い または 署名・origin・rpId のいずれかが合わない\nまたは user verification のフラグが無い または 署名カウンタが保存値以下の場合
   API --> Screen : 401 INVALID_CREDENTIALS\n一時的な印とチャレンジを消す
   Screen --> User : ログインできない
-else 組が同じで、署名・origin・rpId・user verification が合い、署名カウンタが保存値より大きい場合
-  API -> API : セッションと署名カウンタを保存する\ncreateSession()
-  API -> API : ログイン通知メールを送る\nnotifyLogin()
-  API --> Screen : 200 Cookie でセッションを返す\n一時的な印とチャレンジを消す
+else 印とチャレンジの組が使える かつ 署名・origin・rpId が合う\nかつ user verification のフラグがある かつ 署名カウンタが保存値より大きい場合
+  API -> API : 4. セッションと署名カウンタを保存し、\nログイン通知メールを送る
+  API --> Screen : 5. 200 Cookie でセッションを返す\n一時的な印とチャレンジを消す
   Screen --> User : ログインできた
 end
 @enduml

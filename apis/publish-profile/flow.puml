@@ -1,5 +1,5 @@
 ' 深さ3。プロフィールを公開する処理のイメージ。
-' スイムレーンは業務フロー側に書く。ここはメソッドの順番だけを書く。
+' 箱の番号は、設計書（処理詳細.md）の「処理詳細」の番号と同じ。
 @startuml
 skinparam shadowing false
 skinparam defaultFontName "Noto Sans CJK JP"
@@ -9,35 +9,39 @@ skinparam NoteBackgroundColor #FFFFCC
 title プロフィールを公開する
 
 start
-:セッション検証\nリクエストの Cookie を、保存済みの有効なセッションと照合\nrequireSession();
-if (セッションの Cookie が有効な場合) then (有効な場合)
-  :持ち主・本人確認の検証\nセッションの利用者IDをプロフィールの持ち主と、\n本人確認の状態を確認済みと照合\ncheckOwner();
-  if (プロフィールがある場合) then (ある場合)
-    if (セッションの利用者IDが、\nプロフィールの持ち主と同じ場合) then (持ち主の場合)
-      if (本人確認が済んでいる場合) then (済んでいる場合)
-        if (既に公開中の場合) then (公開中の場合)
-          :200 公開中を返す;
-          note right: 保存しない。publishedAt は変えない
-        else (公開中でない場合)
-          :公開中にする処理\npublish();
-          note right: 保存：状態を公開中に。publishedAt に現在日時
-          :200 公開中を返す;
-        endif
-      else (本人確認が済んでいない場合)
-        :失敗を返す\n403 NOT_VERIFIED;
-        note right: 保存しない。公開中にはしない
-      endif
-    else (持ち主でない場合)
-      :失敗を返す\n403 FORBIDDEN;
-      note right: 保存しない
-    endif
-  else (プロフィールが無い場合)
-    :失敗を返す\n404 NOT_FOUND;
-    note right: 保存しない
-  endif
-else (セッションの Cookie が無い、\nまたは無効な場合)
+:1. セッション検証\nCookie のセッションIDを、保存済みの有効なセッションと照合;
+if (Cookie が無い または Cookie のセッションIDが\n保存済みの有効なセッションと合わない場合) then (1.2 セッションが\n合わない場合)
   :失敗を返す\n401 UNAUTHORIZED;
-  note right: 保存しない
+  note right: 何も保存しない
+  stop
+else (1.1 セッションが\n合う場合)
 endif
+:2. 持ち主検証\nセッションの利用者IDを、プロフィールの持ち主IDと照合;
+if (パスのプロフィールIDのプロフィールが無い場合) then (2.1 プロフィールが\n無い場合)
+  :失敗を返す\n404 NOT_FOUND;
+  note right: 何も保存しない
+  stop
+elseif (プロフィールがある\nかつ 利用者IDが持ち主IDと一致しない場合) then (2.2 持ち主で\nない場合)
+  :失敗を返す\n403 FORBIDDEN;
+  note right: 何も保存しない
+  stop
+else (2.3 利用者IDが\n持ち主IDと一致する場合)
+endif
+:3. 本人確認検証\n利用者の本人確認の状態を、確認済みと照合;
+if (その利用者の本人確認が済んでいない場合) then (3.2 済んでいない場合)
+  :失敗を返す\n403 NOT_VERIFIED;
+  note right: 何も保存しない。公開中にはしない
+  stop
+else (3.1 済んでいる場合)
+endif
+:4. 公開中にする\nプロフィールの状態を、公開中と照合;
+if (プロフィールの状態が既に公開中の場合) then (4.1 公開中の場合)
+  :何も保存しない;
+  note right: publishedAt は変えない
+else (4.2 公開中でない場合)
+  :状態を公開中にする;
+  note right: 保存：状態を公開中に。\npublishedAt に現在日時
+endif
+:5. 成功を返す\n200 公開中;
 stop
 @enduml
