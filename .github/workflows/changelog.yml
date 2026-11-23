@@ -1,22 +1,56 @@
 name: 変更履歴を追記する
 
+# main への push だけで動く。PR から書き換えたこのファイルは、マージされるまで動かない。
+# そのため、main を書き換えられるデプロイキーは、マージ済みの内容でだけ使われる。
 on:
-  pull_request:
-    types:
-      - closed
+  push:
+    branches:
+      - main
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: changelog
+  cancel-in-progress: false
 
 jobs:
   append:
-    if: github.event.pull_request.merged == true
+    # 自分の追記や図の更新の push では動かさない
+    if: >-
+      !contains(github.event.head_commit.message, '[changelog]') &&
+      !contains(github.event.head_commit.message, '[plantuml-svg]')
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
+      pull-requests: read
       pages: read
     steps:
+      - name: マージしたPRを探す
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          json="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${SHA}/pulls" --jq '[.[] | select(.merged_at != null and .base.ref == "main")][0] // empty')"
+          if [ -z "$json" ]; then
+            echo "PR 経由ではない push なので、追記しません"
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          {
+            echo "found=true"
+            echo "number=$(jq -r .number <<<"$json")"
+            echo "base=$(jq -r .base.sha <<<"$json")"
+            echo "head=$(jq -r .head.sha <<<"$json")"
+            echo "title<<__TITLE__"
+            jq -r .title <<<"$json"
+            echo "__TITLE__"
+          } >> "$GITHUB_OUTPUT"
+
       - name: mainを取得する
+        if: steps.pr.outputs.found == 'true'
         uses: actions/checkout@v4
         with:
           ref: main
@@ -25,11 +59,12 @@ jobs:
           ssh-key: ${{ secrets.CHANGELOG_DEPLOY_KEY }}
 
       - name: 変更したドキュメントを Job Summary に出す
+        if: steps.pr.outputs.found == 'true'
         # 表示だけなので、失敗しても変更履歴の追記は続ける
         continue-on-error: true
         env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BASE_SHA: ${{ steps.pr.outputs.base }}
+          HEAD_SHA: ${{ steps.pr.outputs.head }}
           GH_TOKEN: ${{ github.token }}
           DOCS_SITE_URL: ${{ vars.DOCS_SITE_URL }}
         run: |
@@ -38,11 +73,12 @@ jobs:
           SITE_URL="$(./scripts/docs-site-url.sh)" python3 scripts/list-changed-docs.py "${BASE_SHA}" "${HEAD_SHA}" >> "$GITHUB_STEP_SUMMARY"
 
       - name: 変更履歴へ1行足す
+        if: steps.pr.outputs.found == 'true'
         env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          PR_TITLE: ${{ github.event.pull_request.title }}
+          BASE_SHA: ${{ steps.pr.outputs.base }}
+          HEAD_SHA: ${{ steps.pr.outputs.head }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+          PR_TITLE: ${{ steps.pr.outputs.title }}
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
