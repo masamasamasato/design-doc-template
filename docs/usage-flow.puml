@@ -1,5 +1,4 @@
 ' ドキュメントを書く流れ。README に載せる概要。
-' 箱は名前と役割の2行。レーンは人／自動。チェックとレビューは両方なので役割行に書く。
 @startuml
 skinparam shadowing false
 skinparam defaultFontName "Noto Sans CJK JP"
@@ -15,6 +14,6 @@ start
 :チェックとレビュー\nCI（自動）と人のレビュー;
 :マージ\nレビュー後に main へ入れる;
 |自動|
-:変更履歴と公開\n履歴の追記とサイト・PDFの公開;
+:変更履歴と公開\n履歴の追記、サイトの公開、PDFの作成;
 stop
 @enduml
