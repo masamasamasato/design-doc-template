@@ -93,6 +93,8 @@ button[title] {{ display: none !important; }}
 .pdf-word {{ white-space: nowrap; }}
 .md-typeset {{ line-break: strict; }}
 .md-typeset table:not([class]) th, .md-typeset table:not([class]) td {{ padding: 0.6em 0.8em; }}
+/* 表の見出しの色。サイト（stylesheets/extra.css）と同じ色にする */
+.md-typeset table:not([class]) th {{ background-color: #e8edf4; color: #1a1a1a; }}
 /* 表の中のコード（application/json など）は、途中で折り返さない */
 .md-typeset table:not([class]) .pdf-nowrap {{ white-space: nowrap; }}
 .md-typeset table:not([class]) code {{ white-space: nowrap; word-break: keep-all; overflow-wrap: normal; }}
