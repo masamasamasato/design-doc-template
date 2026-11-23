@@ -1,0 +1,71 @@
+name: ドキュメントをPDFにする
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+  pull_request:
+    # PDF を作る仕組みを変えたときだけ、PR でも作って検証する。
+    paths:
+      - .github/workflows/pdf.yml
+      - scripts/build-pdf.sh
+      - scripts/build-pdf.py
+      - requirements-pdf.txt
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pdf-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pdf:
+    runs-on: ubuntu-latest
+    steps:
+      - name: リポジトリを取得する
+        uses: actions/checkout@v4
+
+      - name: Pythonを入れる
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Javaを入れる
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Graphvizと日本語フォントを入れる
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y graphviz fonts-noto-cjk
+
+      - name: plantuml.jarを入れる
+        run: ./scripts/install-plantuml.sh
+
+      - name: Pythonの依存を入れる
+        run: python -m pip install -r requirements.txt -r requirements-pdf.txt
+
+      - name: PDFを作るブラウザを入れる
+        run: python -m playwright install --with-deps chromium
+
+      - name: 図をローカルでSVGにする
+        run: ./scripts/render-changed.sh --all >/dev/null
+
+      - name: PDFを作る
+        env:
+          # PDF の外へ出るリンクは、このコミットの GitHub のファイルを指す。
+          PDF_SOURCE_REF: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: ./scripts/build-pdf.sh
+
+      - name: PDFをアップロードする
+        uses: actions/upload-artifact@v4
+        with:
+          name: design-doc-pdf
+          path: pdf/
+          retention-days: 30
+          if-no-files-found: error

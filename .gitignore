@@ -5,3 +5,4 @@ site/
 _site/
 tools/plantuml.jar
 .DS_Store
+pdf/
