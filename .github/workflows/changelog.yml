@@ -57,6 +57,8 @@ jobs:
           fetch-depth: 0
           # main はルールで直接 push を禁止している。例外はこのデプロイキーだけ
           ssh-key: ${{ secrets.CHANGELOG_DEPLOY_KEY }}
+          # 後の git push でこの鍵を使うので、認証情報を残す（既定と同じ true）
+          persist-credentials: true
 
       - name: 変更したドキュメントを Job Summary に出す
         if: steps.pr.outputs.found == 'true'

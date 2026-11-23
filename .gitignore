@@ -9,6 +9,7 @@ pdf/
 # 秘密情報を誤ってコミットしない
 .env
 .env.*
+!.env.example
 *.pem
 *.key
 *.p12
