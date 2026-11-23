@@ -30,7 +30,7 @@ else Cookie のセッションIDが保存済みの有効なセッションと合
   else 同じキーがある かつ 注文ID・預かり番号のいずれかが前と違う場合
     API --> Screen : 422 IDEMPOTENCY_KEY_REUSED\n何も保存しない
     Screen --> User : 支払えない
-  else 同じキーが無い または 最初に受け取ってから24時間を過ぎた場合
+  else 同じキーが無い または 最初に受け取ってから例：24時間を過ぎた場合
     API -> API : 3. カード所有者検証\n4. 注文の状態検証
     alt 本文の預かり番号が、本人が登録したカードのどれとも合わない場合
       API --> Screen : 404 CARD_NOT_FOUND\n何も保存しない。キーも保存しない
@@ -51,7 +51,7 @@ else Cookie のセッションIDが保存済みの有効なセッションと合
           API --> Screen : 6. 200 処理中\n注文を処理中にし、キーと結果を保存する（例：24時間）
         else 決済サービスから返事が無い または 通信に失敗した場合
           API --> Screen : 502 PAYMENT_PROVIDER_ERROR\n注文は処理中のまま。キーと結果（処理中）を保存する（例：24時間）
-          note right of API : 例：返事を10秒待って打ち切る。\n通知が例：30分来なければ、運用者へ警告する
+          note right of API : 返事を例：10秒待って打ち切る。\n通知が例：30分来なければ、運用者へ警告する
         end
         Screen --> User : 処理中
         note right of Screen : 502 でも、処理中と同じく状態を取りに行く
@@ -59,14 +59,14 @@ else Cookie のセッションIDが保存済みの有効なセッションと合
           Screen -> API : GET /orders/{orderId}
           API --> Screen : 200 注文の状態、401、または404
         end
-        alt 60秒以内に、注文の状態が支払い済み または 失敗になった場合
+        alt 例：60秒以内に、注文の状態が支払い済み または 失敗になった場合
           Screen --> User : 支払い済み、または失敗を表示する
         else 401 UNAUTHORIZED が返った場合
           Screen --> User : 取りに行くのをやめ、ログイン画面へ移る
         else 404 ORDER_NOT_FOUND が返った場合
           Screen --> User : 取りに行くのをやめ、「注文を表示できません」と表示する
-        else 60秒たっても注文の状態が処理中の場合
-          Screen --> User : 「60秒たっても処理中です。\n注文履歴で結果を見てください」と表示する
+        else 例：60秒たっても注文の状態が処理中の場合
+          Screen --> User : 例：「60秒たっても処理中です。\n注文履歴で結果を見てください」と表示する
         end
       end
     end

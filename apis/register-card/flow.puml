@@ -49,7 +49,7 @@ if (3Dセキュアが必要\nかつ 本人認証が済んでいない場合) the
   :失敗を返す\n400 AUTHENTICATION_REQUIRED;
   note right: 何も保存しない
   stop
-elseif (本人認証が済んでいる（要らない場合も含む）\nかつ 決済サービスが預かり番号を使えないと返した場合) then (5.2 使えない場合)
+elseif (本人認証が済んだか要らない\nかつ 決済サービスが預かり番号を使えないと返した場合) then (5.2 使えない場合)
   :失敗を返す\n400 INVALID_PAYMENT_METHOD;
   note right: 何も保存しない
   stop
