@@ -277,7 +277,9 @@
   const onBackdropClick = (e) => {
     if (e.target === closeBtn || closeBtn.contains(e.target)) return;
     if (moved) return;
-    if (e.target === dialog || e.target === viewport || !onImage(e.clientX, e.clientY)) {
+    // pointer-events: none のため、図の上でも e.target は viewport になる。
+    // 座標で図の上かどうかを見て、図の外の余白のときだけ閉じる。
+    if (!onImage(e.clientX, e.clientY)) {
       dialog.close();
     }
   };
@@ -299,7 +301,10 @@
     dialog.append(closeBtn, viewport);
     document.body.appendChild(dialog);
 
-    closeBtn.addEventListener("click", () => dialog.close());
+    closeBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      dialog.close();
+    });
     dialog.addEventListener("close", destroy);
     dialog.addEventListener("click", onBackdropClick);
     dialog.addEventListener("keydown", onKey);
