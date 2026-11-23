@@ -8,8 +8,8 @@
   コピーボタンは印刷しない。
 - 各ページの下にページ番号を入れる。
 - 図は、文字が読める大きさで載せる。幅に収めると文字が小さすぎる図は、全体図のあとに、
-  拡大して分けたページを付ける。図の前のページが大きく空くときは、図を少し縮めるか、
-  文字の無い行で図を分けて、前のページへ詰める。
+  拡大して分けたページ（A4 横か A3 横。本文は A4 縦のまま）を付ける。図の前のページが大きく空くときは、
+  図を少し縮めるか、文字の無い行で図を分けて、前のページへ詰める。
 - 画像が1つでも読み込めなければ、PDF を作らずに失敗する。
 
 ふつうは scripts/build-pdf.sh から呼ぶ。
@@ -49,8 +49,18 @@ CONTENT_W_PX = int((PAGE_W_MM - MARGIN_MM["left"] - MARGIN_MM["right"]) * PX_PER
 CONTENT_H_PX = int((PAGE_H_MM - MARGIN_MM["top"] - MARGIN_MM["bottom"]) * PX_PER_MM)
 # 図の縮め方の下限。PlantUML の文字（11〜13px）が、およそ 6pt より小さくならないようにする。
 READABLE_SCALE = 0.55
-# 拡大して分けるときの倍率。11px の文字が 6pt ほどになる。
-TILE_SCALE = 0.75
+# 拡大して分けたページの用紙。小さい順に試す。本文は A4 縦のまま。
+WIDE_PAPERS = [
+    {"name": "a4", "label": "A4 横", "w_mm": 297, "h_mm": 210},
+    {"name": "a3", "label": "A3 横", "w_mm": 420, "h_mm": 297},
+]
+for _paper in WIDE_PAPERS:
+    _paper["w"] = int((_paper["w_mm"] - MARGIN_MM["left"] - MARGIN_MM["right"]) * PX_PER_MM)
+    _paper["h"] = int((_paper["h_mm"] - MARGIN_MM["top"] - MARGIN_MM["bottom"]) * PX_PER_MM)
+# 拡大の倍率。0.75 から下げ、下限は 0.55（PlantUML の 11〜13px の文字が、およそ 4.5〜5.4pt。太字や見出しは 6pt 以上）。
+MAX_ZOOM, MIN_ZOOM = 0.75, 0.55
+# 1つの図の拡大ページの枚数の目安（3段×4列）。下限の倍率と A3 横でも超えるときは、そのまま最小の枚数にする。
+MAX_TILES = 12
 
 # 印刷のときだけ足す CSS。サイトの CSS は変えない。
 # サイトの CSS の @page の余白（25mm）は、下の MARGIN_MM に置きかえる。
@@ -75,11 +85,21 @@ button[title] {{ display: none !important; }}
 .pdf-clip {{ position: relative; overflow: hidden; }}
 .pdf-clip > img {{ position: absolute; left: 0; top: 0; }}
 .pdf-note, .pdf-tile-caption {{ font-size: 9pt; color: #555; }}
+.md-typeset .pdf-tile-caption {{ margin: 0 0 4px; line-height: 1.4; }}
 .pdf-tile {{ break-before: page; break-inside: avoid; }}
+.pdf-tile-a4 {{ page: wide-a4; }}
+.pdf-tile-a3 {{ page: wide-a3; }}
+@page wide-a4 {{ size: A4 landscape; }}
+@page wide-a3 {{ size: A3 landscape; }}
+.pdf-map {{ position: relative; display: inline-block; }}
+.pdf-map > img {{ display: block; }}
+.pdf-map-cell {{ position: absolute; box-sizing: border-box; border: 1px dashed #c62828; color: #c62828;
+  font-size: 8pt; line-height: 1; padding: 2px; }}
 .md-typeset table:not([class]) {{ display: table; width: 100%; font-size: 9pt; }}
 .md-typeset table:not([class]) tr {{ break-inside: avoid; }}
 .md-typeset table:not([class]) th, .md-typeset table:not([class]) td {{ padding: 0.6em 0.8em; }}
 /* 表の中のコード（application/json など）は、途中で折り返さない */
+.md-typeset table:not([class]) .pdf-nowrap {{ white-space: nowrap; }}
 .md-typeset table:not([class]) code {{ white-space: nowrap; word-break: keep-all; overflow-wrap: normal; }}
 .md-typeset .md-typeset__scrollwrap, .md-typeset .md-typeset__table {{ overflow: visible !important; display: block; }}
 /* サイトの表は左右に少しはみ出す作りで、印刷では全体が縮むため、はみ出さないようにする */
@@ -107,6 +127,8 @@ PDF_OPTIONS = dict(
     margin={key: f"{value}mm" for key, value in MARGIN_MM.items()},
     outline=True,
     tagged=True,
+    # 拡大した図のページだけ A3 横にするため、CSS の @page の用紙を使う
+    prefer_css_page_size=True,
 )
 
 
@@ -252,13 +274,22 @@ SHORT_IDS_JS = f"""
 }}
 """
 
+# 表で、短いセル（「メールアドレス」など10文字以下）は折り返さない。列の幅は、長い説明の列が詰めて受け持つ。
+SHORT_CELLS_JS = """
+() => document.querySelectorAll('article table th, article table td').forEach(cell => {
+  if (cell.textContent.trim().length <= 10) cell.classList.add('pdf-nowrap');
+})
+"""
+
 # 図を、文字が読める大きさにする JS。
 # - 画像だけの段落を div.pdf-figure で包み、すぐ後の「ソース:」の段落も中に入れる（同じページに置くため）。
 # - 図は、幅とページの高さに収まる大きさにする。それでは文字が小さすぎるときは、全体図を小さく載せ、
-#   次のページから TILE 倍に拡大して分けたもの（端を少し重ねる）を付ける。文字も線も無い部分は飛ばす。
+#   次のページから、横向きの用紙（A4 横か A3 横）に拡大して分けたものを付ける。全体図には、ピースの枠と番号を重ねる。
+#   ピースは、いちばん大きい文字や吹き出しが丸ごと入るだけ端を重ね、空のピースも飛ばさずに段・列の順に並べる。
+#   倍率は MAX_ZOOM から MIN_ZOOM まで下げ、同じ倍率なら小さい用紙から試し、MAX_TILES 枚以下に収まる最初のものにする。
 # - SVG の文字の上下の位置を data-texts に残す。あとで図を分けるとき、文字の無い行で切るのに使う。
 FIGURES_JS = """
-async ([W, H, READABLE, TILE]) => {
+async ([W, H, READABLE, PAPERS, MAX_ZOOM, MIN_ZOOM, MAX_TILES]) => {
   const root = document.querySelector('article.md-content__inner');
   const hidden = document.createElement('div');
   hidden.style.cssText = 'position:absolute;left:-100000px;top:0;visibility:hidden';
@@ -272,8 +303,11 @@ async ([W, H, READABLE, TILE]) => {
     const box = (e) => { const b = e.getBBox(); return [b.x, b.y, b.x + b.width, b.y + b.height]; };
     const texts = [...node.querySelectorAll('text')].map(box);
     const shapes = [...node.querySelectorAll('rect, path, line, polygon, polyline, ellipse, circle, image')].map(box);
+    const boxes = [...node.querySelectorAll('rect, path, polygon')]
+      .filter(e => { const fill = e.getAttribute('fill'); return fill && fill !== 'none'; })
+      .map(box).filter(b => b[2] - b[0] > 8 && b[3] - b[1] > 8);
     node.remove();
-    return { texts, shapes };
+    return { texts, shapes, boxes };
   };
   const figures = [];
   for (const img of [...root.querySelectorAll('img')]) {
@@ -294,46 +328,88 @@ async ([W, H, READABLE, TILE]) => {
     fig.dataset.h = nh;
     let scale = Math.min(1, W / nw, (H - 80) / nh);
     if (scale < READABLE && boxes) {
-      // 全体図は小さく載せ、拡大して分けたページを後ろに付ける
+      // 全体図は小さく載せ、拡大して分けたページ（A4 横か A3 横）を後ろに付ける
       scale = Math.min(1, W / nw, (H * 0.45) / nh);
       fig.dataset.tiled = '1';
-      const tw = Math.floor(W / TILE), th = Math.floor((H - 70) / TILE), overlap = 40;
-      // 枚数は端を overlap だけ重ねたときの最小にし、そのうえで間隔をそろえる（細い切れ端を作らない）
-      const starts = (length, size) => {
+      // 隣のピースとの重ね。いちばん大きい文字や吹き出しが、どれかのピースに丸ごと入る幅にする
+      // 線や矢印は除き、文字と、塗りのある箱・吹き出しだけを見る
+      const items = boxes.texts.concat(boxes.boxes.filter(b => b[2] - b[0] < nw / 3 && b[3] - b[1] < nh / 3));
+      const widest = Math.max(0, ...items.map(b => b[2] - b[0]));
+      const tallest = Math.max(0, ...items.map(b => b[3] - b[1]));
+      // 枚数は端を重ねたときの最小にし、そのうえで間隔をそろえる（細い切れ端を作らない）
+      const starts = (length, size, overlap) => {
         if (length <= size) return [0];
         const count = Math.ceil((length - overlap) / (size - overlap));
         const step = (length - size) / (count - 1);
         return [...Array(count).keys()].map(i => Math.round(i * step));
       };
-      const xs = starts(nw, tw), ys = starts(nh, th);
-      const small = boxes.shapes.filter(b => b[2] - b[0] < tw && b[3] - b[1] < th);
-      const used = (x, y) => boxes.texts.concat(small)
-        .some(b => b[0] < x + tw && b[2] > x && b[1] < y + th && b[3] > y);
+      const layout = (paper, zoom) => {
+        const tw = Math.floor(paper.w / zoom), th = Math.floor((paper.h - 36) / zoom);
+        const ox = Math.min(Math.max(40, widest + 20), tw * 0.4);
+        const oy = Math.min(Math.max(40, tallest + 20), th * 0.4);
+        const xs = starts(nw, tw, ox), ys = starts(nh, th, oy);
+        return { paper, zoom, tw, th, xs, ys, count: xs.length * ys.length };
+      };
+      // 倍率を高い方から下げていき、同じ倍率なら小さい用紙から試して、MAX_TILES 枚以下に収まる最初のものにする。
+      // 下限の倍率と最大の用紙でも収まらないときは、そのまま（最小の枚数）にする。
+      let plan = null;
+      for (let zoom = MAX_ZOOM; zoom >= MIN_ZOOM - 1e-9 && !plan; zoom = Math.round((zoom - 0.05) * 100) / 100) {
+        for (const paper of PAPERS) {
+          const candidate = layout(paper, zoom);
+          if (candidate.count <= MAX_TILES) { plan = candidate; break; }
+        }
+      }
+      if (!plan) plan = layout(PAPERS[PAPERS.length - 1], MIN_ZOOM);
+      const { paper, zoom, tw, th, xs, ys } = plan;
+      // ピースは、上の段から、左から右へ、空のピースも飛ばさずに並べる
       const tiles = [];
-      ys.forEach((y, r) => xs.forEach((x, c) => { if (used(x, y)) tiles.push([x, y, r, c]); }));
+      ys.forEach((y, r) => xs.forEach((x, c) => tiles.push([x, y, r, c])));
+      fig.dataset.tiles = tiles.length;
+      // 文字や吹き出しで、どのピースにも丸ごと入らないものの数（0 のはず）
+      fig.dataset.cut = items.filter(b => !tiles.some(([x, y]) =>
+        b[0] >= x && b[2] <= Math.min(x + tw, nw) && b[1] >= y && b[3] <= Math.min(y + th, nh))).length;
+      fig.dataset.zoom = zoom;
+      fig.dataset.paper = paper.name;
       const alt = img.getAttribute('alt') || '図';
+      // 全体図に、ピースの区切りと番号を重ねる
+      const map = document.createElement('span');
+      map.className = 'pdf-map';
+      map.style.width = nw * scale + 'px';
+      map.style.height = nh * scale + 'px';
+      img.before(map);
+      map.appendChild(img);
+      tiles.forEach(([x, y, r, c], i) => {
+        const cell = document.createElement('span');
+        cell.className = 'pdf-map-cell';
+        cell.style.left = x * scale + 'px';
+        cell.style.top = y * scale + 'px';
+        cell.style.width = Math.min(tw, nw - x) * scale + 'px';
+        cell.style.height = Math.min(th, nh - y) * scale + 'px';
+        cell.textContent = String(i + 1);
+        map.appendChild(cell);
+      });
       const note = document.createElement('p');
       note.className = 'pdf-note';
-      note.textContent = `文字が小さいため、次のページから図を拡大して分けて載せます（全${tiles.length}ページ。端は少し重ねています）。`;
+      note.textContent = `文字が小さいため、次のページから ${paper.label} のページに、図を ${Math.round(zoom * 100)}% に拡大して分けて載せます（${ys.length}段×${xs.length}列、全${tiles.length}ページ。番号は上の図の枠の番号。端は重ねています）。`;
       p.after(note);
       let anchor = fig;
       tiles.forEach(([x, y, r, c], i) => {
         const tile = document.createElement('div');
-        tile.className = 'pdf-tile';
+        tile.className = 'pdf-tile pdf-tile-' + paper.name;
         const caption = document.createElement('p');
         caption.className = 'pdf-tile-caption';
         caption.textContent = `${alt}（拡大 ${i + 1}/${tiles.length}：上から${r + 1}段目、左から${c + 1}列目。全体は${ys.length}段×${xs.length}列）`;
         const clip = document.createElement('div');
         clip.className = 'pdf-clip';
-        clip.style.width = Math.ceil(Math.min(tw, nw - x) * TILE) + 'px';
-        clip.style.height = Math.ceil(Math.min(th, nh - y) * TILE) + 'px';
+        clip.style.width = Math.ceil(Math.min(tw, nw - x) * zoom) + 'px';
+        clip.style.height = Math.ceil(Math.min(th, nh - y) * zoom) + 'px';
         const part = document.createElement('img');
         part.src = img.src;
         part.alt = '';
-        part.style.width = nw * TILE + 'px';
-        part.style.height = nh * TILE + 'px';
-        part.style.left = -x * TILE + 'px';
-        part.style.top = -y * TILE + 'px';
+        part.style.width = nw * zoom + 'px';
+        part.style.height = nh * zoom + 'px';
+        part.style.left = -x * zoom + 'px';
+        part.style.top = -y * zoom + 'px';
         clip.appendChild(part);
         tile.append(caption, clip);
         anchor.after(tile);
@@ -437,8 +513,14 @@ def open_page(browser: Browser, url: str, links: dict | None = None, short_ids: 
     page.add_style_tag(content=PRINT_CSS)
     # 閉じた details も中身を印刷する
     page.evaluate("document.querySelectorAll('details').forEach(d => d.open = true)")
-    page.evaluate(FIGURES_JS, [CONTENT_W_PX, CONTENT_H_PX, READABLE_SCALE, TILE_SCALE])
+    page.evaluate(SHORT_CELLS_JS)
+    page.evaluate(FIGURES_JS, [CONTENT_W_PX, CONTENT_H_PX, READABLE_SCALE, WIDE_PAPERS, MAX_ZOOM, MIN_ZOOM, MAX_TILES])
     page.evaluate("document.fonts.ready")
+    for alt, cut in page.evaluate(
+        "() => [...document.querySelectorAll('.pdf-figure[data-cut]')].map(f => [f.querySelector('img').alt, +f.dataset.cut])"
+    ):
+        if cut:
+            print(f"注意: 拡大ページの境で切れる文字や吹き出しが {cut} 個あります: {alt}")
     return page
 
 
@@ -479,14 +561,16 @@ def set_outline_titles(path: Path, headings: list[str]) -> None:
         writer.write(handle)
 
 
-def read_layout(path: Path) -> tuple[list[float], dict[str, list[tuple[int, list[float]]]], float]:
+def read_layout(path: Path) -> tuple[list[float], dict[str, list[tuple[int, list[float]]]], list[float]]:
     """印刷した PDF から、ページごとの本文のいちばん下の位置と、目印（図と各ページの先頭）の位置を読む。"""
     reader = PdfReader(str(path))
     bottom_margin = MARGIN_MM["bottom"] * 72 / 25.4
     bottoms: list[float] = []
     marks: dict[str, list[tuple[int, list[float]]]] = {}
-    height = float(reader.pages[0].mediabox.height)
+    heights: list[float] = []
     for number, page in enumerate(reader.pages):
+        height = float(page.mediabox.height)
+        heights.append(height)
         ys: list[float] = []
 
         def visit(text, cm, tm, font, size) -> None:
@@ -505,7 +589,7 @@ def read_layout(path: Path) -> tuple[list[float], dict[str, list[tuple[int, list
                     ys.append(min(y0, y1))
         body = [y for y in ys if y > bottom_margin]
         bottoms.append(min(body) if body else height)
-    return bottoms, marks, height
+    return bottoms, marks, heights
 
 
 def fit_figures(page: Page, label: str) -> None:
@@ -523,8 +607,7 @@ def fit_figures(page: Page, label: str) -> None:
             page.evaluate(WAIT_IMAGES_JS)
             page.pdf(path=str(probe), **PDF_OPTIONS)
             page.evaluate(MARK_JS, False)
-            bottoms, marks, height = read_layout(probe)
-            content = height - top_margin - bottom_margin
+            bottoms, marks, heights = read_layout(probe)
             figures = page.evaluate(
                 "() => [...document.querySelectorAll('.pdf-figure')].map(f => "
                 "[+f.dataset.section, !!f.dataset.tried, !!f.dataset.tiled, +f.dataset.scale, +f.dataset.h])"
@@ -537,8 +620,11 @@ def fit_figures(page: Page, label: str) -> None:
                 if tried or section in done_sections or not where or not start:
                     continue
                 number, (low, high) = where[0]
-                if number == 0 or number <= start[0][0]:
+                # 前のページが A3 横（拡大した図）のときは詰めない
+                if number == 0 or number <= start[0][0] or heights[number - 1] != heights[number]:
                     continue
+                height = heights[number]
+                content = height - top_margin - bottom_margin
                 blank = bottoms[number - 1] - bottom_margin
                 above = (height - top_margin) - high
                 if blank < content * 0.2 or above > 90:
@@ -547,9 +633,13 @@ def fit_figures(page: Page, label: str) -> None:
                 image_h = natural_h * scale * PT_PER_PX
                 room = blank - above - 10
                 new_scale = scale * (room - (figure_h - image_h)) / image_h
+                if tiled:
+                    # 全体図には枠と番号を重ねているので、縮めも分けもしない
+                    page.evaluate(FIX_JS, [index, "none", 0])
+                    continue
                 if new_scale >= max(READABLE_SCALE, scale * 0.85):
                     page.evaluate(FIX_JS, [index, "shrink", new_scale])
-                elif not tiled and page.evaluate(FIX_JS, [index, "split", room / PT_PER_PX - 30]):
+                elif page.evaluate(FIX_JS, [index, "split", room / PT_PER_PX - 30]):
                     pass
                 else:
                     page.evaluate(FIX_JS, [index, "none", 0])
