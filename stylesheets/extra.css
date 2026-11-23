@@ -171,16 +171,42 @@ dialog.doc-zoom::backdrop {
 }
 
 /* 観点一覧（3列）。観点が語の途中で折れないようにする */
+.test-views,
+.test-views .md-typeset__table {
+  overflow-x: auto;
+  max-width: 100%;
+}
+.test-views table:not([class]) th,
+.test-views table:not([class]) td {
+  word-break: keep-all;
+  word-break: auto-phrase;
+  /* anywhere だと行を埋めるために語の途中で折る。収まらない語だけ折る */
+  overflow-wrap: break-word;
+}
 .test-views table:not([class]) th:nth-child(1),
 .test-views table:not([class]) td:nth-child(1) {
   width: 18%;
-  min-width: 9em;
+}
+@media screen {
+  /* 「リクエストの形」が1行に収まる幅。狭い画面は表を横スクロールする */
+  .test-views table:not([class]) th:nth-child(1),
+  .test-views table:not([class]) td:nth-child(1) {
+    min-width: 11em;
+  }
+  /* 「U-02」が「U- / 02」と折れないようにする */
+  .test-views table:not([class]) th:nth-child(3),
+  .test-views table:not([class]) td:nth-child(3) {
+    white-space: nowrap;
+  }
+}
+.test-views table:not([class]) code {
+  white-space: pre-wrap;
   word-break: keep-all;
-  overflow-wrap: normal;
+  overflow-wrap: anywhere;
 }
 
 /* テストケースの表（列が多い）。No・観点・結果・備考を狭め、手順・期待値・実測値を広くする。
-   コードは途中で折らない。min-width:0 で、短い列が内容の最小幅より狭くできるようにする */
+   コードは = や _ のあとで折り返す。狭い画面は横スクロールし、語の途中では折らない */
 .test-cases,
 .test-cases .md-typeset__table {
   overflow-x: auto;
@@ -191,14 +217,27 @@ dialog.doc-zoom::backdrop {
   width: 100% !important;
   max-width: 100%;
 }
+@media screen {
+  /* 狭い画面では列を潰さず横スクロールする（印刷・PDF の幅は変えない） */
+  .test-cases table:not([class]) {
+    min-width: 50rem;
+  }
+}
 .test-cases table:not([class]) th,
 .test-cases table:not([class]) td {
   min-width: 0;
 }
-.test-cases table:not([class]) code {
-  white-space: nowrap !important;
+.test-cases table:not([class]) th,
+.test-cases table:not([class]) td {
   word-break: keep-all;
-  overflow-wrap: normal;
+  word-break: auto-phrase;
+  overflow-wrap: break-word;
+}
+.test-cases table:not([class]) code {
+  /* nowrap だと列をはみ出して隣に重なる。= や _ のあとの wbr で折り返す */
+  white-space: pre-wrap;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
 }
 /* 観点・備考は短く折り返してよい（PDF の短いセル nowrap も外す） */
 .md-typeset .test-cases table:not([class]) th:nth-child(2),
@@ -220,26 +259,25 @@ dialog.doc-zoom::backdrop {
   /* 「リクエストの形」が1行に収まり、語の途中で折れない幅。長い観点は <wbr> の位置だけ折り返す */
   width: 16%;
   min-width: 8em;
-  overflow-wrap: normal;
+  overflow-wrap: break-word;
   word-break: keep-all;
+  word-break: auto-phrase;
 }
 .test-cases table:not([class]) th:nth-child(3),
 .test-cases table:not([class]) td:nth-child(3),
 .test-cases table:not([class]) th:nth-child(4),
-.test-cases table:not([class]) td:nth-child(4) {
-  width: 20%;
-}
+.test-cases table:not([class]) td:nth-child(4),
 .test-cases table:not([class]) th:nth-child(5),
 .test-cases table:not([class]) td:nth-child(5) {
-  width: 21%;
+  width: 20%;
 }
 .test-cases table:not([class]) th:nth-child(7),
 .test-cases table:not([class]) td:nth-child(7) {
-  /* 13%。「パスワード」が1語で収まり、長い文は語の途中で折らない */
-  width: 13%;
+  /* 14%。「メールアドレス」が1語で収まり、長い文は語の途中で折らない */
+  width: 14%;
   padding-left: 0.5em;
   padding-right: 0.5em;
   word-break: keep-all;
   word-break: auto-phrase;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }

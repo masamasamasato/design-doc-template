@@ -114,6 +114,16 @@ button[title] {{ display: none !important; }}
 /* 表の中のコード（application/json など）は、途中で折り返さない */
 .md-typeset table:not([class]) .pdf-nowrap {{ white-space: nowrap; }}
 .md-typeset table:not([class]) code {{ white-space: nowrap; word-break: keep-all; overflow-wrap: normal; }}
+.md-typeset .test-cases table:not([class]) th, .md-typeset .test-cases table:not([class]) td,
+.md-typeset .test-views table:not([class]) th, .md-typeset .test-views table:not([class]) td {{
+  word-break: keep-all; word-break: auto-phrase; overflow-wrap: break-word;
+}}
+.md-typeset .test-cases table:not([class]), .md-typeset .test-views table:not([class]) {{
+  min-width: 0 !important;
+}}
+.md-typeset .test-cases table:not([class]) code, .md-typeset .test-views table:not([class]) code {{
+  white-space: pre-wrap; word-break: keep-all; overflow-wrap: anywhere;
+}}
 /* A4 の本文の幅に収まらない表だけ（WIDE_TABLES_JS が data-wide を付ける）、段階を上げてコードを折り返す。
    1: 空白で折り返す（例:「POST /account-recovery/confirm」）。2: さらに / - _ . @ の後でも折り返す（WIDE_TABLES_JS が
    <wbr> を入れる。例:「/account-recovery/」「confirm」）。3: それでも収まらないときだけ、どこでも折り返す */
@@ -456,7 +466,7 @@ WIDE_TABLES_JS = """
       if (level === '2') table.querySelectorAll('code').forEach(code => {
         // 区切りの後ろが2字以上残るところだけに入れる（1字だけ次の行に落ちないように）
         const text = code.textContent;
-        const parts = text.split(/(?<=[\\/\\-_.@])(?=[^\\/\\-_.@]{2})/);
+        const parts = text.split(/(?<=[\\/=\\-_.@])(?=[^\\/=\\-_.@]{2})/);
         if (parts.length < 2) return;
         code.replaceChildren(...parts.flatMap((part, i) => i ? [document.createElement('wbr'), part] : [part]));
       });
