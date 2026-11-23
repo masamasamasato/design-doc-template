@@ -84,11 +84,6 @@ button[title] {{ display: none !important; }}
 /* 大きい図は、その図だけのページに載せる（用紙の大きさは図ごとに @page で決める） */
 .pdf-figure[data-own] {{ break-before: page; break-after: page; }}
 .pdf-lead {{ max-width: {CONTENT_W_PX}px; }}
-/* Chromium は、1ページ目の用紙の幅で全体を組む。1ページ目が大きい図のページだと、表や文が A4 の幅を
-   はみ出して切れるため、その PDF だけ（FIGURES_JS が pdf-fig-first を付ける）、図だけのページ以外の本文を
-   A4 の幅に収める。1ページ目が A4 の PDF とまとめた PDF（1ページ目は目次）には付けない。付けると、
-   はみ出す前提で組んでいた表の幅が変わり、字の大きさやページ数が変わる */
-.md-typeset.pdf-fig-first:not(:has(> .pdf-page)) > :not(.pdf-mark, .pdf-figure[data-own]) {{ max-width: {PAGE_W_MM - MARGIN_MM["left"] - MARGIN_MM["right"]}mm; }}
 .pdf-fig-title {{ font-weight: 700; }}
 .md-typeset table:not([class]) {{ display: table; width: 100%; font-size: 9pt; }}
 .md-typeset table:not([class]) tr {{ break-inside: avoid; }}
@@ -398,7 +393,6 @@ async ([W, H, BODY_MIN]) => {
       while (before && empty(before)) before = before.previousElementSibling;
       if (!before) {
         fig.style.breakBefore = 'auto';
-        root.classList.add('pdf-fig-first');
         for (let e = fig; e && e !== document.body; e = e.parentElement) {
           for (let s = e.previousElementSibling; s; s = s.previousElementSibling) if (empty(s)) s.style.display = 'none';
         }
