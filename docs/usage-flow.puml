@@ -1,0 +1,17 @@
+' ドキュメントを書く流れ。README に載せる概要。
+@startuml
+skinparam shadowing false
+skinparam defaultFontName "Noto Sans CJK JP"
+skinparam ActivityFontName "Noto Sans CJK JP"
+
+title ドキュメントを書く流れ
+
+start
+:型をコピー;
+:書く;
+:PR;
+:チェックとレビュー;
+:マージ;
+:変更履歴と公開;
+stop
+@enduml

@@ -29,6 +29,7 @@ CLAUDE.md                         Claude Code 向け。AGENTS.md を読む
 用語集.md                         APIで使う言葉（1か所にまとめる）
 docs/guide.md                     書き方と自動化（AI向け）
 docs/setup.md                     GitHub の設定（権限、Pages、PREVIEW_TOKEN）
+docs/usage-flow.puml              README に載せる、ドキュメントを書く流れ
 docs/business/<業務>/             業務フロー（README、flow.puml、変更履歴.md）
 docs/infra/                       記入例。AWSのインフラ構成図
 apis/_template/                   新しいAPIを作るときにコピーする型
