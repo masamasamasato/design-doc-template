@@ -2,15 +2,16 @@
 """MkDocs でビルドしたサイトを、ヘッドレスの Chromium（Playwright）で PDF に印刷する。
 
 - API ごとに1本（apis/<名前>/処理詳細.md）、業務フローごとに1本（docs/business/<業務>/README.md）。
-- mkdocs.yml の nav の順に、ページを1本にまとめた PDF。`_template` の型と各変更履歴は入れない。
+- mkdocs.yml の nav の順に、ページを1本にまとめた PDF。`_template` の型、各変更履歴、PDF に入れないページ（SKIP_PAGES）は入れない。
   先頭に目次を置き、目次と本文中のリンクから各ページへ飛べる。PDF のしおり（アウトライン）も付ける。
 - 見た目は公開サイトと同じ（同じ CSS、ライトモード）。ヘッダー、ナビゲーション、検索、フッター、
   コピーボタンは印刷しない。
 - 各ページの下にページ番号を入れる。
 - 図は、文字が読める大きさで載せる。A4 縦に収めると文字が小さすぎる図は、図の大きさに合わせた用紙の
-  1ページに等倍で載せる（本文は A4 縦のまま）。本文の図の前のページが大きく空くときは、
-  図を少し縮めるか、文字の無い行で図を分けて、前のページへ詰める。
-- 人が読む内容だけを入れる。AI向けのページ（AI_PAGES）と、summary が「AI向け：」で始まる details は入れない。
+  1ページに等倍で載せる（本文は A4 縦のまま）。そのページには、図の直前の見出しと導入文も載せる。
+  本文の図の前のページが大きく空くときは、図を少し縮めるか、文字の無い行で図を分けて、前のページへ詰める。
+- 人が読む内容だけを入れる。SKIP_PAGES のページ（AI向けの書き方と GitHub の設定）と、summary が「AI向け：」で始まる
+  details は入れない。
 - 画像が1つでも読み込めなければ、PDF を作らずに失敗する。
 
 ふつうは scripts/build-pdf.sh から呼ぶ。
@@ -79,6 +80,8 @@ button[title] {{ display: none !important; }}
 .pdf-note {{ font-size: 9pt; color: #555; }}
 /* 大きい図は、その図だけのページに載せる（用紙の大きさは図ごとに @page で決める） */
 .pdf-figure[data-own] {{ break-before: page; break-after: page; }}
+.pdf-lead {{ max-width: {CONTENT_W_PX}px; }}
+.pdf-fig-title {{ font-weight: 700; }}
 .md-typeset table:not([class]) {{ display: table; width: 100%; font-size: 9pt; }}
 .md-typeset table:not([class]) tr {{ break-inside: avoid; }}
 .md-typeset table:not([class]) th, .md-typeset table:not([class]) td {{ padding: 0.6em 0.8em; }}
@@ -160,13 +163,14 @@ OUTSIDE_LINK_JS = """
 """
 
 
-# PDF に入れない AI向けのページ（原稿のパス）。PDF の中のこのページへのリンクも消す。
-AI_PAGES = ("docs/guide.md",)
+# PDF に入れないページ（原稿のパス）。人が読む設計書ではないもの（AI向けの書き方、GitHub の設定）。
+# PDF の中のこのページへのリンクも消す。
+SKIP_PAGES = ("docs/guide.md", "docs/setup.md")
 
-# AI向けの内容を消す JS。summary が「AI向け：」で始まる details を消し、AI向けのページへのリンクは、
+# PDF に入れない内容を消す JS。summary が「AI向け：」で始まる details を消し、SKIP_PAGES へのリンクは、
 # 項目がそのリンクだけなら項目ごと消し、文の中なら文字だけにする。消したものを返す。
-AI_JS = """
-(aiPaths) => {
+SKIP_JS = """
+(skipPaths) => {
   const removed = [];
   document.querySelectorAll('article details').forEach(d => {
     const summary = d.querySelector(':scope > summary');
@@ -177,7 +181,7 @@ AI_JS = """
   });
   document.querySelectorAll('article a[href]').forEach(a => {
     const url = new URL(a.getAttribute('href'), location.href);
-    if (url.origin !== location.origin || !aiPaths.includes(decodeURIComponent(url.pathname))) return;
+    if (url.origin !== location.origin || !skipPaths.includes(decodeURIComponent(url.pathname))) return;
     const item = a.closest('li');
     if (item && item.textContent.trim() === a.textContent.trim()) {
       removed.push('リンクの項目「' + a.textContent.trim() + '」');
@@ -301,6 +305,8 @@ SHORT_CELLS_JS = """
 # - 画像だけの段落を div.pdf-figure で包み、すぐ後の「ソース:」の段落も中に入れる（同じページに置くため）。
 # - 図は、A4 縦の幅と高さに収まる大きさにする。その倍率が BODY_MIN_SCALE より小さい図は等倍にし、
 #   data-own を付ける。あとで PAGES_JS が、図の大きさに合わせた用紙のページにする。
+#   図の直前の見出しと導入文（合わせて H の半分まで）も、div.pdf-lead にして図のページの上に載せる。
+#   前のページに見出しと数行だけが残って、ほぼ空になるのを防ぎ、図のページで何の図か分かるようにする。
 # - SVG の文字の上下の位置を data-texts に残す。あとで図を分けるとき、文字の無い行で切るのに使う。
 FIGURES_JS = """
 async ([W, H, BODY_MIN]) => {
@@ -340,6 +346,42 @@ async ([W, H, BODY_MIN]) => {
     if (scale < BODY_MIN) {
       scale = 1;
       fig.dataset.own = '1';
+      const lead = [];
+      let height = 0;
+      let el = fig.previousElementSibling;
+      while (el && !el.classList.contains('pdf-figure') && !el.querySelector('.pdf-figure')) {
+        height += el.getBoundingClientRect().height;
+        if (height > H / 2) break;
+        lead.unshift(el);
+        if (/^H[1-6]$/.test(el.tagName)) break;
+        el = el.previousElementSibling;
+      }
+      const box = document.createElement('div');
+      box.className = 'pdf-lead';
+      if (lead.length && height <= H / 2) box.append(...lead);
+      // 見出しを載せられないとき（前が図など）は、どのページの何の節の図か分かるよう、見出しの文字を短く入れる
+      if (!box.querySelector('h1, h2, h3, h4, h5, h6')) {
+        const text = (h) => { const c = h.cloneNode(true); c.querySelectorAll('.headerlink').forEach(e => e.remove()); return c.textContent.trim(); };
+        const heads = [...root.querySelectorAll('h1, h2, h3, h4, h5, h6')]
+          .filter(h => h.compareDocumentPosition(fig) & Node.DOCUMENT_POSITION_FOLLOWING);
+        const names = [heads.find(h => h.tagName === 'H1'), heads[heads.length - 1]].filter(Boolean).map(text);
+        const title = document.createElement('p');
+        title.className = 'pdf-fig-title';
+        title.textContent = [...new Set(names)].join(' ― ') + '（つづき）';
+        box.prepend(title);
+      }
+      fig.prepend(box);
+      // 図が本文の先頭なら、前に改ページしない。図より前にある高さ0の要素も消す。
+      // 残すと、それだけの A4 の空のページが先頭にできる（図のページは用紙が違うため）
+      const empty = (e) => !e.getBoundingClientRect().height;
+      let before = fig.previousElementSibling;
+      while (before && empty(before)) before = before.previousElementSibling;
+      if (!before) {
+        fig.style.breakBefore = 'auto';
+        for (let e = fig; e && e !== document.body; e = e.parentElement) {
+          for (let s = e.previousElementSibling; s; s = s.previousElementSibling) if (empty(s)) s.style.display = 'none';
+        }
+      }
     }
     fig.dataset.scale = scale;
     img.style.width = nw * scale + 'px';
@@ -431,8 +473,8 @@ def open_page(browser: Browser, url: str, links: dict | None = None, short_ids: 
     page = browser.new_page(color_scheme="light")
     page.goto(url, wait_until="networkidle")
     check_images(page, url)
-    for item in page.evaluate(AI_JS, ["/" + page_url(src) for src in AI_PAGES]):
-        print(f"  AI向けを外しました: {unquote(url.split('/', 3)[-1]) or 'トップ'} の{item}")
+    for item in page.evaluate(SKIP_JS, ["/" + page_url(src) for src in SKIP_PAGES]):
+        print(f"  PDF から外しました: {unquote(url.split('/', 3)[-1]) or 'トップ'} の{item}")
     if links is not None:
         page.evaluate(f"([pages, base]) => ({OUTSIDE_LINK_JS})(document, pages, base)", [links["pages"], links["base"]])
     if short_ids:
@@ -449,7 +491,7 @@ def open_page(browser: Browser, url: str, links: dict | None = None, short_ids: 
 HEADINGS_JS = """
 () => [...document.querySelectorAll('article h1, article h2, article h3, article h4, article h5, article h6')]
   .filter(h => h.offsetParent !== null)
-  .map(h => [h.matches('.pdf-page > h1:first-of-type, #pdf-toc'), (c => { c.querySelectorAll('.headerlink').forEach(e => e.remove()); return c.textContent; })(h.cloneNode(true)).replace(/\\s+/g, ' ').trim()])
+  .map(h => [(h.matches('#pdf-toc') || (h.tagName === 'H1' && !!h.closest('.pdf-page') && h.closest('.pdf-page').querySelector('h1') === h)), (c => { c.querySelectorAll('.headerlink').forEach(e => e.remove()); return c.textContent; })(h.cloneNode(true)).replace(/\\s+/g, ' ').trim()])
 """
 
 
@@ -661,12 +703,12 @@ EXTRACT_JS = f"""
 
 
 def in_combined(src: str) -> bool:
-    """まとめた PDF に入れるページか。`_template` の型、変更履歴、AI向けのページは入れない。"""
+    """まとめた PDF に入れるページか。`_template` の型、変更履歴、SKIP_PAGES のページは入れない。"""
     path = Path(src)
     return (
         not any(part.startswith("_") for part in path.parts)
         and path.name != "変更履歴.md"
-        and src not in AI_PAGES
+        and src not in SKIP_PAGES
     )
 
 

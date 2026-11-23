@@ -2,7 +2,7 @@
 # ドキュメントを PDF にする。出力は pdf/（git に入れない）。
 #   pdf/apis/<名前>.pdf        API ごとの設計書（処理詳細.md）
 #   pdf/業務フロー/<業務>.pdf   業務フローごと
-#   pdf/設計書.pdf              まとめた1本（目次としおりつき。_template の型と変更履歴は入れない）
+#   pdf/設計書.pdf              まとめた1本（目次としおりつき。_template の型、変更履歴、AI向けの書き方と GitHub の設定のページは入れない）
 # 使い方:
 #   scripts/build-pdf.sh
 # 先に要るもの: requirements.txt と requirements-pdf.txt の Python の依存、
