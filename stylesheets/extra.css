@@ -136,3 +136,14 @@ dialog.doc-zoom::backdrop {
     cursor: default;
   }
 }
+
+/* 表の見出しの色。PDF（scripts/build-pdf.py の PRINT_CSS）と同じ色にする */
+.md-typeset table:not([class]) th {
+  background-color: #e8edf4;
+  color: #1a1a1a;
+}
+
+[data-md-color-scheme="slate"] .md-typeset table:not([class]) th {
+  background-color: #3a4456;
+  color: #f2f2f2;
+}
