@@ -46,6 +46,8 @@ apis/get-order/                   記入例。注文の状態を見るAPI
 apis/payment-webhook/             記入例。決済の結果を受け取るAPI
 mkdocs.yml                        サイトの設定
 mkdocs/docs/                      サイトが読む原稿へのリンク
+stylesheets/                      サイトの追加 CSS
+javascripts/                      サイトの追加 JS（図の拡大）
 .github/workflows/                図の変換、公開、変更履歴
 .github/pull_request_template.md  PRの書き方
 .vscode/                          ローカルプレビューの設定
@@ -273,7 +275,17 @@ SVGにするときは、次を実行します。
 
 ### 3. mkdocs serve で見る
 
-サイトは MkDocs Material です。PlantUML から作った SVG を表示します。検索は日本語です。
+サイトは MkDocs Material です。PlantUML から作った SVG を表示します。図を押すと、拡大できる窓が開きます。検索は日本語です。
+
+<details markdown>
+<summary>AI向け：図の拡大窓</summary>
+
+- 実装は `javascripts/image-zoom.js` と `stylesheets/extra.css`。`mkdocs.yml` の `extra_javascript` と `extra_css` で読み込む。`scripts/prepare-docs.sh` が `mkdocs/docs/javascripts` へのリンクを作る。
+- 本文の `.md-typeset img` だけを対象にする。図を別の要素で包まない（PDF の図の扱いが変わるため）。
+- 窓は開くまで DOM に作らず、閉じたら消す。PDF 生成はページ内のすべての `img` を検証するため。印刷では CSS で隠す。
+- 大きな SVG はインラインで拡大し、`img` のビットマップを引き伸ばさない。ホイール、ピンチ、ドラッグ、Esc、背景クリック、閉じるボタン、`+` / `-` / `0`、矢印キーに対応する。
+
+</details>
 
 ```bash
 python3 -m venv .venv
