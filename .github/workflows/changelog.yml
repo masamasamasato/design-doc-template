@@ -14,7 +14,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      actions: write
       pages: read
     steps:
       - name: mainを取得する
@@ -22,6 +21,8 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
+          # main はルールで直接 push を禁止している。例外はこのデプロイキーだけ
+          ssh-key: ${{ secrets.CHANGELOG_DEPLOY_KEY }}
 
       - name: 変更したドキュメントを Job Summary に出す
         # 表示だけなので、失敗しても変更履歴の追記は続ける
@@ -58,8 +59,8 @@ jobs:
           git commit -m "変更履歴を更新 [changelog]"
           for attempt in 1 2 3 4; do
             git pull --rebase origin main
+            # デプロイキーの push は pages.yml を起動するので、ここで呼ばない
             if git push origin HEAD:main; then
-              gh workflow run pages.yml --ref main
               exit 0
             fi
             sleep $((attempt * 2))
