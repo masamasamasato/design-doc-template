@@ -1,5 +1,5 @@
 ' 深さ3。パスキーでログインする処理のイメージ。
-' スイムレーンは業務フロー側に書く。ここはメソッドの順番だけを書く。
+' 箱の番号は、設計書（処理詳細.md）の「処理詳細」の番号と同じ。
 @startuml
 skinparam shadowing false
 skinparam defaultFontName "Noto Sans CJK JP"
@@ -9,28 +9,27 @@ skinparam NoteBackgroundColor #FFFFCC
 title パスキーでログインする
 
 start
-note right: メールアドレスは入れない。セッションを作る前に、\n印とチャレンジの組、署名、署名カウンタの検証が必要
-:ログイン用のチャレンジを発行する処理\nissueLoginOptions();
-note right: 保存：チャレンジと一時的な印の組（例：5分で消える）。\n印は5分の Cookie でブラウザに付ける
+:1. チャレンジ発行\nPOST /sessions/passkey/options;
+note right: 保存：チャレンジと一時的な印の組（例：5分で消える）。\n印は Cookie でブラウザに付ける
 :画面がチャレンジを端末へ渡し、\n端末の署名（assertion）を受け取る;
 note right: 端末で PIN か生体認証をする。ここはサーバーの外
-:印・チャレンジ検証\nブラウザの一時的な印とチャレンジの組を、発行時に保存した組と照合\nverifyAssertion();
-if (印があり、チャレンジとの組が発行時と同じで、\nチャレンジが5分以内・未使用の場合) then (組が同じ場合)
-  :assertion 検証\nassertion の署名を、保存した公開鍵とチャレンジで照合し、\n署名カウンタを保存値と比べる\nverifyAssertion();
-  if (credential ID のパスキーがあり、署名・origin・rpId・\nuser verification が合い、署名カウンタが保存値より大きい場合) then (すべて合う場合)
-    :セッションを作る処理\ncreateSession();
-    note right: 保存：セッション（例：24時間有効）と、新しい署名カウンタ
-    :ログイン通知メールを送る処理\nnotifyLogin();
-    note right: パスワードのログインと同じ。送信に失敗してもログインは成功のまま
-    :200 Cookie でセッションを返す;
-    note right: 削除：一時的な印とチャレンジ
-  else (パスキーが無い、署名・origin・rpId・user verification の\nどれかが合わない、または署名カウンタが保存値以下の場合)
-    :失敗を返す\n401 INVALID_CREDENTIALS;
-    note right: 削除：一時的な印とチャレンジ。\nセッションは作らない。どこが違うかは返さない
-  endif
-else (印が無い、組が発行時と違う、\nまたはチャレンジが期限切れ・使用済みの場合)
+:2. 印・チャレンジ検証\nPOST /sessions/passkey。印とチャレンジの組を、保存した組と照合;
+if (リクエストに印が無い または 印が保存済みの組と合わない\nまたは その組のチャレンジが期限切れ または 使用済みの場合) then (2.2 組が\n使えない場合)
   :失敗を返す\n401 INVALID_CREDENTIALS;
   note right: 削除：一時的な印とチャレンジ。\nセッションは作らない
+  stop
+else (2.1 組が\n使える場合)
 endif
+:3. assertion 検証\n署名を、保存した公開鍵とチャレンジで照合;
+if (パスキーが無い または 署名・origin・rpId のいずれかが合わない\nまたは user verification のフラグが無い\nまたは 署名カウンタが保存値以下の場合) then (3.2 いずれかが\n合わない場合)
+  :失敗を返す\n401 INVALID_CREDENTIALS;
+  note right: 削除：一時的な印とチャレンジ。\nセッションは作らない。どこが違うかは返さない
+  stop
+else (3.1 すべて\n合う場合)
+endif
+:4. セッション作成\nセッションを保存し、ログイン通知メールを送る;
+note right: 保存：セッション（例：24時間有効）と、新しい署名カウンタ。\nメールの送信に失敗しても、ログインは成功のまま
+:5. 成功を返す\n200 Cookie でセッションを返す;
+note right: 削除：一時的な印とチャレンジ
 stop
 @enduml

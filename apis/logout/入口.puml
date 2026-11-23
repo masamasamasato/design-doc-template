@@ -13,11 +13,11 @@ participant "認証API" as API
 
 User -> Screen : ログアウトする
 Screen -> API : DELETE /sessions/current\nセッションの Cookie があれば付ける
-API -> API : セッション検証と無効化\ninvalidateSession()
-alt セッションの Cookie が有効な場合
-  API --> Screen : 200 Cookie を消した\n保存済みのセッションを削除した
-else セッションの Cookie が無い、または既に無効な場合
-  API --> Screen : 200 Cookie を消した\nサーバーでは何も削除しない
+API -> API : 1. セッション検証と無効化
+alt Cookie のセッションIDが保存済みの有効なセッションと合う場合
+  API --> Screen : 2. 200 Cookie を消した\n保存済みのセッションを削除した
+else Cookie が無い または Cookie のセッションIDが保存済みの有効なセッションと合わない場合
+  API --> Screen : 2. 200 Cookie を消した\nサーバーでは何も削除しない
 end
 Screen --> User : ログアウトできた
 @enduml

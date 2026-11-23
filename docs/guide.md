@@ -88,6 +88,14 @@ APIの設計書は `apis/<名前>/処理詳細.md` の1本です。入口の `RE
 
 設計書には、その API の中身だけを書きます。「どこが正か」「この節の読み方」「AI向けの補足」のような、読み方や書き方の説明は設計書に書かず、このページに置きます。
 
+1つのAPIに呼び出しが2つ以上あるとき（例: チャレンジを受け取ってから署名を送る、登録と削除）も、設計書は1本にします。
+
+- エンドポイントは、呼ぶ順に番号を付けて並べる。メソッドが呼び出しごとに違うときは、エンドポイントとメソッドの表にする。
+- リクエスト例の項目は1つの表にまとめ、一部の呼び出しだけで要る項目は △ に呼び出しを書く。例: `△（POST /passkeys の場合）`。curl は呼ぶ順に並べる。
+- 処理詳細の手順の番号は通しで付け、見出しのすぐ下に「`POST /passkeys` の手順です。」のように、どの呼び出しの手順かを書く。全部の呼び出しで同じ手順（例: セッション検証）は、合う場合の結果に、呼び出しごとの次の手順を書く。
+
+このAPIだけで使う言葉が無いときも、`用語.md` は残し、「このAPIだけで使う言葉はありません」と書きます。失敗を返さないAPIは、レスポンス例に「失敗のレスポンスはありません」と書きます。
+
 リクエスト例の項目の表の「必須」列は、記号で書きます。凡例「○＝必須、△＝条件付き必須、−＝任意」は、表の上に1回だけ置きます。
 
 - ○: いつも必要
@@ -117,8 +125,8 @@ APIの設計書は `apis/<名前>/処理詳細.md` の1本です。入口の `RE
 
 | 前 | 後 |
 | --- | --- |
-| 合わず、連続4回以下の場合 | 入力パスワードが保存済みのハッシュと合わない かつ この失敗でそのメールアドレスの連続失敗が4回以下の場合 |
-| ロック中の場合 | そのメールアドレスがロック中（連続5回失敗から15分以内）の場合 |
+| 合わず、連続4回以下の場合 | 入力パスワードが保存済みのハッシュと合わない かつ この失敗でそのメールアドレスの連続失敗が例：4回以下の場合 |
+| ロック中の場合 | そのメールアドレスがロック中（例：連続5回失敗から15分以内）の場合 |
 | 送信できた場合 | メール送信サービスがログイン通知メールを受け付けた場合 |
 | 200 の場合 | 外部APIの返事のHTTPステータスが 200 の場合 |
 
@@ -161,7 +169,7 @@ APIの設計書は `apis/<名前>/処理詳細.md` の1本です。入口の `RE
 | --- | --- | --- |
 | 業務フロー | PlantUML のスイムレーン | [プロフィールを公開する](business/プロフィールを公開する/README.md) |
 | インフラ構成 | PlantUML（awslib のアイコン） | [AWSのインフラ構成](infra/index.md) |
-| 処理の順番 | PlantUML のシーケンス図 | [プロフィール公開APIの入口](../apis/publish-profile/README.md) |
+| 処理の順番 | PlantUML のシーケンス図 | [プロフィール公開APIの処理フローの図](../apis/publish-profile/処理詳細.md#処理フローの図) |
 | 分かれ道 | PlantUML のアクティビティ図 | [図の例](examples/index.md) |
 | データ | PlantUML の ER 図 | [図の例](examples/index.md) |
 | 状態 | PlantUML の状態図 | [図の例](examples/index.md) |
@@ -205,9 +213,9 @@ cp -a apis/_template apis/予約を確定する
 
 コピーした `変更履歴.md` は空の説明に戻します。型に付いている例の行は残しません。
 
-記入例は [プロフィールを公開する](../apis/publish-profile/README.md) です。本人確認が済んでいる人だけ、プロフィールを公開中にします。コードのパスは架空で、`src/services/profile.ts` です。
+記入例は [プロフィールを公開する](../apis/publish-profile/README.md) です。本人確認が済んでいる人だけ、プロフィールを公開中にします。
 
-ほかの記入例は、[ログインする](../apis/login/README.md)、[ログアウトする](../apis/logout/README.md)、[商品詳細を取得する](../apis/get-product/README.md)、[商品一覧を取得する](../apis/list-products/README.md)、[商品を検索する](../apis/search-products/README.md)、[パスキーを登録する](../apis/register-passkey/README.md)、[パスキーでログインする](../apis/login-passkey/README.md)、[アカウントを復旧する](../apis/recover-account/README.md)、[カードを登録する](../apis/register-card/README.md)、[支払う](../apis/create-payment/README.md)、[注文の状態を見る](../apis/get-order/README.md)、[決済の結果を受け取る](../apis/payment-webhook/README.md) です。認証は `src/services/auth.ts`、パスキーは `src/services/passkey.ts`、商品は `src/services/product.ts`、支払いは `src/services/payment.ts` です。業務フローの記入例は、[ログインして商品を探す](business/ログインして商品を探す/README.md)、[カードで支払う](business/カードで支払う/README.md)、[パスキーの端末をなくす](business/パスキーの端末をなくす/README.md) です。
+ほかの記入例は、[ログインする](../apis/login/README.md)、[ログアウトする](../apis/logout/README.md)、[商品詳細を取得する](../apis/get-product/README.md)、[商品一覧を取得する](../apis/list-products/README.md)、[商品を検索する](../apis/search-products/README.md)、[パスキーを登録する](../apis/register-passkey/README.md)、[パスキーでログインする](../apis/login-passkey/README.md)、[アカウントを復旧する](../apis/recover-account/README.md)、[カードを登録する](../apis/register-card/README.md)、[支払う](../apis/create-payment/README.md)、[注文の状態を見る](../apis/get-order/README.md)、[決済の結果を受け取る](../apis/payment-webhook/README.md) です。業務フローの記入例は、[ログインして商品を探す](business/ログインして商品を探す/README.md)、[カードで支払う](business/カードで支払う/README.md)、[パスキーの端末をなくす](business/パスキーの端末をなくす/README.md) です。
 
 新しい業務フローを足すときは、既存のフォルダをコピーして、中身を書き換えます。
 

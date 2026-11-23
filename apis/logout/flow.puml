@@ -1,5 +1,5 @@
 ' 深さ3。ログアウトする処理のイメージ。
-' スイムレーンは業務フロー側に書く。ここはメソッドの順番だけを書く。
+' 箱の番号は、設計書（処理詳細.md）の「処理詳細」の番号と同じ。
 @startuml
 skinparam shadowing false
 skinparam defaultFontName "Noto Sans CJK JP"
@@ -10,16 +10,14 @@ title ログアウトする
 
 start
 note right: 失敗は返さない。どの場合も 200
-:セッション検証\nリクエストの Cookie を、保存済みの有効なセッションと照合\ninvalidateSession();
-switch (セッション検証の結果)
-case (セッションの Cookie が\n有効な場合)
-  :今のセッションを無効にする処理;
+:1. セッション検証と無効化\nCookie のセッションIDを、保存済みの有効なセッションと照合;
+if (Cookie のセッションIDが\n保存済みの有効なセッションと合う場合) then (1.1 合う場合)
+  :保存済みのセッションを削除する;
   note right: 削除：保存済みのセッション
-case (セッションの Cookie が無い、\nまたは既に無効な場合)
-  :何もしない;
-  note right: 保存も削除もしない
-endswitch
-:200 を返し、\nセッションの Cookie を消す;
+else (1.2 Cookie が無い\nまたは 合わない場合)
+  :何も削除しない;
+endif
+:2. 成功を返す\n200 セッションの Cookie を消す;
 note right: 削除：ブラウザのセッションの Cookie
 stop
 @enduml

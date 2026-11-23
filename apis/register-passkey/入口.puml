@@ -13,29 +13,29 @@ participant "認証API" as API
 
 User -> Screen : パスキーを登録する
 Screen -> API : POST /passkeys/options
-API -> API : セッション検証\nrequireSession()
-alt セッションの Cookie が無い、または無効な場合
+API -> API : 1. セッション検証
+alt Cookie が無い または Cookie のセッションIDが保存済みの有効なセッションと合わない場合
   API --> Screen : 401 UNAUTHORIZED\n何も保存しない
   Screen --> User : ログインが必要
-else セッションの Cookie が有効な場合
-  API -> API : チャレンジを発行する\nissueRegistrationOptions()
+else Cookie のセッションIDが保存済みの有効なセッションと合う場合
+  API -> API : 2. チャレンジ発行
   API --> Screen : 200 チャレンジ\nチャレンジを保存する
   note right of Screen : 例：チャレンジは1回限りで、5分で消える
   Screen --> User : 端末で登録する（PIN か生体認証）
   User -> Screen : 端末がパスキーを作り、\nattestation を返す
   Screen -> API : POST /passkeys
-  API -> API : セッション検証と attestation 検証\nrequireSession()、verifyAndSavePasskey()
-  alt セッションの Cookie が無い、または無効な場合
-    API --> Screen : 401 UNAUTHORIZED\n何も保存しない
+  API -> API : 1. セッション検証\n3. attestation 検証\n4. 端末名検証
+  alt Cookie が無い または Cookie のセッションIDが保存済みの有効なセッションと合わない場合
+    API --> Screen : 401 UNAUTHORIZED\n何も保存しない。チャレンジも消さない
     Screen --> User : ログインが必要
-  else チャレンジが無い・期限切れ・使用済み・他の利用者のもの、\norigin・rpId が合わない、または user verification が無い場合
+  else attestation のチャレンジが発行した有効なものと合わない\nまたは origin・rpId のいずれかが自社と合わない または user verification のフラグが無い場合
     API --> Screen : 400 INVALID_CHALLENGE\nチャレンジを消す。パスキーは保存しない
     Screen --> User : 登録できない。やり直す
-  else 検証が通り、端末名が30文字を超える場合
+  else attestation の検証が通る かつ 端末名が例：30文字を超える場合
     API --> Screen : 400 INVALID_DEVICE_NAME\nチャレンジを消す。パスキーは保存しない
-    Screen --> User : 端末名を30文字以内にしてやり直す
-  else 検証が通り、端末名が30文字以内、または無い・空の場合
-    API --> Screen : 200 登録した\n公開鍵などを保存し、チャレンジを消す。\n端末名が無い・空なら「端末」を保存する
+    Screen --> User : 端末名を短くしてやり直す
+  else attestation の検証が通る かつ 端末名が例：30文字以内の場合（無い・空も含む）
+    API --> Screen : 5. 200 登録した\n公開鍵などを保存し、チャレンジを消す。\n端末名が無い・空なら「端末」を保存する
     Screen --> User : 登録できた
   end
 end
