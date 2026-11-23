@@ -10,21 +10,21 @@ skinparam NoteBackgroundColor #FFFFCC
 title ログインする
 
 start
-:1. リクエストバリデーション\n本文の email と password を条件と照合\nvalidateLoginRequest();
+:1. リクエストバリデーション\n本文の email と password を条件と照合;
 if (いずれかの項目が条件に合わない場合) then (1.2 合わない場合)
   :失敗を返す\n400 INVALID_REQUEST;
   note right: 何も保存しない。失敗回数も増やさない
   stop
 else (1.1 合う場合)
 endif
-:2. ロック判定\nメールアドレスを保存済みのロックと照合\nauthenticate();
+:2. ロック判定\nメールアドレスを保存済みのロックと照合;
 if (ロック中（連続5回失敗から15分以内）の場合) then (2.1 ロック中の場合)
   :失敗を返す\n403 ACCOUNT_LOCKED;
   note right: 保存しない。失敗回数もロックの期限も変えない。\n例：15分たつと自動で解除
   stop
 else (2.2 ロック中でない場合)
 endif
-:3. メールアドレス・パスワード検証\n登録済みのパスワードハッシュと入力パスワードを照合\nauthenticate();
+:3. メールアドレス・パスワード検証\n登録済みのパスワードハッシュと入力パスワードを照合;
 switch (メールアドレス・パスワード検証の結果)
 case (3.2 合わず、\n連続4回以下の場合)
   :失敗を返す\n401 INVALID_CREDENTIALS;
@@ -36,9 +36,9 @@ case (3.3 合わず、\n連続5回目の場合)
   stop
 case (3.1 合う場合)
 endswitch
-:4. セッション作成\nセッションを保存し、Cookie に入れる\ncreateSession();
+:4. セッション作成\nセッションを保存し、Cookie に入れる;
 note right: 保存：セッション（例：24時間有効）。\n削除：そのメールアドレスの失敗回数
-:5. ログイン通知メール送信\nnotifyLogin();
+:5. ログイン通知メール送信\nメール送信サービスへ、ログイン通知メールを渡す;
 :外部API：メール送信サービス（例: SES）\n登録したメールアドレスへログイン通知を届ける; <<#E3F2FD>>
 note right
   タイムアウト：例：3秒

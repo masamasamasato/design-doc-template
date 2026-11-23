@@ -8,21 +8,21 @@ skinparam defaultFontName "Noto Sans CJK JP"
 title （APIの名前）
 
 start
-:1. リクエストバリデーション\n項目を条件と照合\n（methodName()）;
+:1. リクエストバリデーション\n項目を条件と照合;
 if (いずれかの項目が条件に合わない場合) then (1.2 合わない場合)
   :失敗を返す\n400 （コード）。例: INVALID_REQUEST;
   note right: 何も保存しない
   stop
 else (1.1 合う場合)
 endif
-:2. （〜検証）\n（何と何を照合するかを1行）。例: 持ち主と本人確認\n（methodName()）;
+:2. （〜検証）\n（何と何を照合するかを1行）。例: 持ち主と本人確認;
 if ((〜の場合)。例: 持ち主でない、または本人確認が済んでいない場合) then (2.2 （〜の場合）)
   :失敗を返す\n（ステータスとコード）。例: 403 NOT_VERIFIED;
   note right: （保存・削除）。例: 何も保存しない
   stop
 else (2.1 （〜の場合）)
 endif
-:3. （外部APIを呼ぶ手順）\n（methodName()）;
+:3. （外部APIを呼ぶ手順）\n（何を送り、何を受け取るかを1行）;
 :外部API：（サービス名）\n（役割を1行）; <<#E3F2FD>>
 note right
   タイムアウト：（例：3秒）
