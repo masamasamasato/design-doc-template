@@ -45,6 +45,7 @@ extra_css:
 
 extra_javascript:
   - javascripts/image-zoom.js
+  - javascripts/test-table-wrap.js
 
 plugins:
   - search:

@@ -74,3 +74,6 @@ jobs:
 
       - name: 目次を検証する
         run: python3 scripts/update-toc.py --check
+
+      - name: インフラ図の等倍専用ページの印を検証する
+        run: python3 scripts/check-own-page-marks.py
