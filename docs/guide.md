@@ -26,7 +26,6 @@ README.md                         使い方（人が読む最低限）
 用語集.md                         APIをまたいで使う言葉
 docs/guide.md                     書き方と自動化（AI向け）
 docs/setup.md                     GitHub の設定（権限、Pages、PREVIEW_TOKEN）
-docs/examples/                    図の書き方の例（.puml と SVG）
 docs/business/<業務>/             業務フロー（README、flow.puml、変更履歴.md）
 docs/infra/                       記入例。AWSのインフラ構成図
 apis/_template/                   新しいAPIを作るときにコピーする型
@@ -44,7 +43,6 @@ apis/register-card/               記入例。カードを登録するAPI
 apis/create-payment/              記入例。支払うAPI
 apis/get-order/                   記入例。注文の状態を見るAPI
 apis/payment-webhook/             記入例。決済の結果を受け取るAPI
-decisions/                        決めたことと、捨てた案
 mkdocs.yml                        サイトの設定
 mkdocs/docs/                      サイトが読む原稿へのリンク
 .github/workflows/                図の変換、公開、変更履歴
@@ -161,12 +159,10 @@ APIの設計書は `apis/<名前>/処理詳細.md` の1本です。入口の `RE
 | --- | --- | --- |
 | 業務フロー | PlantUML のスイムレーン | [プロフィールを公開する](business/プロフィールを公開する/README.md) |
 | インフラ構成 | PlantUML（awslib のアイコン） | [AWSのインフラ構成](infra/index.md) |
-| 処理の順番 | PlantUML のシーケンス図 | [プロフィール公開APIの入口](../apis/publish-profile/README.md) |
-| 分かれ道 | PlantUML のアクティビティ図 | [図の例](examples/index.md) |
-| データ | PlantUML の ER 図 | [図の例](examples/index.md) |
-| 状態 | PlantUML の状態図 | [図の例](examples/index.md) |
-
-処理の順番の図の例も、[図の書き方の例](examples/index.md) にあります。
+| 処理の順番 | PlantUML のシーケンス図 | [ログインするの処理フローの図（入口の図）](../apis/login/処理詳細.md#処理フローの図) |
+| 分かれ道 | PlantUML のアクティビティ図 | [ログインするの処理フローの図（処理のイメージ）](../apis/login/処理詳細.md#処理フローの図) |
+| データ | PlantUML の ER 図 | 記入例はまだありません |
+| 状態 | PlantUML の状態図 | 記入例はまだありません |
 
 スイムレーンの書き方は次のとおりです。全文は [業務フロー](business/プロフィールを公開する/flow.puml) にあります。
 
