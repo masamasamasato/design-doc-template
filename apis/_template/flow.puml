@@ -8,13 +8,38 @@ skinparam defaultFontName "Noto Sans CJK JP"
 title （APIの名前）
 
 start
-:1. （〜検証）\n（何と何を照合するかを1行）\nmethodName();
-note right: 番号は、設計書の「処理詳細」の番号と同じにする。\n例: 2. 持ち主・本人確認の検証 checkOwner()
-if ((〜か)。例: 持ち主で、本人確認が済んでいるか) then (1.1 （〜の場合）)
-  :（成功したら何をする）。例: 公開中にする;
-else (1.2 （〜の場合）)
-  :失敗を返す\n（コード）。例: NOT_VERIFIED;
+:1. リクエストバリデーション\n項目を条件と照合\n（methodName()）;
+if (すべての項目が条件に合うか) then (1.2 合わない場合)
+  :失敗を返す\n400 （コード）。例: INVALID_REQUEST;
+  note right: 何も保存しない
+  stop
+else (1.1 合う場合)
 endif
+:2. （〜検証）\n（何と何を照合するかを1行）。例: 持ち主と本人確認\n（methodName()）;
+if ((〜か)。例: 持ち主で、本人確認が済んでいるか) then (2.2 （〜の場合）)
+  :失敗を返す\n（ステータスとコード）。例: 403 NOT_VERIFIED;
+  note right: （保存・削除）。例: 何も保存しない
+  stop
+else (2.1 （〜の場合）)
+endif
+:3. （外部APIを呼ぶ手順）\n（methodName()）;
+:外部API：（サービス名）\n（役割を1行）; <<#E3F2FD>>
+note right
+  タイムアウト：（例：3秒）
+  再試行：（例: しない（例：0回））
+  失敗時：（ステータスとコード）
+end note
+switch (HTTPステータス)
+case (3.2 404 の場合)
+  :失敗を返す\n404 （コード）。例: NOT_FOUND;
+  stop
+case (3.3 200・404 以外、\nまたは返事が無い場合)
+  :失敗を返す\n503 （コード）。例: SERVICE_UNAVAILABLE;
+  stop
+case (3.1 200 の場合)
+endswitch
+:4. 成功を返す\n（ステータス）。例: 200;
+note right: （保存・削除）。例: 状態を公開中に、publishedAt に日時
 stop
 
 @enduml
