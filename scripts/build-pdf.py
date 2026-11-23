@@ -82,6 +82,10 @@ button[title] {{ display: none !important; }}
 /* 大きい図は、その図だけのページに載せる（用紙の大きさは図ごとに @page で決める） */
 .pdf-figure[data-own] {{ break-before: page; break-after: page; }}
 .pdf-lead {{ max-width: {CONTENT_W_PX}px; }}
+/* Chromium は、1ページ目の用紙の幅で全体を組む。1ページ目が大きい図のページだと、表や文が A4 の幅を
+   はみ出して切れるため、1本の PDF では、図だけのページ以外の本文を A4 の幅に収める（まとめた PDF の
+   1ページ目は目次で A4 なので、何もしない） */
+.md-typeset:not(:has(> .pdf-page)) > :not(.pdf-mark, .pdf-figure[data-own]) {{ max-width: {PAGE_W_MM - MARGIN_MM["left"] - MARGIN_MM["right"]}mm; }}
 .pdf-fig-title {{ font-weight: 700; }}
 .md-typeset table:not([class]) {{ display: table; width: 100%; font-size: 9pt; }}
 .md-typeset table:not([class]) tr {{ break-inside: avoid; }}
