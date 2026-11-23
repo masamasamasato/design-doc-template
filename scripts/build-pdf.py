@@ -436,8 +436,8 @@ WIDE_TABLES_JS = """
 # 図を、文字が読める大きさにする JS。
 # - 画像だけの段落を div.pdf-figure で包み、すぐ後の「ソース:」の段落も中に入れる（同じページに置くため）。
 # - 図は、A4 縦の幅と高さに収まる大きさにする。その倍率が BODY_MIN_SCALE より小さい図と、
-#   インフラ構成の図は等倍にし、data-own を付ける。あとで PAGES_JS が、図の大きさに合わせた用紙の
-#   ページにする。前の節の本文の残りには詰めない。
+#   画像に pdf-own-page の印がある図（インフラ構成の図）は等倍にし、data-own を付ける。
+#   あとで PAGES_JS が、図の大きさに合わせた用紙のページにする。前の節の本文の残りには詰めない。
 #   図の直前の見出しと導入文（合わせて H の半分まで）も、div.pdf-lead にして図のページの上に載せる。
 #   前のページに見出しと数行だけが残って、ほぼ空になるのを防ぎ、図のページで何の図か分かるようにする。
 # - SVG の文字の上下の位置を data-texts に残す。あとで図を分けるとき、文字の無い行で切るのに使う。
@@ -486,9 +486,9 @@ async ([W, H, BODY_MIN]) => {
       if (/^H[1-6]$/.test(el.tagName)) break;
       el = el.previousElementSibling;
     }
-    // インフラ構成の図も、大きさに関わらず、図の大きさに合わせた1ページに等倍で載せる
-    const isInfra = new URL(img.src).pathname.includes('/docs/infra/');
-    if (scale < BODY_MIN || isInfra) {
+    // インフラ構成の図は、原稿の画像に付けた印（pdf-own-page）で、大きさに関わらず等倍の専用ページにする
+    const isOwn = img.classList.contains('pdf-own-page');
+    if (scale < BODY_MIN || isOwn) {
       scale = 1;
       fig.dataset.own = '1';
       const box = document.createElement('div');
@@ -730,17 +730,24 @@ def fit_figures(page: Page, label: str) -> None:
                 content = height - top_margin - bottom_margin
                 blank = bottoms[number - 1] - bottom_margin
                 above = (height - top_margin) - high
-                if blank < content * 0.2 or above > 90:
+                # 図のページの上に見出しがあるとき（見出しは break-after: avoid で図と一緒に送られる）も詰める。
+                # 見出しと導入の高さ（本文の 1/4 まで）は、図がページ先頭に近いと見て許容する。
+                if blank < content * 0.2 or above > content * 0.25:
                     continue
                 figure_h = high - low
                 image_h = natural_h * scale * PT_PER_PX
-                room = blank - above - 10
+                # 前のページがほぼ空（本文が 1/4 未満）のときは、本文に置く図の下限まで縮めてよい。
+                # 余裕は多めに取る。見出しがページ途中に来ると、ページ先頭では潰れていた上余白が乗るため。
+                almost_blank = blank >= content * 0.75
+                slack = 60 if almost_blank else 10
+                min_scale = BODY_MIN_SCALE if almost_blank else scale * 0.85
+                room = blank - above - slack
                 new_scale = scale * (room - (figure_h - image_h)) / image_h
                 if own:
                     # 図だけのページに載せる図は、縮めも分けもしない
                     page.evaluate(FIX_JS, [index, "none", 0])
                     continue
-                if new_scale >= scale * 0.85:
+                if new_scale >= min_scale:
                     page.evaluate(FIX_JS, [index, "shrink", new_scale])
                 elif page.evaluate(FIX_JS, [index, "split", room / PT_PER_PX - 30]):
                     pass
@@ -1015,11 +1022,51 @@ def build_combined(browser: Browser, base: str, site: Path, entries, out: Path, 
     print(f"作りました: {shown(out)}（{len(pages)}ページ分、{len(PdfReader(str(out)).pages)}枚）")
 
 
+# インフラ構成の図に付ける、等倍の専用ページの印。公開パスでは判定しない（パスが変わっても外れない）。
+OWN_PAGE_CLASS = "pdf-own-page"
+IMAGE_REF = re.compile(
+    r'!\[[^\]]*\]\(\s*([^\s)]+)(?:\s+"[^"]*")?\s*\)\s*(\{:[^}]*\})?',
+)
+
+
+def check_own_page_marks() -> None:
+    """docs/infra の図に、等倍専用ページの印があるかを見る。無いと専用ページから外れる。"""
+    missing: list[str] = []
+    suffixes = {".svg", ".png", ".jpg", ".jpeg", ".gif", ".webp"}
+    for path in ROOT.rglob("*.md"):
+        if any(part.startswith("_") or part in {".venv", "site", "pdf", "node_modules"} for part in path.parts):
+            continue
+        text = path.read_text(encoding="utf-8")
+        for match in IMAGE_REF.finditer(text):
+            target = match.group(1).split()[0]
+            attrs = match.group(2) or ""
+            dest = path.parent / target
+            try:
+                resolved = dest.resolve()
+            except OSError:
+                continue
+            if resolved.suffix.lower() not in suffixes:
+                continue
+            try:
+                resolved.relative_to((ROOT / "docs" / "infra").resolve())
+            except ValueError:
+                continue
+            if OWN_PAGE_CLASS not in attrs:
+                missing.append(f"{path.relative_to(ROOT)}: {match.group(0)}")
+    if missing:
+        raise SystemExit(
+            "インフラ構成の図に、等倍専用ページの印（クラス pdf-own-page）がありません。\n"
+            + "\n".join(missing)
+        )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--site", type=Path, required=True, help="mkdocs build の出力")
     parser.add_argument("--out", type=Path, required=True, help="PDF を出すフォルダ")
     args = parser.parse_args()
+
+    check_own_page_marks()
 
     config = yaml.load((ROOT / "mkdocs.yml").read_text(encoding="utf-8"), Loader=_Loader)
     entries = [
