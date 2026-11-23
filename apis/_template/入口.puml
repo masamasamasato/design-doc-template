@@ -14,10 +14,10 @@ participant "（APIの名前）" as API
 User -> Screen : （操作）。例: 公開する
 Screen -> API : （メソッドとパス）。例: POST /profiles/{id}/publish
 API -> API : （N. 〜検証）\n（何と何を照合するかを1行）
-alt （成功する条件。〜の場合）。例: 本人確認が済んでいる場合
+alt （成功する条件。何が何と合う〜の場合）。例: 利用者の本人確認が済んでいる場合
   API --> Screen : （200 と返すもの）
   Screen --> User : （画面に出す言葉）。例: 公開できた
-else （失敗する条件。〜の場合）。例: 本人確認が済んでいない場合
+else （失敗する条件。何が何と合わない〜の場合）。例: 利用者の本人確認が済んでいない場合
   API --> Screen : （コード）。例: 403 NOT_VERIFIED
   Screen --> User : （画面に出す言葉）。例: 先に本人確認が必要
 end

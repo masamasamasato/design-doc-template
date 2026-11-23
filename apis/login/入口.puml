@@ -14,24 +14,24 @@ participant "認証API" as API
 User -> Screen : ログインする
 Screen -> API : POST /sessions
 API -> API : 1. リクエストバリデーション\n本文の項目を条件と照合
-alt 本文のいずれかの項目が条件に合わない場合
+alt 本文のいずれかの項目が、手順1の条件に合わない場合
   API --> Screen : 400 INVALID_REQUEST\n何も保存しない
   Screen --> User : 入力を直すよう表示する
-else 本文のすべての項目が条件に合う場合
+else 本文のすべての項目が、手順1の条件に合う場合
   API -> API : 2. ロック判定\n3. メアド・パスワード検証
-  alt ロック中（連続5回失敗から15分以内）の場合
+  alt そのメールアドレスがロック中（連続5回失敗から15分以内）の場合
     API --> Screen : 403 ACCOUNT_LOCKED\n何も保存しない
     Screen --> User : 15分間ログインできない
     note right of Screen : 例：15分たつと自動で解除
-  else メールアドレス・パスワードが正しい場合
+  else 入力パスワードが保存済みのハッシュと合う場合
     API -> API : 4. セッションを保存する
     API -> API : 5. ログイン通知メールを送る
     API --> Screen : 6. 200 Cookie でセッションを返す\n失敗回数を消す
     Screen --> User : ログインできた
-  else メールアドレス・パスワードが異なり、この失敗が連続5回目の場合
+  else 入力パスワードが保存済みのハッシュと合わない場合で、この失敗がそのメールアドレスの連続5回目の場合
     API --> Screen : 403 ACCOUNT_LOCKED\nロックを保存する
     Screen --> User : 15分間ログインできない
-  else メールアドレス・パスワードが異なり、連続失敗が4回以下の場合
+  else 入力パスワードが保存済みのハッシュと合わない場合で、この失敗でそのメールアドレスの連続失敗が4回以下の場合
     API --> Screen : 401 INVALID_CREDENTIALS\n失敗回数を1増やす
     Screen --> User : ログインできない
   end
