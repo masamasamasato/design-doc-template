@@ -20,7 +20,7 @@ alt Cookie が無い または Cookie のセッションIDが保存済みの有�
 else Cookie のセッションIDが保存済みの有効なセッションと合う場合
   API -> API : 2. チャレンジ発行
   API --> Screen : 200 チャレンジ\nチャレンジを保存する
-  note right of Screen : 例：チャレンジは1回限りで、5分で消える
+  note right of Screen : チャレンジは1回限りで、例：5分で消える
   Screen --> User : 端末で登録する（PIN か生体認証）
   User -> Screen : 端末がパスキーを作り、\nattestation を返す
   Screen -> API : POST /passkeys

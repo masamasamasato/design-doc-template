@@ -34,7 +34,7 @@ elseif (呼び出しが POST /passkeys の場合) then (登録する場合)
     :失敗を返す\n400 INVALID_DEVICE_NAME;
     note right: 削除：チャレンジ。パスキーは保存しない
     stop
-  else (4.1 30文字以内の場合\n（無い・空も含む）)
+  else (4.1 例：30文字以内の場合\n（無い・空も含む）)
   endif
   :5. 保存して成功を返す\n200;
   note right: 保存：公開鍵、credential ID、署名カウンタ、端末名。\n端末名が無い・空なら「端末」。削除：チャレンジ
