@@ -89,10 +89,17 @@ button[title] {{ display: none !important; }}
 .md-typeset table:not([class]) tr {{ break-inside: avoid; }}
 /* 表のセルの最後の行に1字だけ残らないよう、行の折り返しを整える（例:「…15分ロックす／る」） */
 .md-typeset table:not([class]) td {{ text-wrap: pretty; }}
+/* 段落などの最後の4字は折り返さない（TAILS_JS） */
+.pdf-tail {{ white-space: nowrap; }}
 .md-typeset table:not([class]) th, .md-typeset table:not([class]) td {{ padding: 0.6em 0.8em; }}
 /* 表の中のコード（application/json など）は、途中で折り返さない */
 .md-typeset table:not([class]) .pdf-nowrap {{ white-space: nowrap; }}
 .md-typeset table:not([class]) code {{ white-space: nowrap; word-break: keep-all; overflow-wrap: normal; }}
+/* A4 の本文の幅に収まらない表だけ（WIDE_TABLES_JS が data-wide を付ける）、段階を上げてコードを折り返す。
+   1: 空白で折り返す（例:「POST /account-recovery/confirm」）。2: さらに / - _ . @ の後でも折り返す（WIDE_TABLES_JS が
+   <wbr> を入れる。例:「/account-recovery/」「confirm」）。3: それでも収まらないときだけ、どこでも折り返す */
+.md-typeset table[data-wide] code {{ white-space: normal; }}
+.md-typeset table[data-wide="3"] code {{ overflow-wrap: anywhere; }}
 .md-typeset .md-typeset__scrollwrap, .md-typeset .md-typeset__table {{ overflow: visible !important; display: block; }}
 /* サイトの表は左右に少しはみ出す作りで、印刷では全体が縮むため、はみ出さないようにする */
 .md-typeset .md-typeset__scrollwrap {{ margin: 1em 0 !important; }}
@@ -105,6 +112,8 @@ button[title] {{ display: none !important; }}
 .pdf-toc .pdf-toc-group {{ font-weight: 700; margin-top: 0.6em; }}
 /* 目次は1ページに収める */
 .md-typeset .pdf-toc li {{ margin-bottom: 0.3em; }}
+/* 目次の字は 9pt。本文と同じ 10.5pt だと、目次が2ページになる */
+.md-typeset .pdf-toc {{ font-size: 9pt; }}
 /* 文書の最後のページ（図だけのページの前のページも）が数行だけになるとき、その文書だけ字を少し小さくして詰める */
 .md-typeset.pdf-tight-1, .md-typeset .pdf-tight-1 {{ font-size: 10pt; }}
 .md-typeset.pdf-tight-2, .md-typeset .pdf-tight-2 {{ font-size: 9.5pt; }}
@@ -316,6 +325,58 @@ SHORT_CELLS_JS = """
 })
 """
 
+# 段落・箇条書き・表のセルの最後の4字を、1つの塊にして途中で折り返さない JS。最後の行に1字だけ（例:「ん。」「い」）
+# が落ちるのを防ぐ。折り返しが最後の4字の中に来るときだけ、4字まとめて次の行に送る。
+TAILS_JS = """
+() => document.querySelectorAll('article p, article li, article td, article th').forEach(el => {
+  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  let last = null;
+  for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+    if (n.textContent.trim() && n.parentElement.closest('p, li, td, th') === el) last = n;
+  }
+  if (!last || last.parentElement.closest('.pdf-nowrap, pre')) return;
+  const text = last.textContent.replace(/\\s+$/, '');
+  if ([...text].length < 5) return;
+  const cut = text.length - [...text].slice(-4).join('').length;
+  const tail = last.splitText(cut);
+  if (tail.textContent.length > text.length - cut) tail.splitText(text.length - cut);
+  const span = document.createElement('span');
+  span.className = 'pdf-tail';
+  tail.before(span);
+  span.appendChild(tail);
+})
+"""
+
+# A4 の本文の幅（W）より広い表に、コードを折り返す段階（data-wide）を付ける JS。広い表が1つでもあると、
+# Chromium はその文書全体を縮めて印刷する（まとめた PDF では全部の文書が縮む）。収まる表は変えない。
+WIDE_TABLES_JS = """
+(W) => {
+  const root = document.querySelector('article.md-content__inner');
+  const width = root.style.width;
+  root.style.width = W + 'px';
+  // 箇条書きの中の表は字下げの分だけ狭いので、幅ではなく右端で比べる
+  const right = root.getBoundingClientRect().left + W + 0.5;
+  const wide = [];
+  root.querySelectorAll('table').forEach(table => {
+    const before = Math.round(table.getBoundingClientRect().width);
+    for (const level of ['1', '2', '3']) {
+      if (table.getBoundingClientRect().right <= right) break;
+      table.dataset.wide = level;
+      if (level === '2') table.querySelectorAll('code').forEach(code => {
+        // 区切りの後ろが2字以上残るところだけに入れる（1字だけ次の行に落ちないように）
+        const text = code.textContent;
+        const parts = text.split(/(?<=[\\/\\-_.@])(?=[^\\/\\-_.@]{2})/);
+        if (parts.length < 2) return;
+        code.replaceChildren(...parts.flatMap((part, i) => i ? [document.createElement('wbr'), part] : [part]));
+      });
+    }
+    if (table.dataset.wide) wide.push([table.dataset.wide, before, Math.round(table.getBoundingClientRect().right - right + 0.5)]);
+  });
+  root.style.width = width;
+  return wide;
+}
+"""
+
 # 図を、文字が読める大きさにする JS。
 # - 画像だけの段落を div.pdf-figure で包み、すぐ後の「ソース:」の段落も中に入れる（同じページに置くため）。
 # - 図は、A4 縦の幅と高さに収まる大きさにする。その倍率が BODY_MIN_SCALE より小さい図は等倍にし、
@@ -498,6 +559,10 @@ def open_page(browser: Browser, url: str, links: dict | None = None, short_ids: 
     # 閉じた details も中身を印刷する
     page.evaluate("document.querySelectorAll('details').forEach(d => d.open = true)")
     page.evaluate(SHORT_CELLS_JS)
+    page.evaluate(TAILS_JS)
+    for level, width, over in page.evaluate(WIDE_TABLES_JS, CONTENT_W_PX):
+        note = "" if over <= 0 else f"、まだ {over}px はみ出す"
+        print(f"  広い表のコードを折り返しました: {unquote(url.split('/', 3)[-1])}（段階{level}、元の幅 {width}px{note}）")
     page.evaluate(FIGURES_JS, [CONTENT_W_PX, CONTENT_H_PX, BODY_MIN_SCALE])
     page.evaluate("document.fonts.ready")
     return page
