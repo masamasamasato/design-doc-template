@@ -12,6 +12,9 @@
 - 同じPR番号とタイトルの行がファイルにあれば、二重に足さない。
 - 古い形の行（`YYYY-MM-DD #40 タイトル`、`- \\#40 タイトル`、`- #40 タイトル`）が残っていれば、先にこの形へ直す。
 - PRのURLは、GITHUB_SERVER_URL と GITHUB_REPOSITORY から作る。無いときは git remote（origin）から作る。
+- ファイルの先頭は「# 変更履歴」だけ。書き方の説明は docs/guide.md に置く。
+  前の形で先頭にあった自動の説明（「`main` へマージすると…」「形式は…」）が残っていれば、消す。
+- ファイルが無いときは、「# 変更履歴」だけのファイルを作ってから足す。
 フォルダ名が _ で始まるもの（apis/_template など）は対象外。"""
 
 from __future__ import annotations
@@ -44,11 +47,10 @@ def changed_files(base: str, head: str) -> list[str]:
 HEADING = re.compile(r"^## (\d{4}-\d{2}-\d{2})\s*$")
 OLD_LINE = re.compile(r"^(\d{4}-\d{2}-\d{2}) #(\d+) (.*)$")
 ITEM = re.compile(r"^- (?:\\?#(\d+)|\[#(\d+)\]\([^)]*\)) (.*)$")
-NEW_FILE_INTRO = (
-    "# 変更履歴\n\n"
-    "`main` へマージすると、マージした日の見出しの下に1行足されます。\n\n"
-    "形式は、見出し `## YYYY-MM-DD` の下に `- [#PR番号](PRのURL) PRタイトル` です。\n"
-)
+TITLE = "# 変更履歴"
+NEW_FILE_INTRO = TITLE + "\n"
+# 前の形で、先頭に自動で書いていた説明の行。足すときに消す。
+OLD_INTRO = re.compile(r"^(`main` へマージすると、.*足されます。|形式は.*です。.*|例: `\d{4}-\d{2}-\d{2} #\d+ .*`)$")
 
 
 def repo_url() -> str:
@@ -105,9 +107,18 @@ def split(text: str, url: str) -> tuple[list[str], list[tuple[str, list[str]]]]:
                 sections[-1][1].append(make_item(url, *key) if key else raw)
         else:
             intro.append(raw)
+    intro = [line for line in intro if not OLD_INTRO.match(line)]
     while intro and not intro[-1].strip():
         intro.pop()
-    return intro, sections
+    while intro and not intro[0].strip():
+        intro.pop(0)
+    if not intro:
+        intro = [TITLE]
+    cleaned: list[str] = []
+    for line in intro:
+        if line.strip() or (cleaned and cleaned[-1].strip()):
+            cleaned.append(line)
+    return cleaned, sections
 
 
 def join(intro: list[str], sections: list[tuple[str, list[str]]]) -> str:
