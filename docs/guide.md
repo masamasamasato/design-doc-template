@@ -30,8 +30,10 @@ CLAUDE.md                         Claude Code 向け。AGENTS.md を読む
 docs/guide.md                     書き方と自動化（AI向け）
 docs/setup.md                     GitHub の設定（権限、Pages、PREVIEW_TOKEN）
 docs/usage-flow.puml              README に載せる、ドキュメントを書く流れ
+docs/business/index.md            業務フローの入口（一覧）
 docs/business/<業務>/             業務フロー（README、flow.puml、変更履歴.md）
 docs/infra/                       記入例。AWSのインフラ構成図
+apis/index.md                     API設計書の入口（一覧）
 apis/_template/                   新しいAPIを作るときにコピーする型
 apis/<名前>/                      APIの設計書。下は記入例
 apis/publish-profile/             記入例。プロフィール公開API
@@ -60,7 +62,7 @@ scripts/                          ローカル変換、履歴の追記、PDF の
 
 ## 書き方の決まり
 
-README は、人が読む最低限だけを書きます。ルートの README の詳細（命名規則、書き方のルール、やってはいけないこと、手順の詳細、チェックリスト、図の書き方の細則）は、このページに置きます。ほかの README で AI向けの補足を書くときは、`<details>` に入れて閉じます。`summary` は `AI向け：` で始めます。GitHub では `summary` のあと空行が必要です。MkDocs では `<details markdown>` を使い、`md_in_html` を有効にします。
+README は、人が読む最低限だけを書きます。ルートの README のリンクは、領域の入口だけを表にします。個別の業務フローや個別のAPIは、各入口の一覧からたどります。ルートの README の詳細（命名規則、書き方のルール、やってはいけないこと、手順の詳細、チェックリスト、図の書き方の細則）は、このページに置きます。ほかの README で AI向けの補足を書くときは、`<details>` に入れて閉じます。`summary` は `AI向け：` で始めます。GitHub では `summary` のあと空行が必要です。MkDocs では `<details markdown>` を使い、`md_in_html` を有効にします。
 
 見出し `##` が2つ以上あるドキュメントは、冒頭（`#` のタイトルとリード文の直後）に「目次」の節を置きます。目次は `python3 scripts/update-toc.py` で作り直します。手で書きません。
 
@@ -231,7 +233,7 @@ cp -a apis/_template apis/予約を確定する
 cp -a docs/business/プロフィールを公開する docs/business/予約を確定する
 ```
 
-コピーした `変更履歴.md` は、「# 変更履歴」の1行だけに戻し、コピー元の履歴の行は消します。`mkdocs.yml` の nav に、新しいフォルダの README と変更履歴を追加します。フォルダ名に `/` は使いません。パスが壊れるためです。
+コピーした `変更履歴.md` は、「# 変更履歴」の1行だけに戻し、コピー元の履歴の行は消します。`mkdocs.yml` の nav に、新しいフォルダの README と変更履歴を追加します。`docs/business/index.md` または `apis/index.md` の一覧にも、名前と役割を1行足します。フォルダ名に `/` は使いません。パスが壊れるためです。
 
 ## 図の変換とローカルプレビュー
 

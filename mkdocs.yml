@@ -72,6 +72,7 @@ nav:
   - 書き方と自動化（AI向け）: docs/guide.md
   - 用語集: 用語集.md
   - 業務フロー:
+      - 一覧: docs/business/index.md
       - プロフィールを公開する:
           - 概要: docs/business/プロフィールを公開する/README.md
           - 変更履歴: docs/business/プロフィールを公開する/変更履歴.md
@@ -86,6 +87,7 @@ nav:
           - 変更履歴: docs/business/パスキーの端末をなくす/変更履歴.md
   - インフラ構成: docs/infra/index.md
   - API:
+      - 一覧: apis/index.md
       - 新しいAPIの型:
           - 入口: apis/_template/README.md
           - 設計書: apis/_template/処理詳細.md
