@@ -184,17 +184,21 @@ dialog.doc-zoom::backdrop {
 .test-cases,
 .test-cases .md-typeset__table {
   overflow-x: auto;
+  max-width: 100%;
 }
 .test-cases table:not([class]) {
   table-layout: fixed;
-  width: 100%;
+  width: 100% !important;
+  max-width: 100%;
 }
 .test-cases table:not([class]) th,
 .test-cases table:not([class]) td {
   min-width: 0;
 }
 .test-cases table:not([class]) code {
-  white-space: nowrap;
+  white-space: nowrap !important;
+  word-break: keep-all;
+  overflow-wrap: normal;
 }
 /* 観点・備考は短く折り返してよい（PDF の短いセル nowrap も外す） */
 .md-typeset .test-cases table:not([class]) th:nth-child(2),
@@ -222,12 +226,20 @@ dialog.doc-zoom::backdrop {
 .test-cases table:not([class]) th:nth-child(3),
 .test-cases table:not([class]) td:nth-child(3),
 .test-cases table:not([class]) th:nth-child(4),
-.test-cases table:not([class]) td:nth-child(4),
+.test-cases table:not([class]) td:nth-child(4) {
+  width: 20%;
+}
 .test-cases table:not([class]) th:nth-child(5),
 .test-cases table:not([class]) td:nth-child(5) {
-  width: 22%;
+  width: 21%;
 }
 .test-cases table:not([class]) th:nth-child(7),
 .test-cases table:not([class]) td:nth-child(7) {
-  width: 8%;
+  /* 13%。「パスワード」が1語で収まり、長い文は語の途中で折らない */
+  width: 13%;
+  padding-left: 0.5em;
+  padding-right: 0.5em;
+  word-break: keep-all;
+  word-break: auto-phrase;
+  overflow-wrap: anywhere;
 }
