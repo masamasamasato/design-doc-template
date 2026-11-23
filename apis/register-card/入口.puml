@@ -14,16 +14,15 @@ participant "決済サービス" as PSP
 
 User -> Screen : カードを登録する
 Screen -> API : POST /cards/setup
-API -> API : セッション検証\nrequireSession()
-alt セッションの Cookie が無い、または無効な場合
+API -> API : 1. セッション検証
+alt Cookie が無い または Cookie のセッションIDが保存済みの有効なセッションと合わない場合
   API --> Screen : 401 UNAUTHORIZED\n何も保存しない
   Screen --> User : ログインが必要
-else セッションの Cookie が有効な場合
-  API -> API : カード登録の準備を作る\ncreateCardSetup()
-  API -> PSP : 利用者IDを付けて、登録の準備を作る
+else Cookie のセッションIDが保存済みの有効なセッションと合う場合
+  API -> PSP : 2. 利用者IDを付けて、登録の準備を作る
   PSP --> API : 準備
   API --> Screen : 200 準備\n自社には保存しない
-  note right of Screen : 準備は、カード番号を自社に渡さず\n決済サービスへ直接送るための材料
+  note right of Screen : 返事が無いときは 502 PAYMENT_PROVIDER_ERROR
   User -> Screen : カード番号・有効期限・CVC を入れる
   Screen -> PSP : カード番号・有効期限・CVC を送る
   note right of PSP : 自社サーバーは通さない
@@ -37,29 +36,30 @@ else セッションの Cookie が有効な場合
     PSP --> Screen : 決済サービスのエラー
     Screen --> User : このカードは登録できない
     note right of Screen : 自社APIは呼ばない。\n自社には何も保存しない
-  else 預かり番号が返る場合
+  else 決済サービスが預かり番号を返した場合
     PSP --> Screen : 預かり番号
     Screen -> API : POST /cards
-    API -> API : セッション検証、カード所有者検証、\n3Dセキュア・預かり番号の検証\nrequireSession()、verifyCardOwner()、savePaymentMethod()
-    alt セッションの Cookie が無い、または無効な場合
+    API -> API : 1. セッション検証
+    alt Cookie が無い または Cookie のセッションIDが保存済みの有効なセッションと合わない場合
       API --> Screen : 401 UNAUTHORIZED\n何も保存しない
       Screen --> User : ログインが必要
-    else 準備の利用者IDが今の利用者IDと違う、または既に他の利用者に結びついている場合
-      API --> Screen : 403 PAYMENT_METHOD_NOT_OWNED\n何も保存しない
-      Screen --> User : 登録できない
-    else 本人の番号で、3Dセキュアが必要なのに済んでいない場合
-      API --> Screen : 400 AUTHENTICATION_REQUIRED\n何も保存しない
-      Screen --> User : 本人認証をやり直す
-    else 本人の番号で、決済サービスが預かり番号を使えないと返す場合
-      API --> Screen : 400 INVALID_PAYMENT_METHOD\n何も保存しない
-      Screen --> User : このカードは登録できない
-    else 本人の番号で使え、同じカードを既に保存している場合
-      API --> Screen : 200 既に保存した預かり番号\n新しく保存しない
-      Screen --> User : 登録済みと表示する
-    else 本人の番号で使え、まだ保存していないカードの場合
-      API -> API : 預かり番号を保存する\nsavePaymentMethod()
-      API --> Screen : 200 ブランドと下4桁\n預かり番号と表示用の情報を保存する
-      Screen --> User : 登録できた
+    else Cookie のセッションIDが保存済みの有効なセッションと合う場合
+      API -> PSP : 3. 預かり番号を問い合わせる
+      PSP --> API : 準備の利用者ID、3Dセキュアの状態など
+      API -> API : 4. カード所有者検証\n5. 3Dセキュア・預かり番号の検証
+      alt 準備の利用者IDがセッションの利用者IDと一致しない\nまたは 預かり番号が既に他の利用者に結びついている場合
+        API --> Screen : 403 PAYMENT_METHOD_NOT_OWNED\n何も保存しない
+        Screen --> User : 登録できない
+      else 3Dセキュアが必要 かつ 本人認証が済んでいない場合
+        API --> Screen : 400 AUTHENTICATION_REQUIRED\n何も保存しない
+        Screen --> User : 本人認証をやり直す
+      else 本人認証が済んでいる（要らない場合も含む）\nかつ 決済サービスが預かり番号を使えないと返した場合
+        API --> Screen : 400 INVALID_PAYMENT_METHOD\n何も保存しない
+        Screen --> User : このカードは登録できない
+      else 本人認証が済んでいる（要らない場合も含む）\nかつ 決済サービスが預かり番号を使えると返した場合
+        API --> Screen : 6. 200 ブランドと下4桁\n同じカードなら、保存済みの預かり番号を返す
+        Screen --> User : 登録できた
+      end
     end
   end
 end

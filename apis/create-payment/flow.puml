@@ -1,5 +1,5 @@
 ' 深さ3。支払う処理のイメージ。
-' スイムレーンは業務フロー側に書く。ここはメソッドの順番だけを書く。
+' 箱の番号は、設計書（処理詳細.md）の「処理詳細」の番号と同じ。
 @startuml
 skinparam shadowing false
 skinparam defaultFontName "Noto Sans CJK JP"
@@ -10,62 +10,64 @@ title 支払う
 
 start
 note right: 支払い済みにするのは、決済サービスからの通知
-:セッション検証\nリクエストの Cookie を、保存済みの有効なセッションと照合\nrequireSession();
-if (セッションの Cookie が有効な場合) then (有効な場合)
-  :冪等キー検証\n保存済みのキーと、注文ID・預かり番号を照合\ncheckIdempotencyKey();
-  note right: キーは「利用者ID＋キー」で探す
-  switch (Idempotency-Key の状態)
-  case (ヘッダーにキーが無い場合)
-    :失敗を返す\n400 MISSING_IDEMPOTENCY_KEY;
-    note right: 保存しない。注文の状態は変えない
-  case (同じキーで、注文ID と\n預かり番号も同じ場合)
-    :前の結果をそのまま返す\n200 処理中、または 402 PAYMENT_DECLINED;
-    note right: 保存しない。二重に請求しない。\n502 のあとは 200 処理中を返し、\n決済サービスへ請求し直さない
-  case (同じキーで、注文ID または\n預かり番号が違う場合)
-    :失敗を返す\n422 IDEMPOTENCY_KEY_REUSED;
-    note right: 保存しない。注文の状態は変えない
-  case (同じキーが無い、または\n最初に受け取ってから24時間を過ぎた場合)
-    :カード所有者検証\n預かり番号を、本人が登録したカードと照合\nfindOwnCard();
-    if (預かり番号が本人の登録したカードの場合) then (本人のカードの場合)
-      :注文の状態検証\n注文の持ち主と状態を、今の利用者・未払いと照合\nstartPayment();
-      if (本人の注文で、未払いの場合) then (未払いの場合)
-        :注文を処理中にする;
-        note right: 保存：注文の状態を処理中に。\n支払額は画面から受け取らない
-        :外部API：決済サービス\n注文の金額を、同じキーで1回だけ請求する; <<#E3F2FD>>
-        note right
-          タイムアウト：例：10秒
-          再試行：しない。502 のあとも請求し直さない
-          失敗時：断られたら 402 PAYMENT_DECLINED。
-          返事が無い・通信に失敗したら 502 PAYMENT_PROVIDER_ERROR
-        end note
-        switch (決済サービスの返事)
-        case (請求を受け付けた場合)
-          :200 処理中を返す;
-          note right: 保存：キーと注文ID・預かり番号・結果（例：24時間）
-        case (請求を断った場合\n（カードが使えない など）)
-          if (注文がまだ処理中の場合) then (処理中の場合)
-            :注文を未払いに戻す;
-          else (支払い済み、または\n失敗になっている場合)
-            :注文の状態は変えない;
-          endif
-          :失敗を返す\n402 PAYMENT_DECLINED;
-          note right: 保存：キーと結果（例：24時間）。\n同じキーなら同じ 402
-        case (返事が無い、または\n通信に失敗した場合)
-          :失敗を返す\n502 PAYMENT_PROVIDER_ERROR;
-          note right: 注文は処理中のまま残す。\n保存：キーと結果（処理中）（例：24時間）。\n通知が例：30分来なければ、運用者へ警告する
-        endswitch
-      else (注文が無い、他人の注文、\nまたは処理中・支払い済み・失敗の場合)
-        :失敗を返す\n409 ORDER_NOT_PAYABLE;
-        note right: 保存しない。キーも保存しない。\n注文の状態は変えない。\n502 のあとに新しいキーで送られた場合もここ
-      endif
-    else (他人のカード、または\n無いカードの場合)
-      :失敗を返す\n404 CARD_NOT_FOUND;
-      note right: 保存しない。キーも保存しない。\n他人のカードか、無いカードかは区別しない
-    endif
-  endswitch
-else (セッションの Cookie が無い、\nまたは無効な場合)
+:1. セッション検証\nCookie のセッションIDを、保存済みの有効なセッションと照合;
+if (Cookie が無い または Cookie のセッションIDが\n保存済みの有効なセッションと合わない場合) then (1.2 セッションが\n合わない場合)
   :失敗を返す\n401 UNAUTHORIZED;
-  note right: 保存しない
+  note right: 何も保存しない
+  stop
+else (1.1 セッションが\n合う場合)
 endif
+:2. 冪等キー検証\n保存済みのキーの注文ID・預かり番号を、本文と照合;
+note right: キーは「利用者ID＋キー」で探す
+if (ヘッダーに Idempotency-Key が無い場合) then (2.1 キーが無い場合)
+  :失敗を返す\n400 MISSING_IDEMPOTENCY_KEY;
+  note right: 何も保存しない
+  stop
+elseif (同じキーがある\nかつ 注文ID・預かり番号が前と同じ場合) then (2.2 前と同じ場合)
+  :前の結果をそのまま返す\n200 処理中、または 402 PAYMENT_DECLINED;
+  note right: 何も保存しない。二重に請求しない。\n502 のあとは 200 処理中を返す
+  stop
+elseif (同じキーがある\nかつ 注文ID・預かり番号のいずれかが前と違う場合) then (2.3 前と違う場合)
+  :失敗を返す\n422 IDEMPOTENCY_KEY_REUSED;
+  note right: 何も保存しない
+  stop
+else (2.4 同じキーが無い\nまたは 24時間を過ぎた場合)
+endif
+:3. カード所有者検証\n預かり番号を、本人が登録したカードと照合;
+if (本文の預かり番号が、\n本人が登録したカードのどれとも合わない場合) then (3.2 合わない場合)
+  :失敗を返す\n404 CARD_NOT_FOUND;
+  note right: キーも含め、何も保存しない。\n他人のカードか、無いカードかは区別しない
+  stop
+else (3.1 合う場合)
+endif
+:4. 注文の状態検証\n注文の持ち主と状態を、今の利用者・未払いと照合;
+if (注文が無い または 注文の持ち主が本人でない\nまたは 注文の状態が未払いでない場合) then (4.2 支払えない場合)
+  :失敗を返す\n409 ORDER_NOT_PAYABLE;
+  note right: キーも含め、何も保存しない。\n502 のあとに新しいキーで送られた場合もここ
+  stop
+else (4.1 本人の未払いの\n注文の場合)
+  :注文を処理中にする;
+  note right: 保存：注文の状態を処理中に
+endif
+:5. 決済サービスへの請求\n注文の金額を、同じキーで1回だけ請求;
+:外部API：決済サービス\n注文の金額を、同じキーで1回だけ請求する; <<#E3F2FD>>
+note right
+  タイムアウト：例：10秒
+  再試行：しない。502 のあとも請求し直さない
+  失敗時：断られたら 402 PAYMENT_DECLINED。
+  返事が無い・通信に失敗したら 502 PAYMENT_PROVIDER_ERROR
+end note
+if (決済サービスが請求を断った場合) then (5.2 断った場合)
+  :失敗を返す\n402 PAYMENT_DECLINED;
+  note right: 注文がまだ処理中なら未払いに戻す。\n保存：キーと結果（例：24時間）
+  stop
+elseif (決済サービスから返事が無い\nまたは 通信に失敗した場合) then (5.3 返事が無い場合)
+  :失敗を返す\n502 PAYMENT_PROVIDER_ERROR;
+  note right: 注文は処理中のまま。\n保存：キーと結果（処理中）（例：24時間）。\n通知が例：30分来なければ、運用者へ警告する
+  stop
+else (5.1 受け付けた場合)
+endif
+:6. 成功を返す\n200 処理中;
+note right: 保存：キーと注文ID・預かり番号・結果（例：24時間）
 stop
 @enduml

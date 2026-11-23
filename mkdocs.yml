@@ -133,23 +133,19 @@ nav:
           - 変更履歴: apis/recover-account/変更履歴.md
       - 記入例 カードを登録する:
           - 入口: apis/register-card/README.md
-          - 用語: apis/register-card/用語.md
-          - 処理詳細: apis/register-card/処理詳細.md
+          - 設計書: apis/register-card/処理詳細.md
           - 変更履歴: apis/register-card/変更履歴.md
       - 記入例 支払う:
           - 入口: apis/create-payment/README.md
-          - 用語: apis/create-payment/用語.md
-          - 処理詳細: apis/create-payment/処理詳細.md
+          - 設計書: apis/create-payment/処理詳細.md
           - 変更履歴: apis/create-payment/変更履歴.md
       - 記入例 注文の状態を見る:
           - 入口: apis/get-order/README.md
-          - 用語: apis/get-order/用語.md
-          - 処理詳細: apis/get-order/処理詳細.md
+          - 設計書: apis/get-order/処理詳細.md
           - 変更履歴: apis/get-order/変更履歴.md
       - 記入例 決済の結果を受け取る:
           - 入口: apis/payment-webhook/README.md
-          - 用語: apis/payment-webhook/用語.md
-          - 処理詳細: apis/payment-webhook/処理詳細.md
+          - 設計書: apis/payment-webhook/処理詳細.md
           - 変更履歴: apis/payment-webhook/変更履歴.md
   - 決定記録:
       - テンプレートの方針: decisions/0000-template.md
