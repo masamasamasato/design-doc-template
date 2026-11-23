@@ -148,7 +148,30 @@ dialog.doc-zoom::backdrop {
   color: #f2f2f2;
 }
 
-/* テストケースの表（列が多い）。用紙と画面の幅に収める。観点の列は、短い見出しが隣の列へはみ出さない幅にする */
+/* 見出しや長い表が、上部の検索ボタンに隠れないようにする。
+   表の overflow が作る重ね順で、ヘッダーの検索より手前に出ないようにする */
+.md-typeset h1,
+.md-typeset h2,
+.md-typeset h3,
+.md-typeset .test-cases {
+  scroll-margin-top: calc(var(--md-header-height, 3.6rem) + 0.5rem);
+}
+.md-header,
+.md-search,
+.md-search__form,
+.md-search__inner {
+  z-index: 10;
+}
+.md-main,
+.md-typeset .md-typeset__table,
+.md-typeset table,
+.test-cases {
+  position: relative;
+  z-index: 0;
+}
+
+/* テストケースの表（列が多い）。No・観点・結果・備考を狭め、手順・期待値・実測値を広くする。
+   コードは途中で折らない。min-width:0 で、短い列が内容の最小幅より狭くできるようにする */
 .test-cases,
 .test-cases .md-typeset__table {
   overflow-x: auto;
@@ -156,19 +179,42 @@ dialog.doc-zoom::backdrop {
 .test-cases table:not([class]) {
   table-layout: fixed;
   width: 100%;
-  overflow-wrap: anywhere;
+}
+.test-cases table:not([class]) th,
+.test-cases table:not([class]) td {
+  min-width: 0;
+}
+.test-cases table:not([class]) code {
+  white-space: nowrap;
+}
+/* 観点・備考は短く折り返してよい（PDF の短いセル nowrap も外す） */
+.md-typeset .test-cases table:not([class]) th:nth-child(2),
+.md-typeset .test-cases table:not([class]) td:nth-child(2),
+.md-typeset .test-cases table:not([class]) th:nth-child(7),
+.md-typeset .test-cases table:not([class]) td:nth-child(7) {
+  white-space: normal !important;
 }
 .test-cases table:not([class]) th:nth-child(1),
 .test-cases table:not([class]) td:nth-child(1),
 .test-cases table:not([class]) th:nth-child(6),
 .test-cases table:not([class]) td:nth-child(6) {
-  width: 7%;
+  width: 5%;
+  min-width: 3.6em;
+  white-space: nowrap;
 }
 .test-cases table:not([class]) th:nth-child(2),
 .test-cases table:not([class]) td:nth-child(2) {
-  width: 22%;
+  width: 10%;
+}
+.test-cases table:not([class]) th:nth-child(3),
+.test-cases table:not([class]) td:nth-child(3),
+.test-cases table:not([class]) th:nth-child(4),
+.test-cases table:not([class]) td:nth-child(4),
+.test-cases table:not([class]) th:nth-child(5),
+.test-cases table:not([class]) td:nth-child(5) {
+  width: 23%;
 }
 .test-cases table:not([class]) th:nth-child(7),
 .test-cases table:not([class]) td:nth-child(7) {
-  width: 13%;
+  width: 11%;
 }
