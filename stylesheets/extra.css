@@ -162,7 +162,6 @@ dialog.doc-zoom::backdrop {
 .md-search__inner {
   z-index: 10;
 }
-.md-main,
 .md-typeset .md-typeset__table,
 .md-typeset table,
 .test-cases {
