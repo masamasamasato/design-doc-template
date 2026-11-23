@@ -15,6 +15,8 @@
   let viewport = null;
   let stage = null;
   let closeBtn = null;
+  let plusBtn = null;
+  let minusBtn = null;
   let natW = 1;
   let natH = 1;
   let scale = 1;
@@ -43,8 +45,15 @@
     });
   };
 
+  const updateZoomButtons = () => {
+    if (!minusBtn || !plusBtn) return;
+    minusBtn.disabled = scale <= fit + 1e-6;
+    plusBtn.disabled = scale >= maxScale() - 1e-6;
+  };
+
   const apply = () => {
     if (stage) stage.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`;
+    updateZoomButtons();
   };
 
   const viewRect = () => viewport.getBoundingClientRect();
@@ -94,13 +103,21 @@
   const destroy = () => {
     unlock();
     if (dialog) dialog.remove();
-    dialog = viewport = stage = closeBtn = null;
+    dialog = viewport = stage = closeBtn = plusBtn = minusBtn = null;
     pointers = new Map();
     pinch = drag = null;
     openSeq += 1;
   };
 
   const isSvgUrl = (src) => /\.svg(?=([?#]|$))/i.test(src || "");
+
+  const isSameOrigin = (src) => {
+    try {
+      return new URL(src, location.href).origin === location.origin;
+    } catch (_) {
+      return false;
+    }
+  };
 
   const sizeFromSvg = (svg) => {
     const vb = svg.viewBox && svg.viewBox.baseVal;
@@ -125,7 +142,7 @@
     natW = img.naturalWidth || 1;
     natH = img.naturalHeight || 1;
 
-    if (isSvgUrl(src)) {
+    if (isSvgUrl(src) && isSameOrigin(src)) {
       try {
         const res = await fetch(src, { cache: "force-cache" });
         if (res.ok) {
@@ -175,7 +192,7 @@
   });
 
   const onPointerDown = (e) => {
-    if (e.target === closeBtn || closeBtn.contains(e.target)) return;
+    if (isControls(e.target)) return;
     if (e.pointerType === "mouse" && e.button !== 0) return;
     try { viewport.setPointerCapture(e.pointerId); } catch (_) {}
     pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -274,8 +291,13 @@
     }
   };
 
+  const isControls = (el) => {
+    if (!el) return false;
+    return !!(el.closest && el.closest('.doc-zoom__close, .doc-zoom__controls, .doc-zoom__btn'));
+  };
+
   const onBackdropClick = (e) => {
-    if (e.target === closeBtn || closeBtn.contains(e.target)) return;
+    if (isControls(e.target)) return;
     if (moved) return;
     // pointer-events: none のため、図の上でも e.target は viewport になる。
     // 座標で図の上かどうかを見て、図の外の余白のときだけ閉じる。
@@ -291,20 +313,40 @@
     dialog.setAttribute("aria-modal", "true");
     closeBtn = document.createElement("button");
     closeBtn.type = "button";
-    closeBtn.className = "doc-zoom__close";
+    closeBtn.className = "doc-zoom__btn doc-zoom__close";
     closeBtn.textContent = "閉じる";
+    const controls = document.createElement("div");
+    controls.className = "doc-zoom__controls";
+    minusBtn = document.createElement("button");
+    minusBtn.type = "button";
+    minusBtn.className = "doc-zoom__btn";
+    minusBtn.textContent = "−";
+    minusBtn.setAttribute("aria-label", "縮小");
+    plusBtn = document.createElement("button");
+    plusBtn.type = "button";
+    plusBtn.className = "doc-zoom__btn";
+    plusBtn.textContent = "＋";
+    plusBtn.setAttribute("aria-label", "拡大");
+    controls.append(minusBtn, plusBtn);
     viewport = document.createElement("div");
     viewport.className = "doc-zoom__viewport";
     stage = document.createElement("div");
     stage.className = "doc-zoom__stage";
     viewport.appendChild(stage);
-    dialog.append(closeBtn, viewport);
+    dialog.append(closeBtn, controls, viewport);
     document.body.appendChild(dialog);
 
     closeBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       dialog.close();
     });
+    const zoomBy = (factor) => (e) => {
+      e.stopPropagation();
+      const c = center();
+      zoomAt(c.x, c.y, factor);
+    };
+    minusBtn.addEventListener("click", zoomBy(1 / STEP));
+    plusBtn.addEventListener("click", zoomBy(STEP));
     dialog.addEventListener("close", destroy);
     dialog.addEventListener("click", onBackdropClick);
     dialog.addEventListener("keydown", onKey);

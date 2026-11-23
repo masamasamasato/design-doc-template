@@ -36,11 +36,7 @@ dialog.doc-zoom::backdrop {
   background: #1a1a1a;
 }
 
-.doc-zoom__close {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  z-index: 2;
+.doc-zoom__btn {
   min-width: 44px;
   min-height: 44px;
   padding: 0 16px;
@@ -54,26 +50,53 @@ dialog.doc-zoom::backdrop {
   cursor: pointer;
 }
 
-.doc-zoom__close:hover {
+.doc-zoom__btn:hover:not(:disabled) {
   background: #f3f3f3;
 }
 
-.doc-zoom__close:focus-visible {
+.doc-zoom__btn:focus-visible {
   outline: 4px solid #000;
   outline-offset: 2px;
 }
 
-[data-md-color-scheme="slate"] .doc-zoom__close {
+.doc-zoom__btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.doc-zoom__close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 2;
+}
+
+.doc-zoom__controls {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  z-index: 2;
+  display: flex;
+  gap: 8px;
+}
+
+.doc-zoom__controls .doc-zoom__btn {
+  padding: 0;
+  width: 44px;
+  font-size: 18px;
+}
+
+[data-md-color-scheme="slate"] .doc-zoom__btn {
   border-color: #555;
   background: #2a2a2a;
   color: #f0f0f0;
 }
 
-[data-md-color-scheme="slate"] .doc-zoom__close:hover {
+[data-md-color-scheme="slate"] .doc-zoom__btn:hover:not(:disabled) {
   background: #3a3a3a;
 }
 
-[data-md-color-scheme="slate"] .doc-zoom__close:focus-visible {
+[data-md-color-scheme="slate"] .doc-zoom__btn:focus-visible {
   outline-color: #fff;
 }
 

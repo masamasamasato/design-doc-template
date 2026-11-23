@@ -89,8 +89,9 @@ button[title] {{ display: none !important; }}
 .md-typeset table:not([class]) tr {{ break-inside: avoid; }}
 /* 表のセルの最後の行に1字だけ残らないよう、行の折り返しを整える（例:「…15分ロックす／る」） */
 .md-typeset table:not([class]) td {{ text-wrap: pretty; }}
-/* 段落などの最後の4字は折り返さない（TAILS_JS） */
-.pdf-tail {{ white-space: nowrap; }}
+/* 言葉の途中で折り返さない（TAILS_JS が .pdf-word を付ける） */
+.pdf-word {{ white-space: nowrap; }}
+.md-typeset {{ line-break: strict; }}
 .md-typeset table:not([class]) th, .md-typeset table:not([class]) td {{ padding: 0.6em 0.8em; }}
 /* 表の中のコード（application/json など）は、途中で折り返さない */
 .md-typeset table:not([class]) .pdf-nowrap {{ white-space: nowrap; }}
@@ -325,26 +326,79 @@ SHORT_CELLS_JS = """
 })
 """
 
-# 段落・箇条書き・表のセルの最後の4字を、1つの塊にして途中で折り返さない JS。最後の行に1字だけ（例:「ん。」「い」）
-# が落ちるのを防ぐ。折り返しが最後の4字の中に来るときだけ、4字まとめて次の行に送る。
+# 段落・箇条書き・表のセルで、言葉の途中や1字だけを次の行に残して折り返さない JS。
+# カタカナ語（例: ページ、エラーコード）、漢字＋送り仮名、短い助詞を一塊にする。
+# 以前は最後の4字だけを対象にしていたため、「ペ／ージ分け」「エラーコー／ドは返さない」が残っていた。
 TAILS_JS = """
-() => document.querySelectorAll('article p, article li, article td, article th').forEach(el => {
-  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
-  let last = null;
-  for (let n = walker.nextNode(); n; n = walker.nextNode()) {
-    if (n.textContent.trim() && n.parentElement.closest('p, li, td, th') === el) last = n;
-  }
-  if (!last || last.parentElement.closest('.pdf-nowrap, pre')) return;
-  const text = last.textContent.replace(/\\s+$/, '');
-  if ([...text].length < 5) return;
-  const cut = text.length - [...text].slice(-4).join('').length;
-  const tail = last.splitText(cut);
-  if (tail.textContent.length > text.length - cut) tail.splitText(text.length - cut);
-  const span = document.createElement('span');
-  span.className = 'pdf-tail';
-  tail.before(span);
-  span.appendChild(tail);
-})
+(W) => {
+  const skipSel = '.pdf-nowrap, pre, code, kbd, .pdf-word';
+  const wordRe = /[ァ-ヶー]+|[A-Za-z0-9][A-Za-z0-9._@-]*|[一-龥々〆〇]+[ぁ-ゖ]*|[ぁ-ゖ]+|[^ァ-ヶーA-Za-z0-9一-龥々〆〇ぁ-ゖ]+/g;
+  const isWord = (s) => /[ァ-ヶーA-Za-z0-9一-龥々〆〇ぁ-ゖ]/.test(s);
+  const isShortHira = (s) => /^[ぁ-ゖ]+$/.test(s) && [...s].length <= 3;
+  const wordSpan = (s) => {
+    const span = document.createElement('span');
+    span.className = 'pdf-word';
+    span.textContent = s;
+    return span;
+  };
+
+  // 短いリンク（「ページ分け」など）は、リンクごと一塊にする
+  document.querySelectorAll('article a').forEach(a => {
+    if (a.closest('.pdf-nowrap, pre, code')) return;
+    const t = a.textContent.trim();
+    if (t && [...t].length <= 15 && !a.querySelector('img')) a.classList.add('pdf-word');
+  });
+
+  document.querySelectorAll('article p, article li, article td, article th').forEach(el => {
+    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    const nodes = [];
+    for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+      if (n.parentElement.closest(skipSel)) continue;
+      nodes.push(n);
+    }
+    nodes.forEach(node => {
+      const text = node.textContent;
+      if (!text) return;
+      const parts = text.match(wordRe);
+      if (!parts) return;
+      if (parts.length === 1 && !isWord(parts[0])) return;
+      const merged = [];
+      for (const part of parts) {
+        if (isShortHira(part) && merged.length && isWord(merged[merged.length - 1])) {
+          merged[merged.length - 1] += part;
+        } else {
+          merged.push(part);
+        }
+      }
+      for (let i = 0; i < merged.length - 1; i++) {
+        if (isShortHira(merged[i]) && isWord(merged[i + 1])) {
+          merged[i + 1] = merged[i] + merged[i + 1];
+          merged[i] = null;
+        }
+      }
+      const frag = document.createDocumentFragment();
+      for (const part of merged) {
+        if (part == null) continue;
+        if (isWord(part) && [...part].length >= 2) frag.append(wordSpan(part));
+        else frag.append(part);
+      }
+      node.replaceWith(frag);
+    });
+  });
+
+  // 一塊がセルや段に収まらないときだけ、その塊の nowrap を外す（表が広がって文書全体が縮むのを防ぐ）
+  const root = document.querySelector('article.md-content__inner');
+  if (!root || W == null) return;
+  const prev = root.style.width;
+  root.style.width = W + 'px';
+  root.querySelectorAll('.pdf-word').forEach(span => {
+    const box = span.closest('td, th, p, li') || span.parentElement;
+    if (span.getBoundingClientRect().width > box.getBoundingClientRect().width + 0.5) {
+      span.classList.remove('pdf-word');
+    }
+  });
+  root.style.width = prev;
+}
 """
 
 # A4 の本文の幅（W）より広い表に、コードを折り返す段階（data-wide）を付ける JS。広い表が1つでもあると、
@@ -559,7 +613,7 @@ def open_page(browser: Browser, url: str, links: dict | None = None, short_ids: 
     # 閉じた details も中身を印刷する
     page.evaluate("document.querySelectorAll('details').forEach(d => d.open = true)")
     page.evaluate(SHORT_CELLS_JS)
-    page.evaluate(TAILS_JS)
+    page.evaluate(TAILS_JS, CONTENT_W_PX)
     for level, width, over in page.evaluate(WIDE_TABLES_JS, CONTENT_W_PX):
         note = "" if over <= 0 else f"、まだ {over}px はみ出す"
         print(f"  広い表のコードを折り返しました: {unquote(url.split('/', 3)[-1])}（段階{level}、元の幅 {width}px{note}）")
