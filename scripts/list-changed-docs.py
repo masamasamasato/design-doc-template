@@ -28,7 +28,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DOC_SUFFIXES = (".md", ".puml", ".plantuml")
 # MkDocs の原稿（scripts/prepare-docs.sh がリンクを作るもの）
 PUBLISHED_FILES = ("README.md", "用語集.md")
-PUBLISHED_DIRS = ("docs/", "apis/")
+PUBLISHED_DIRS = ("docs/", "apis/", "tests/")
 MARKER = "<!-- changed-docs -->"
 
 

@@ -17,6 +17,7 @@ link "README.md" "../../README.md"
 link "用語集.md" "../../用語集.md"
 link "docs" "../../docs"
 link "apis" "../../apis"
+link "tests" "../../tests"
 link "stylesheets" "../../stylesheets"
 link "javascripts" "../../javascripts"
 

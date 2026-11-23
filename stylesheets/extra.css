@@ -147,3 +147,28 @@ dialog.doc-zoom::backdrop {
   background-color: #3a4456;
   color: #f2f2f2;
 }
+
+/* テストケースの表（列が多い）。用紙と画面の幅に収める。観点の列は、短い見出しが隣の列へはみ出さない幅にする */
+.test-cases,
+.test-cases .md-typeset__table {
+  overflow-x: auto;
+}
+.test-cases table:not([class]) {
+  table-layout: fixed;
+  width: 100%;
+  overflow-wrap: anywhere;
+}
+.test-cases table:not([class]) th:nth-child(1),
+.test-cases table:not([class]) td:nth-child(1),
+.test-cases table:not([class]) th:nth-child(6),
+.test-cases table:not([class]) td:nth-child(6) {
+  width: 7%;
+}
+.test-cases table:not([class]) th:nth-child(2),
+.test-cases table:not([class]) td:nth-child(2) {
+  width: 22%;
+}
+.test-cases table:not([class]) th:nth-child(7),
+.test-cases table:not([class]) td:nth-child(7) {
+  width: 13%;
+}

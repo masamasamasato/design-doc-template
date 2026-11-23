@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""変わった apis/<名前>/ と docs/business/<業務>/ の変更履歴.md に、マージ日とPRを足す。
+"""変わった apis/<名前>/、docs/business/<業務>/、tests/<名前>/ の変更履歴.md に、マージ日とPRを足す。
 
 形は、日付の見出しの下に、PRへのリンクの箇条書きを並べる形。
 
@@ -30,6 +30,7 @@ ROOT = Path(__file__).resolve().parents[1]
 TARGETS = (
     (re.compile(r"^apis/([^/]+)/"), ROOT / "apis"),
     (re.compile(r"^docs/business/([^/]+)/"), ROOT / "docs" / "business"),
+    (re.compile(r"^tests/([^/]+)/"), ROOT / "tests"),
 )
 
 
@@ -190,7 +191,7 @@ def main() -> None:
             append(directory / "変更履歴.md", today, number, title, url)
 
     if not seen:
-        print("apis/ と docs/business/ の変更はありません")
+        print("apis/ と docs/business/ と tests/ の変更はありません")
 
 
 if __name__ == "__main__":
