@@ -45,58 +45,34 @@ Users(user, "利用者\nブラウザから操作する", "ブラウザ")
 
 AWSCloudGroup(aws, "AWS クラウド") {
   Route53(dns, "Route 53\n名前を解決する", "DNS")
-  rectangle "例: www.example.com" as n_dns #FFFFCC
-  together {
-    WAF(waf, "AWS WAF\n不正な要求を落とす", "Web ACL")
-    rectangle "CloudFrontに付ける" as n_waf #FFFFCC
-  }
+  WAF(waf, "AWS WAF\n不正な要求を落とす", "Web ACL")
 
   SimpleStorageService(s3, "静的画面\n画面ファイルを置く", "S3")
-  rectangle "（OAC）\n例: login.html" as n_s3 #FFFFCC
   CloudFront(cf, "CloudFront\nHTTPSで配信する", "CDN")
-  rectangle "画面はS3から（OAC）、\nAPIはALBへ回す" as n_cf #FFFFCC
-  together {
-    CertificateManager(acm, "ACM\nHTTPSの証明書を発行する", "HTTPS")
-    rectangle "CloudFrontとALBに付ける" as n_acm #FFFFCC
-  }
+  CertificateManager(acm, "ACM\nHTTPSの証明書を発行する", "HTTPS")
 
   together {
     rectangle "NAT経由で取得する" as n_ecr #FFFFCC
     ElasticContainerRegistry(ecr, "ECR\nAPIのイメージを置く", "レジストリ")
   }
-  together {
-    rectangle "パスワードは出さない" as n_logs #FFFFCC
-    CloudWatchLogs(logs, "CloudWatch Logs\n両APIのログを集める", "ログ")
-  }
+  CloudWatchLogs(logs, "CloudWatch Logs\n両APIのログを集める", "ログ")
   CloudWatchAlarm(alarm, "CloudWatch Alarm\n障害を知らせる", "アラーム")
   together {
     rectangle "例: 5xxが増えたら、\n開発者へメールやSlack" as n_sns #FFFFCC
     SimpleNotificationService(sns, "Amazon SNS\nアラームの通知先", "通知")
   }
-  together {
-    rectangle "NAT経由。送信失敗でも\nログインは成功のまま" as n_ses #FFFFCC
-    SimpleEmailService(ses, "SES\nログイン通知メールを送る", "メール")
-  }
-  together {
-    rectangle "NAT経由。ログには出さない" as n_sm #FFFFCC
-    SecretsManager(sm, "Secrets Manager\nこの図ではDBパスワード", "機密")
-  }
+  SimpleEmailService(ses, "SES\nログイン通知メールを送る", "メール")
+  SecretsManager(sm, "Secrets Manager\nDBパスワードを置く", "機密")
 
   VPCGroup(vpc, "VPC") {
-    together {
-      ElasticLoadBalancingApplicationLoadBalancer(alb, "ALB\n2つのAZのAPIへ振り分ける", "負荷分散")
-      rectangle "2つのAZのパブリック\nサブネットにまたがる" as n_alb #FFFFCC
-    }
+    ElasticLoadBalancingApplicationLoadBalancer(alb, "ALB\n2つのAZのAPIへ振り分ける", "負荷分散")
 
     AvailabilityZoneGroup(az1, "AZ ap-northeast-1a") {
       PublicSubnetGroup(pub1, "パブリックサブネット") {
         VPCNATGateway(nat1, "NAT Gateway\nこのAZのAPIの出口", "1a")
       }
       PrivateSubnetGroup(pri1, "プライベートサブネット") {
-        together {
-          ElasticContainerService(ecs1, "APIサービス\nログインと商品のAPI", "ECS Fargate")
-          rectangle "例: POST /sessions" as n_ecs1 #FFFFCC
-        }
+        ElasticContainerService(ecs1, "APIサービス\nログインと商品のAPI", "ECS Fargate")
       }
     }
     AvailabilityZoneGroup(az2, "AZ ap-northeast-1c") {
@@ -104,10 +80,7 @@ AWSCloudGroup(aws, "AWS クラウド") {
         VPCNATGateway(nat2, "NAT Gateway\nこのAZのAPIの出口", "1c")
       }
       PrivateSubnetGroup(pri2, "プライベートサブネット") {
-        together {
-          rectangle "例: GET /products/search" as n_ecs2 #FFFFCC
-          ElasticContainerService(ecs2, "APIサービス\nログインと商品のAPI", "ECS Fargate")
-        }
+        ElasticContainerService(ecs2, "APIサービス\nログインと商品のAPI", "ECS Fargate")
       }
     }
 
@@ -115,13 +88,10 @@ AWSCloudGroup(aws, "AWS クラウド") {
 
     GenericGroup(data, "データ（マルチAZ）") {
       together {
-        rectangle "どのAPIでもログインが続く\nセッションは例：24時間\n失敗回数とロックは\n例：15分で消える" as n_cache #FFFFCC
+        rectangle "どのAPIでも\nログインが続く" as n_cache #FFFFCC
         ElastiCache(cachep, "ElastiCache プライマリ（1a）\nセッションと失敗回数・ロックを置く", "Redis")
       }
-      together {
-        RDS(rdsp, "RDS プライマリ（1a）\n商品・利用者を置く", "DB")
-        rectangle "例: masato@example.com" as n_rds #FFFFCC
-      }
+      RDS(rdsp, "RDS プライマリ（1a）\n商品・利用者を置く", "DB")
       ElastiCache(cacher, "ElastiCache レプリカ（1c）\n障害時の読み取り先", "Redis")
       RDS(rdss, "RDS スタンバイ（1c）\n障害時に昇格する", "マルチAZ")
     }
@@ -131,19 +101,12 @@ AWSCloudGroup(aws, "AWS クラウド") {
 ' ---- 通信の流れ ----
 user -down-> dns
 dns -down-> cf
-dns -[dotted]down- n_dns
 dns -[hidden]right- waf
-waf -[dotted]right- n_waf
 waf -down..> cf
 cf -left-> s3
-s3 -[dotted]down- n_s3
-cf -[dotted]down- n_cf
-n_s3 -[hidden]right- n_cf
-acm -[dotted]right- n_acm
 acm -left..> cf : 証明書
 acm -down..> alb : 証明書
 cf -down-> alb
-alb -[dotted]right- n_alb
 nat1 -[hidden]down- ecs1
 nat2 -[hidden]down- ecs2
 alb -[hidden]down- az1
@@ -152,8 +115,6 @@ az1 -[hidden]right- az2
 nat1 -[hidden]right- nat2
 alb -down-> ecs1
 alb -down-> ecs2
-ecs1 -[dotted]right- n_ecs1
-n_ecs2 -[dotted]right- ecs2
 ecs1 -down-> j
 ecs2 -down-> j
 j -down-> cachep
@@ -161,7 +122,6 @@ j -down-> rdsp
 cachep -down-> cacher
 rdsp -down-> rdss
 n_cache -[dotted]right- cachep
-rdsp -[dotted]right- n_rds
 cachep -[hidden]right- rdsp
 cacher -[hidden]right- rdss
 j -right-> ses : NAT経由
@@ -174,10 +134,7 @@ gha -[hidden]right- user
 n_gha -[dotted]right- gha
 gha -down-> ecr
 n_ecr -[dotted]right- ecr
-n_logs -[dotted]right- logs
 n_sns -[dotted]right- sns
-n_ses -[dotted]right- ses
-n_sm -[dotted]right- sm
 ecr -[hidden]down- logs
 logs -down-> alarm
 alarm -down-> sns
