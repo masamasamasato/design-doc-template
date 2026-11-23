@@ -64,7 +64,9 @@ html, body {{ background: #fff !important; }}
 .md-header, .md-tabs, .md-sidebar, .md-footer, .md-search, .md-top, .md-dialog,
 .md-content__button, .md-source, .md-banner, .headerlink, .md-clipboard, .md-code__nav, .md-code__button,
 button[title] {{ display: none !important; }}
-.md-main__inner {{ margin: 0 !important; max-width: none !important; }}
+/* サイトの CSS は .md-main__inner を display: flex にする。印刷で用紙の大きさがページごとに違うと（大きい図のページ
+   と A4）、Chromium はこの flex のために文書全体を約67%に縮めて印刷し、A4 の本文 9pt が 6pt になる。ブロックに戻す */
+.md-main__inner {{ margin: 0 !important; max-width: none !important; display: block !important; }}
 .md-content {{ max-width: none !important; margin: 0 !important; }}
 .md-content__inner {{ margin: 0 !important; padding: 0 !important; }}
 .md-content__inner::before {{ display: none !important; }}
