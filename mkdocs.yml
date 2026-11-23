@@ -1,5 +1,8 @@
 site_name: 設計書
 site_description: 人が読む設計書のテンプレートです。業務、機能、サービスメソッドまでを書きます。
+# 公開する URL。pages.yml が環境変数 SITE_URL で渡す（mkdocs build に --site-url は無い）。
+# 無いとき（手元や PR の確認）は空のままにする。
+site_url: !ENV SITE_URL
 # MkDocs は、設定ファイルのあるフォルダ自体を原稿にできない。
 # mkdocs/docs は、リポジトリ直下の原稿へのリンク。
 docs_dir: mkdocs/docs
