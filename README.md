@@ -19,4 +19,3 @@
 - [GitHub の設定](docs/setup.md)
 - [書き方と自動化（AI向け）](docs/guide.md)
 - 記入例：[ログインする](apis/login/README.md)、[ログインして商品を探す](docs/business/ログインして商品を探す/README.md)、[AWSのインフラ構成](docs/infra/index.md)
-- 決めた理由：[ADR 0000](decisions/0000-template.md)

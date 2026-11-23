@@ -18,35 +18,35 @@ start
 
 |認証API|
 :メアド・パスワード検証\n登録済みメアドのパスワードハッシュと\n入力パスワードを照合;
-if (ロック中（連続5回失敗から15分以内）の場合) then (ロック中の場合)
+if (ロック中（例：連続5回失敗から15分以内）の場合) then (ロック中の場合)
   :何も保存しない;
   note left: 失敗回数もロックの期限も変えない
   |ログイン画面|
-  :15分間ログインできないと表示する\n403 ACCOUNT_LOCKED;
+  :例：15分間ログインできないと表示する\n403 ACCOUNT_LOCKED;
   stop
 else (ロック中でない場合)
 endif
 |認証API|
-if (メールアドレス・パスワードが異なり、\n連続失敗(5回未満)の場合) then (5回未満の場合)
+if (メールアドレス・パスワードが異なり、\n連続失敗(例：5回未満)の場合) then (例：5回未満の場合)
   :失敗回数を1増やして保存する;
   note left: 例：15分で消える
   |ログイン画面|
   :ログインできないと表示する\n401 INVALID_CREDENTIALS;
   stop
-else (5回未満でない場合)
+else (例：5回未満でない場合)
 endif
 |認証API|
-if (メールアドレス・パスワードが異なり、\n連続失敗(5回以上)の場合) then (5回以上の場合)
+if (メールアドレス・パスワードが異なり、\n連続失敗(例：5回以上)の場合) then (例：5回以上の場合)
   :ロックを保存する;
   note left: 例：15分で自動解除
   |ログイン画面|
-  :15分間ログインできないと表示する\n403 ACCOUNT_LOCKED;
+  :例：15分間ログインできないと表示する\n403 ACCOUNT_LOCKED;
   stop
 else (メールアドレス・パスワードが正しい場合)
 endif
 |認証API|
 :セッションを保存し、\n失敗回数を消す;
-note left: 例：セッションは24時間有効
+note left: セッションは例：24時間有効
 :ログイン通知メールを送る;
 
 |ログイン画面|
@@ -69,11 +69,11 @@ else (有効な場合)
 endif
 |商品API|
 :検索語と指定の検証\nq の文字数と、page・limit・sort・order を\n決まりと照合;
-if (q が無い・空・100文字超、\npage が1以上の整数でない、\nlimit が1〜100の整数でない、\nsort が created_at・price 以外、\nまたは order が asc・desc 以外の場合) then (決まりどおりでない場合)
+if (q が無い・空・例：100文字超、\npage が1以上の整数でない、\nlimit が例：1〜100の整数でない、\nsort が created_at・price 以外、\nまたは order が asc・desc 以外の場合) then (決まりどおりでない場合)
   |商品画面|
   :検索語や指定を直すよう表示する\n400 INVALID_QUERY;
   stop
-else (q が1〜100文字で、\npage が1以上の整数、\nlimit が1〜100の整数、\nsort が created_at か price、\norder が asc か desc の場合)
+else (q が例：1〜100文字で、\npage が1以上の整数、\nlimit が例：1〜100の整数、\nsort が created_at か price、\norder が asc か desc の場合)
 endif
 |商品API|
 :商品名に検索語を含む、\n公開中の商品を返す;
