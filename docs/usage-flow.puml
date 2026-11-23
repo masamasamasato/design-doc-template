@@ -1,0 +1,19 @@
+' ドキュメントを書く流れ。README に載せる概要。
+@startuml
+skinparam shadowing false
+skinparam defaultFontName "Noto Sans CJK JP"
+skinparam ActivityFontName "Noto Sans CJK JP"
+
+title ドキュメントを書く流れ
+
+|人|
+start
+:型をコピー\napis/_template や docs/business/ をコピー;
+:書く\n設計書と図を書き、手元で確認する;
+:PR\n概要（2行まで）と判断してほしい点を書いて出す;
+:チェックとレビュー\nCI（自動）と人のレビュー;
+:マージ\nレビュー後に main へ入れる;
+|自動|
+:変更履歴と公開\n履歴の追記、サイトの公開、PDFの作成;
+stop
+@enduml
