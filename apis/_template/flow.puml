@@ -1,5 +1,5 @@
 ' 深さ3の処理イメージ。スイムレーン（|利用者|）は業務フローだけに使う。
-' ここは分岐が分かるアクティビティ図にする。
+' ここは分岐がわかるアクティビティ図にする。
 @startuml
 skinparam shadowing false
 skinparam NoteBackgroundColor #FFFFCC
@@ -10,15 +10,15 @@ title （〇〇）API
 start
 :1. リクエストバリデーション\n項目を条件と照合;
 if (リクエストのいずれかの項目が、\n手順1の条件に合わない場合) then (1.2 いずれかの項目が\n合わない場合)
-  :失敗を返す\n400 （コード）。例: INVALID_REQUEST;
+  :失敗を返す\n400 （コード）。例： INVALID_REQUEST;
   note right: 何も保存しない
   stop
 else (1.1 すべての項目が\n合う場合)
 endif
-:2. （〜検証）\n（何と何を照合するかを1行）。例: 持ち主と本人確認;
-if ((何が何と合わない〜の場合)。例: 利用者IDが持ち主IDと一致しない\nまたは 利用者の本人確認が済んでいない場合) then (2.2 （〜の場合）)
-  :失敗を返す\n（ステータスとコード）。例: 403 NOT_VERIFIED;
-  note right: （保存・削除）。例: 何も保存しない
+:2. （〜検証）\n（何と何を照合するかを1行）。例： 持ち主と本人確認;
+if ((何が何と合わない〜の場合)。例： 利用者IDが持ち主IDと一致しない\nまたは 利用者の本人確認が済んでいない場合) then (2.2 （〜の場合）)
+  :失敗を返す\n（ステータスとコード）。例： 403 NOT_VERIFIED;
+  note right: （保存・削除）。例： 何も保存しない
   stop
 else (2.1 （〜の場合）)
 endif
@@ -26,19 +26,19 @@ endif
 :外部API：（サービス名）\n（役割を1行）; <<#E3F2FD>>
 note right
   タイムアウト：（例：3秒）
-  再試行：（例: しない（例：0回））
+  再試行：（例： しない（例：0回））
   失敗時：（ステータスとコード）
 end note
 if (外部APIの返事のHTTPステータスが 404 の場合) then (3.2 HTTPステータスが\n404 の場合)
-  :失敗を返す\n404 （コード）。例: NOT_FOUND;
+  :失敗を返す\n404 （コード）。例： NOT_FOUND;
   stop
 elseif (外部APIの返事のHTTPステータスが 200・404 以外\nまたは 外部APIから返事が無い場合) then (3.3 HTTPステータスが200・404 以外\nまたは 返事が無い場合)
-  :失敗を返す\n503 （コード）。例: SERVICE_UNAVAILABLE;
+  :失敗を返す\n503 （コード）。例： SERVICE_UNAVAILABLE;
   stop
 else (3.1 HTTPステータスが\n200 の場合)
 endif
-:4. 成功を返す\n（ステータス）。例: 200;
-note right: （保存・削除）。例: 状態を公開中に、publishedAt に日時
+:4. 成功を返す\n（ステータス）。例： 200;
+note right: （保存・削除）。例： 状態を公開中に、publishedAt に日時
 stop
 
 @enduml

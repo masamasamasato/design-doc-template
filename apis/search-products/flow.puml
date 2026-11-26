@@ -19,7 +19,7 @@ endif
 :2. リクエストバリデーション\nq・page・limit・sort・order を条件と照合;
 if (クエリのいずれかの項目が、\n手順2の条件に合わない場合) then (2.2 いずれかの項目が\n合わない場合)
   :失敗を返す\n400 INVALID_QUERY;
-  note right: 例: q が空、q が101文字、limit=200
+  note right: 例： q が空、q が101文字、limit=200
   stop
 else (2.1 すべての項目が\n合う場合)
 endif
