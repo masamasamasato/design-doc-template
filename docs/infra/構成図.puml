@@ -57,7 +57,7 @@ AWSCloudGroup(aws, "AWS クラウド") {
   CloudWatchLogs(logs, "CloudWatch Logs\n両APIのログを集める", "ログ")
   CloudWatchAlarm(alarm, "CloudWatch Alarm\n障害を知らせる", "アラーム")
   together {
-    rectangle "例: 5xxが増えたら、\n開発者へメールやSlack" as n_sns #FFFFCC
+    rectangle "例： 5xxが増えたら、\n開発者へメールやSlack" as n_sns #FFFFCC
     SimpleNotificationService(sns, "Amazon SNS\nアラームの通知先", "通知")
   }
   SimpleEmailService(ses, "SES\nログイン通知メールを送る", "メール")

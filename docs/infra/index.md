@@ -38,16 +38,16 @@
 
 各要素の細部です。
 
-- Route 53: 例: `www.example.com`。
-- S3（静的画面）: CloudFront からだけ開けます（OAC）。直接のURLでは開けません。例: `login.html`。
+- Route 53: 例： `www.example.com`。
+- S3（静的画面）: CloudFront からだけ開けます（OAC）。直接のURLでは開けません。例： `login.html`。
 - NAT Gateway: AZごとに1つ、そのAZのパブリックサブネットに置きます。そのAZのAPIが ECR、SES、Secrets Manager へ出るときに使います。
-- ECS Fargate（APIサービス）: 各AZのプライベートサブネットに1つずつ置きます。例: `POST /sessions`、`GET /products/search`。
+- ECS Fargate（APIサービス）: 各AZのプライベートサブネットに1つずつ置きます。例： `POST /sessions`、`GET /products/search`。
 - ElastiCache: セッションの TTL は、ログインから例：24時間です。切れたら、もう一度ログインします。ログインの失敗回数とロックも置き、TTL は例：15分です。プライマリは `ap-northeast-1a`、レプリカは `ap-northeast-1c` です。
-- RDS: 例: メールアドレス `masato@example.com`、商品 `product_1001`。プライマリは `ap-northeast-1a`、スタンバイは `ap-northeast-1c` です。
+- RDS: 例： メールアドレス `masato@example.com`、商品 `product_1001`。プライマリは `ap-northeast-1a`、スタンバイは `ap-northeast-1c` です。
 - Secrets Manager: DBパスワードを置きます。決済通知の署名の秘密も実際はここに置きますが、図には載せていません。値はコード、ログ、図に出しません。VPC の外（AWSクラウド内）に置き、APIからは NAT 経由で取ります。
 - CloudWatch Logs: 両APIのログを集めます。パスワードは出しません。
 - SES: VPC の外（AWSクラウド内）に置き、NAT 経由で使います。送信に失敗しても、ログインは成功のままです。
-- Amazon SNS: 例: 5xx が増えたら、開発者にメールや Slack で知らせます。
+- Amazon SNS: 例： 5xx が増えたら、開発者にメールや Slack で知らせます。
 - AZ: `ap-northeast-1a` と `ap-northeast-1c` の2つです。
 
 </details>
