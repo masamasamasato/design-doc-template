@@ -2,6 +2,8 @@
 
 人が読む設計書を、リポジトリに残す型です。人が書くのは深さ3までで、それより細かい処理はAIがコードを読んで扱います。
 
+公開サイト：[設計書サイト（GitHub Pages）](https://masamasamasato.github.io/design-doc-template/)
+
 ## 目次
 
 - [どこまで書くか](#どこまで書くか)
