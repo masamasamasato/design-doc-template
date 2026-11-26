@@ -1,0 +1,17 @@
+' 人が設計書に書く深さと、AIに任せる範囲。README に載せる概要。
+@startuml
+skinparam shadowing false
+skinparam defaultFontName "Noto Sans CJK JP"
+skinparam ActivityFontName "Noto Sans CJK JP"
+
+title 設計書で扱う深さ（人が書く範囲とAIに任せる範囲）
+
+|人が設計書に書く|
+start
+:深さ1：業務の流れを書く\n誰が何を渡し、仕事がどこまで進むか\n例：利用者が公開し、APIが公開中にする;
+:深さ2：画面とAPIのつながりを書く\nどの画面がどのAPIを呼ぶか\n例：画面が POST /profiles/{id}/publish を呼ぶ;
+:深さ3：メソッド単位の処理を書く\n1つの目的を持つ手順と条件分岐まで\n例：持ち主かつ本人確認済みかを検証する;
+|AIがコードで扱う|
+:それより細かい処理はコードから読む\nif文の式やSQLの1行は設計書に書かず、\n実装を直接読んで扱う;
+stop
+@enduml
