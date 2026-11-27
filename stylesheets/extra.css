@@ -156,12 +156,6 @@ dialog.doc-zoom::backdrop {
 .md-typeset .test-cases {
   scroll-margin-top: calc(var(--md-header-height, 3.6rem) + 0.5rem);
 }
-.md-header,
-.md-search,
-.md-search__form,
-.md-search__inner {
-  z-index: 10;
-}
 .md-typeset .md-typeset__table,
 .md-typeset table,
 .test-cases {
