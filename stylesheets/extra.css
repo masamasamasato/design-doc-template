@@ -232,23 +232,29 @@ dialog.doc-zoom::backdrop {
   word-break: keep-all;
   overflow-wrap: anywhere;
 }
-/* 観点・備考は短く折り返してよい（PDF の短いセル nowrap も外す） */
+/* 観点・備考は短く折り返してよい（PDF の短いセル nowrap も外す）。
+   rowspan で結合すると :nth-child がずれるため、JS が付けた data-col を優先して使う */
 .md-typeset .test-cases table:not([class]) th:nth-child(2),
-.md-typeset .test-cases table:not([class]) td:nth-child(2),
+.md-typeset .test-cases table:not([class]) td[data-col="2"],
+.md-typeset .test-cases table:not([class]) tbody:not([data-merged]) td:nth-child(2),
 .md-typeset .test-cases table:not([class]) th:nth-child(7),
-.md-typeset .test-cases table:not([class]) td:nth-child(7) {
+.md-typeset .test-cases table:not([class]) td[data-col="7"],
+.md-typeset .test-cases table:not([class]) tbody:not([data-merged]) td:nth-child(7) {
   white-space: normal !important;
 }
 .test-cases table:not([class]) th:nth-child(1),
-.test-cases table:not([class]) td:nth-child(1),
+.test-cases table:not([class]) td[data-col="1"],
+.test-cases table:not([class]) tbody:not([data-merged]) td:nth-child(1),
 .test-cases table:not([class]) th:nth-child(6),
-.test-cases table:not([class]) td:nth-child(6) {
+.test-cases table:not([class]) td[data-col="6"],
+.test-cases table:not([class]) tbody:not([data-merged]) td:nth-child(6) {
   width: 5%;
   min-width: 3.6em;
   white-space: nowrap;
 }
 .test-cases table:not([class]) th:nth-child(2),
-.test-cases table:not([class]) td:nth-child(2) {
+.test-cases table:not([class]) td[data-col="2"],
+.test-cases table:not([class]) tbody:not([data-merged]) td:nth-child(2) {
   /* 「リクエストの形」が1行に収まり、語の途中で折れない幅。長い観点は <wbr> の位置だけ折り返す */
   width: 16%;
   min-width: 8em;
@@ -257,15 +263,19 @@ dialog.doc-zoom::backdrop {
   word-break: auto-phrase;
 }
 .test-cases table:not([class]) th:nth-child(3),
-.test-cases table:not([class]) td:nth-child(3),
+.test-cases table:not([class]) td[data-col="3"],
+.test-cases table:not([class]) tbody:not([data-merged]) td:nth-child(3),
 .test-cases table:not([class]) th:nth-child(4),
-.test-cases table:not([class]) td:nth-child(4),
+.test-cases table:not([class]) td[data-col="4"],
+.test-cases table:not([class]) tbody:not([data-merged]) td:nth-child(4),
 .test-cases table:not([class]) th:nth-child(5),
-.test-cases table:not([class]) td:nth-child(5) {
+.test-cases table:not([class]) td[data-col="5"],
+.test-cases table:not([class]) tbody:not([data-merged]) td:nth-child(5) {
   width: 20%;
 }
 .test-cases table:not([class]) th:nth-child(7),
-.test-cases table:not([class]) td:nth-child(7) {
+.test-cases table:not([class]) td[data-col="7"],
+.test-cases table:not([class]) tbody:not([data-merged]) td:nth-child(7) {
   /* 14%。「メールアドレス」が1語で収まり、長い文は語の途中で折らない */
   width: 14%;
   padding-left: 0.5em;
@@ -273,4 +283,10 @@ dialog.doc-zoom::backdrop {
   word-break: keep-all;
   word-break: auto-phrase;
   overflow-wrap: break-word;
+}
+/* 縦結合した観点セル。上揃えにし、右側に薄い区切り線を引いて束がわかるようにする */
+.md-typeset .test-cases table:not([class]) td[rowspan] {
+  vertical-align: top;
+  border-left: 0.05rem solid var(--md-typeset-table-color);
+  border-right: 0.05rem solid var(--md-typeset-table-color);
 }
